@@ -72,6 +72,12 @@
             "languages": [
                 "matlab"
             ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Ellipses",
+            "languages": [
+                "matlab"
+            ]
         }
     ],
     "dependencies": [

@@ -121,8 +121,8 @@ for iModel = 1:nModels
         scatter(sigma*cos(2*theta), sigma*sin(2*theta), 20^2, 1*[1 1 1],'LineWidth',5);
         scatter(sigma*cos(2*theta), sigma*sin(2*theta), 20^2, 0*[1 1 1],'LineWidth',3);
         axis equal
-        xlabel('\sigma_n')
-        ylabel('\sigma_s')
+        xlabel('$\sigma_n$')
+        ylabel('$\sigma_s$')
         
         % make the zeros be white
         cmap = colormap;
@@ -132,21 +132,21 @@ for iModel = 1:nModels
         subplot(2,4,3)
         histogram(u0Est,'Normalization','pdf')
         vlines(u0,'k--')
-        title('u_0')
+        title('$u_0$')
         
         subplot(2,4,4)
         histogram(v0Est,'Normalization','pdf')
         vlines(v0,'k--')
-        title('v_0')
+        title('$v_0$')
         
         subplot(2,4,7)
         histogram(zetaEst,'Normalization','pdf')
         vlines(zeta,'k--')
-        title('\zeta')
+        title('$\zeta$')
         
         subplot(2,4,8)
         histogram(kappaEst,'Normalization','pdf')
         vlines(kappa,'k--')
-        title('\kappa')
+        title('$\kappa$')
     end
 end

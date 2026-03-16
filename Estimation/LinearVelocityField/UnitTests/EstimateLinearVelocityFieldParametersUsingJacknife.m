@@ -74,8 +74,8 @@ for iEst=1:2
     ylim([-1e-5 1e-5])
     
     axis equal
-    xlabel('\sigma_n')
-    ylabel('\sigma_s')
+    xlabel('$\sigma_n$')
+    ylabel('$\sigma_s$')
     title('Kernel density estimate')
     cb = colorbar('eastoutside');
     cb.Ticks = dLevels;
@@ -83,7 +83,7 @@ for iEst=1:2
     
     subplot(1,2,2)
     histogram((kappaEst(:,iEst)),10)
-    xlabel('\kappa')
+    xlabel('$\kappa$')
     title('diffusivity estimate')
     
 end
