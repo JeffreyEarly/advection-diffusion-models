@@ -77,36 +77,33 @@ classdef KinematicModel < handle
             end
         end
         
-        function varargout = plotVelocityField(self,t,quiverscale,N)
-            if ~exist('t','var')
-                t = 0;
-            end
-            if ~exist('quiverscale','var')
-                quiverscale = 1;
-            end
-            if ~exist('N','var')
-                N = 150;
+        function varargout = plotVelocityField(self,options)
+            arguments
+                self 
+                options.t (1,1) double = 0
+                options.quiverscale (1,1) double = 1
+                options.N (1,1) double = 150
             end
             
             
-            xg = linspace(min(self.xVisLim),max(self.xVisLim),2*N)';
-            yg = linspace(min(self.yVisLim),max(self.yVisLim),N)';
+            xg = linspace(min(self.xVisLim),max(self.xVisLim),2*options.N)';
+            yg = linspace(min(self.yVisLim),max(self.yVisLim),options.N)';
             [X,Y] = meshgrid(xg,yg);
                        
             if ~isempty(self.obstacles)
-%                 x = reshape(X,[],1);
-%                 y = reshape(Y,[],1);
-%                 mask = false(size(x));
-%                 for iObstacle=1:length(self.obstacles)
-%                     mask = mask & ~isinterior(self.obstacles(iObstacle),x,y);
-%                 end
-%                 mask = reshape(mask,size(X));
+                x = reshape(X,[],1);
+                y = reshape(Y,[],1);
+                mask = true(size(x));
+                for iObstacle=1:length(self.obstacles)
+                    mask = mask & ~isinterior(self.obstacles(iObstacle),x,y);
+                end
+                mask = reshape(mask,size(X));
 
-%                 quiver(X/self.visualScale,Y/self.visualScale,mask.*self.u(t,X,Y),mask.*self.v(t,X,Y)), hold on
-                quiver(X/self.visualScale,Y/self.visualScale,self.u(t,X,Y),self.v(t,X,Y),quiverscale), hold on
+                % quiver(X/self.visualScale,Y/self.visualScale,mask.*self.u(options.t,X,Y),mask.*self.v(options.t,X,Y)), hold on
+                quiver(X/self.visualScale,Y/self.visualScale,mask.*self.u(options.t,X,Y),mask.*self.v(options.t,X,Y),options.quiverscale), hold on
                 plot(scale(self.obstacles,1/self.visualScale))
             else
-                quiver(X/self.visualScale,Y/self.visualScale,self.u(t,X,Y),self.v(t,X,Y),quiverscale)
+                quiver(X/self.visualScale,Y/self.visualScale,self.u(options.t,X,Y),self.v(options.t,X,Y),options.quiverscale)
             end
             
             axis equal
