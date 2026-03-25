@@ -14,12 +14,7 @@ classdef LinearVelocityFieldEstimationUnitTests < matlab.unittest.TestCase
             [x0, y0] = ndgrid([-600 0 600],[-400 0 400]);
             [t, x, y] = integrator.particleTrajectories(x0(:),y0(:),12*3600,900);
 
-            parameters = EstimateLinearVelocityFieldParameters( ...
-                x, ...
-                y, ...
-                t, ...
-                [ModelParameter.u0v0, ModelParameter.strain, ModelParameter.vorticity], ...
-                1);
+            parameters = EstimateLinearVelocityFieldParameters(x, y, t, [ModelParameter.u0v0, ModelParameter.strain, ModelParameter.vorticity], 1);
 
             testCase.verifyEqual(parameters.u0, u0, "AbsTol", 5e-6);
             testCase.verifyEqual(parameters.v0, v0, "AbsTol", 5e-6);
@@ -42,7 +37,7 @@ classdef LinearVelocityFieldEstimationUnitTests < matlab.unittest.TestCase
             x = xCenter + reshape(xOffset,1,[]);
             y = yCenter + reshape(yOffset,1,[]);
 
-            parameters = EstimateLinearVelocityFieldParameters(x,y,t,ModelParameter.u0v0,4);
+            parameters = EstimateLinearVelocityFieldParameters(x, y, t, ModelParameter.u0v0, 4);
 
             testCase.verifySize(parameters.u0,size(t));
             testCase.verifySize(parameters.v0,size(t));

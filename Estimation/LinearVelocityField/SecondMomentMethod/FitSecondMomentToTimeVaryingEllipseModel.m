@@ -1,9 +1,9 @@
-function [parameters,error,B] = FitSecondMomentToTimeVaryingEllipseModel( Mxx, Myy, Mxy, t, model,dof,K)
+function [parameters,error,B] = FitSecondMomentToTimeVaryingEllipseModel( Mxx, Myy, Mxy, t, model, dof, S)
 
-t_knot = InterpolatingSpline.KnotPointsForSplines(t,K,dof);
+knotPoints = BSpline.knotPointsForDataPoints(t, S=S, splineDOF=dof);
 
 % B is matrix of size(B)=[length(t) nSplines]
-B = BSpline.Spline(t,t_knot,K,0);
+B = BSpline.matrixForDataPoints(t, knotPoints=knotPoints, S=S);
 nSplines = size(B,2);
 
 if strcmp(model,'strain-diffusive')
@@ -35,4 +35,3 @@ end
 
 
 end
-

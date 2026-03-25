@@ -228,4 +228,3 @@ end
 %parameters.kappa = 0; %mean(x_sm(end,:).^2 + y_sm(end,:).^2)/(4*(t(end)-t(1)));
 
 end
-

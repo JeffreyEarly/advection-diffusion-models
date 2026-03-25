@@ -18,8 +18,8 @@ y0 = [0; 0; -500; -250; 0; 250; 500; 0; 0;];
 
 [t,x,y] = integrator.particleTrajectories(x0,y0,T,dt);
 dof = 2;
-K = 2;
-[parameters,error,B] = FitTrajectoriesToTimeVaryingEllipseModel( x, y, t, 'strain-diffusive', dof, K );
+S = 1;
+[parameters,error,B] = FitTrajectoriesToTimeVaryingEllipseModel( x, y, t, 'strain-diffusive', dof, S );
 X = B(:,1);
 
 %%

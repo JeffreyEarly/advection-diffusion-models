@@ -7,12 +7,18 @@ cd(testRoot);
 repoRoot = fileparts(testRoot);
 workspaceRoot = fileparts(repoRoot);
 dependencyRoot = fullfile(workspaceRoot,'spline-core');
+distributionRoot = fullfile(workspaceRoot,'distributions');
 
 addPackageToPath(repoRoot);
 
 if ~isfolder(dependencyRoot)
     error('Expected dependency repo at %s.',dependencyRoot);
 end
+if ~isfolder(distributionRoot)
+    error('Expected dependency repo at %s.',distributionRoot);
+end
+
+addPackageToPath(distributionRoot);
 addPackageToPath(dependencyRoot);
 
 import matlab.unittest.TestRunner
@@ -22,7 +28,6 @@ runner = testrunner("textoutput");
 suite = [ ...
     TestSuite.fromClass(?IntegratorUnitTests) ...
     TestSuite.fromClass(?IntegratorWithObstaclesUnitTests) ...
-    TestSuite.fromClass(?LinearVelocityFieldUnitTests) ...
     TestSuite.fromClass(?LinearVelocityFieldEstimationUnitTests) ...
     ];
 

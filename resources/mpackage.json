@@ -1,6 +1,6 @@
 {
     "name": "AdvectionDiffusionModels",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "id": "8925cc26-879f-495c-b6a7-7f0d66ac906a",
     "formerNames": [],
     "displayName": "Advection-Diffusion Models",
@@ -83,8 +83,13 @@
     "dependencies": [
         {
             "name": "SplineCore",
-            "compatibleVersions": "",
+            "compatibleVersions": "^2.0",
             "id": "f723c088-397a-43e5-a0ad-e19422cc3c2a"
+        },
+        {
+            "name": "Distributions",
+            "compatibleVersions": "^1.0",
+            "id": "c543ab89-e5a2-4697-830f-12cf8ed03694"
         }
     ],
     "releaseCompatibility": ">=R2024b",

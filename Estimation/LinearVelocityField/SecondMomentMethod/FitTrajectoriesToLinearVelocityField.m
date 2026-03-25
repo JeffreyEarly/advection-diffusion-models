@@ -1,7 +1,7 @@
-function [parameters,error] = FitTrajectoriesToLinearVelocityField( x, y, t, model, dof, K)
+function [parameters,error] = FitTrajectoriesToLinearVelocityField( x, y, t, model, dof, S)
 
 % First order of business is to set the expansion point.
-t_knot = InterpolatingSpline.KnotPointsForSplines(t,K,dof);
+knotPoints = BSpline.knotPointsForDataPoints(t, S=S, splineDOF=dof);
 nDrifters = size(x,2);
 xf = zeros(size(x));
 yf = zeros(size(x));
@@ -9,8 +9,8 @@ for iDrifter = 1:nDrifters
     xd = x(:,iDrifter);
     yd = y(:,iDrifter);
 
-    spline_mean_x = ConstrainedSpline(t,xd,K,t_knot,NormalDistribution(1),[]);
-    spline_mean_y = ConstrainedSpline(t,yd,K,t_knot,NormalDistribution(1),[]);
+    spline_mean_x = ConstrainedSpline(t, xd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(1));
+    spline_mean_y = ConstrainedSpline(t, yd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(1));
     
     xf(:,iDrifter) = spline_mean_x(t);
     yf(:,iDrifter) = spline_mean_y(t);
@@ -28,10 +28,10 @@ q = q(1:end-1) + diff(q)/2;
 r = r(1:end-1) + diff(r)/2;
 
 t = t(1:end-1);
-t_knot = InterpolatingSpline.KnotPointsForSplines(t,K,dof);
+knotPoints = BSpline.knotPointsForDataPoints(t, S=S, splineDOF=dof);
 
 % B is matrix of size(B)=[length(t) nSplines]
-B = BSpline.Spline(t,t_knot,K,0);
+B = BSpline.matrixForDataPoints(t, knotPoints=knotPoints, S=S);
 nSplines = size(B,2);
 
 % Now put all the data together
@@ -68,4 +68,3 @@ end
 
 
 end
-
