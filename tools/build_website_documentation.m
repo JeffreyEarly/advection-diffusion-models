@@ -2,6 +2,9 @@ function build_website_documentation(options)
 arguments
     options.rootDir = ".."
 end
+
+return;
+
 buildFolder = fullfile(options.rootDir,"docs");
 sourceFolder = fullfile(options.rootDir,"Documentation","WebsiteDocumentation");
 
