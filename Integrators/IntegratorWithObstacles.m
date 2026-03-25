@@ -46,6 +46,12 @@ classdef IntegratorWithObstacles < Integrator
             self.isPeriodic = isPeriodic;
 
             self.SetObstacles(obstacles);
+            for iObstacle = 1:length(obstacles)
+                [isInside, isOnBoundary] = inpolygon(y0(:,1), y0(:,2), obstacles(iObstacle).Vertices(:,1), obstacles(iObstacle).Vertices(:,2));
+                if any(isInside & ~isOnBoundary)
+                    error('Initial particles inside obstacle are not allowed.');
+                end
+            end
             
             self.diffusivityFlux = cell(length(ymin),1);
             for i = 1:length(ymin)
