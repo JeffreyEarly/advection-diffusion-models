@@ -111,8 +111,15 @@ classdef IntegratorWithObstacles < Integrator
 %                         hold on, scatter(yi(particlesToCheck,1),yi(particlesToCheck,2),'filled')
 %                         hold on, scatter(yo(particlesToCheck,1),yo(particlesToCheck,2),'filled')
 %                     end
+
+                    yo_current = yi(particlesToCheck,:) + dy(particlesToCheck,:);
+                    for i=1:self.nDims
+                        if self.isPeriodic(i) == 1
+                            yo_current(:,i) = mod(yo_current(:,i)-self.ymin(i),self.ymax(i)-self.ymin(i)) + self.ymin(i);
+                        end
+                    end
                     
-                    [yi_new,dy_new,didReflect] = self.UpdateWithReflection(self.obstacles(iObstacle),yi(particlesToCheck,:),yo(particlesToCheck,:),dy(particlesToCheck,:));
+                    [yi_new,dy_new,didReflect] = self.UpdateWithReflection(self.obstacles(iObstacle),yi(particlesToCheck,:),yo_current,dy(particlesToCheck,:));
                     
 %                     if nLoops > 9
 %                         hold on, scatter(yi_new(:,1)+dy_new(:,1),yi_new(:,2)+dy_new(:,2),'filled')
@@ -226,23 +233,26 @@ classdef IntegratorWithObstacles < Integrator
             % is on a vertex. So we only ever need to store the first
             % non-zero crossing.
             
+            nPoints = size(p_i,1);
+
             % output
-            didReflect = false(size(p_i,1),1);
+            didReflect = false(nPoints,1);
             p_f_new = p_f;
             p_intersection = zeros(size(p_f));
             
             % Information needed to determine whether or not we reflect
             isPfInterior = IntegratorWithObstacles.isInterior( polygon,p_f(:,1),p_f(:,2));
-            isPiOnBorder = false(size(p_i,1),1);
-            numCrossings = zeros(size(p_i,1),1);
+            isPiOnBorder = false(nPoints,1);
+            numCrossings = zeros(nPoints,1);
                         
             % Information needed to do the actual reflection
             first_non_zero_crossing = zeros(size(p_f));
-            dist_to_first_nonzero_crossing = nan(size(p_i,1),1);
+            dist_to_first_nonzero_crossing = nan(nPoints,1);
+            first_non_zero_crossing_edge = nan(nPoints,1);
+            zero_crossing_edge = nan(nPoints,1);
             
             zeroThreshold = 0; % this should be a relative value.
-            p_intersect = nan(size(p_i));
-            r2 = nan(size(p_i,1),1);
+            intersectionBackoff = 1e-6;
             for i=1:(length(polygon.Vertices)-1)
 %                 [doesIntersect,p_intersect,r2] = IntegratorWithObstacles.DoesIntersect( p_i, p_f, polygon.Vertices(i,1:2), polygon.Vertices(i+1,1:2), doesIntersect,p_intersect,r2 );
                 
@@ -251,6 +261,8 @@ classdef IntegratorWithObstacles < Integrator
                 % This has big performance gains due to Matlab memory
                 % management
                 % *********************************************************
+                p_intersect = nan(size(p_i));
+                r2 = nan(nPoints,1);
                 x1x2 = p_i(:,1)-p_f(:,1);   % x1 - x2
                 y3y4 = -polygon.dy(i);      % y3 - y4
                 y1y2 = p_i(:,2)-p_f(:,2);   % y1 - y2
@@ -269,8 +281,12 @@ classdef IntegratorWithObstacles < Integrator
                 % not be used for a reflection
                 doesIntersect = t >= 0 & t <= 1 & u >= 0 & u <= 1 & denom ~= 0;
                 if any(doesIntersect)
-                    dx = - 0.999*t(doesIntersect).*x1x2(doesIntersect);
-                    dy = - 0.999*t(doesIntersect).*y1y2(doesIntersect);
+                    dx = -t(doesIntersect).*x1x2(doesIntersect);
+                    dy = -t(doesIntersect).*y1y2(doesIntersect);
+                    dr = sqrt(dx.^2 + dy.^2);
+                    nonzero = dr > 0;
+                    dx(nonzero) = max(dr(nonzero) - intersectionBackoff, 0).*dx(nonzero)./dr(nonzero);
+                    dy(nonzero) = max(dr(nonzero) - intersectionBackoff, 0).*dy(nonzero)./dr(nonzero);
                     r2(doesIntersect) = dx.^2+dy.^2;
                     p_intersect(doesIntersect,1) = p_i(doesIntersect,1) + dx;
                     p_intersect(doesIntersect,2) = p_i(doesIntersect,2) + dy;
@@ -280,43 +296,56 @@ classdef IntegratorWithObstacles < Integrator
                 % *********************************************************
 
                 numCrossings = numCrossings + doesIntersect;
-                isPiOnBorder = isPiOnBorder | r2 <= zeroThreshold;
+                zeroCrossing = doesIntersect & r2 <= zeroThreshold;
+                isPiOnBorder = isPiOnBorder | zeroCrossing;
+                newZeroCrossing = zeroCrossing & isnan(zero_crossing_edge);
+                if any(newZeroCrossing)
+                    zero_crossing_edge(newZeroCrossing) = i;
+                end
                 
                 % *** New intersection to record if ***
                 % it intersects, isn't on the border, and we don't previously have a point recorded, OR
                 % it isn't on the border and is closer
-                newIntersection = (doesIntersect & r2 > zeroThreshold & isnan(dist_to_first_nonzero_crossing)) | (r2 > zeroThreshold & r2 < dist_to_first_nonzero_crossing);
+                newIntersection = doesIntersect & r2 > zeroThreshold & (isnan(dist_to_first_nonzero_crossing) | r2 < dist_to_first_nonzero_crossing);
                 if any(newIntersection)
                    dist_to_first_nonzero_crossing(newIntersection) = r2(newIntersection);
                    first_non_zero_crossing(newIntersection,:) = p_intersect(newIntersection,:);
+                   first_non_zero_crossing_edge(newIntersection) = i;
                 end
-                
-                % Update new possible reflection.
-                % Reflect if we crossed a boundary, except case 5 above
-                shouldReflect = doesIntersect & numCrossings > 0 & ~(isPiOnBorder & ~isPfInterior & numCrossings == 1);
-                didReflect = didReflect | shouldReflect;
-                if any(shouldReflect)
-                    p_intersection(doesIntersect,:) = first_non_zero_crossing(doesIntersect,:);
-                    
-                    % Reflection point is p_i in cases 3 and 7
-                    piIsReflectionPoint = shouldReflect & ( (isPiOnBorder & isPfInterior & mod(numCrossings,2) == 1) | (isPiOnBorder & ~isPfInterior & mod(numCrossings,2) == 0) );
-                    p_intersection(piIsReflectionPoint,:) = p_i(piIsReflectionPoint,:);
-                    
-                    % treat the point of intersection as the origin. This means the
-                    % interior point is
-                    px = p_f(shouldReflect,1) - p_intersect(shouldReflect,1);
-                    py = p_f(shouldReflect,2) - p_intersect(shouldReflect,2);
-                    
-                    dx = polygon.Vertices(i+1,1)-polygon.Vertices(i,1);
-                    dy = polygon.Vertices(i+1,2)-polygon.Vertices(i,2);
-                    
-                    a = dx*dx-dy*dy;
-                    b = 2*dx*dy;
-                    d = dx*dx+dy*dy;
-                    
-                    p_f_new(shouldReflect,1) = (a*px + b*py)/d + p_intersect(shouldReflect,1);
-                    p_f_new(shouldReflect,2) = (b*px - a*py)/d + p_intersect(shouldReflect,2);
-                end
+            end
+
+            reflectAtPi = isPiOnBorder & ( ...
+                (isPfInterior & mod(numCrossings,2) == 1) | ...
+                (~isPfInterior & numCrossings > 0 & mod(numCrossings,2) == 0) ...
+                );
+            reflectAtFirstNonZero = (~isPiOnBorder & numCrossings > 0) | ...
+                (isPiOnBorder & ( ...
+                (isPfInterior & mod(numCrossings,2) == 0 & ~isnan(first_non_zero_crossing_edge)) | ...
+                (~isPfInterior & numCrossings > 1 & mod(numCrossings,2) == 1) ...
+                ));
+
+            didReflect = reflectAtPi | reflectAtFirstNonZero;
+            p_intersection(reflectAtFirstNonZero,:) = first_non_zero_crossing(reflectAtFirstNonZero,:);
+            p_intersection(reflectAtPi,:) = p_i(reflectAtPi,:);
+
+            reflectionEdge = nan(nPoints,1);
+            reflectionEdge(reflectAtPi) = zero_crossing_edge(reflectAtPi);
+            reflectionEdge(reflectAtFirstNonZero) = first_non_zero_crossing_edge(reflectAtFirstNonZero);
+
+            reflecting = didReflect & ~isnan(reflectionEdge);
+            if any(reflecting)
+                px = p_f(reflecting,1) - p_intersection(reflecting,1);
+                py = p_f(reflecting,2) - p_intersection(reflecting,2);
+
+                dx = polygon.dx(reflectionEdge(reflecting));
+                dy = polygon.dy(reflectionEdge(reflecting));
+
+                a = dx.^2 - dy.^2;
+                b = 2*dx.*dy;
+                d = dx.^2 + dy.^2;
+
+                p_f_new(reflecting,1) = (a.*px + b.*py)./d + p_intersection(reflecting,1);
+                p_f_new(reflecting,2) = (b.*px - a.*py)./d + p_intersection(reflecting,2);
             end
 %             if any(isPfInterior & ~didReflect)
 %                fprintf('What happened here?'); 
@@ -413,4 +442,3 @@ classdef IntegratorWithObstacles < Integrator
         end
     end
 end
-
