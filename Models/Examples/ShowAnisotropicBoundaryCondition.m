@@ -27,8 +27,8 @@ g = @(t,x) cat(2,zeros(size(x(:,1))), sqrt(2*sigma(x(:,1))/tau) );
 
 x0 = cat(2,linspace(.1,L-.1,reps).',zeros(reps,1));
 
-integrator = IntegratorEulerMaruyama( f, g, x0, 0.1*deltaT );
-pn = integrator.IntegrateAlongDimension(t);
+integrator = IntegratorEulerMaruyama(f, g, x0, dt=0.1*deltaT);
+pn = integrator.integrateToTime(t);
 x = squeeze(pn(:,1,:)).';
 u = squeeze(pn(:,2,:)).';
 

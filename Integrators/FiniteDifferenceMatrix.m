@@ -1,18 +1,53 @@
 function D = FiniteDifferenceMatrix(numDerivs, x, leftBCDerivs, rightBCDerivs, orderOfAccuracy)
-%% FiniteDifferenceMatrix
-% Creates a finite difference matrix of aribtrary accuracy, on an arbitrary
-% grid. Left and right boundary conditions are specified as their order of
-% derivative.
+% Assemble a finite-difference matrix for $$\frac{d^m y}{dx^m}$$.
 %
-% numDerivs ? the number of derivatives
-% x ? the grid
-% leftBCDerivs ? derivatives for the left boundary condition.
-% rightBCDerivs ? derivatives for the right boundary condition.
-% orderOfAccuracy ? minimum order of accuracy required
+% `FiniteDifferenceMatrix` builds the discrete operator `D` on the grid
+% `x` such that
 %
-% Jeffrey J. Early, 2015
+% $$
+% D y \approx \frac{d^m y}{dx^m},
+% $$
+%
+% where `m = numDerivs` in the interior rows. The first and last rows use
+% derivative orders `leftBCDerivs` and `rightBCDerivs` to encode boundary
+% derivative conditions on the same grid. The returned matrix follows the
+% existing arbitrary-grid Fornberg-weight construction used in this
+% repository.
+%
+% - Topic: Integrators
+% - Declaration: D = FiniteDifferenceMatrix(numDerivs,x,leftBCDerivs,rightBCDerivs,orderOfAccuracy)
+% - Parameter numDerivs: nonnegative derivative order $$m$$ approximated in the interior rows
+% - Parameter x: strictly increasing grid vector with length `n`
+% - Parameter leftBCDerivs: nonnegative derivative order enforced in the first row
+% - Parameter rightBCDerivs: nonnegative derivative order enforced in the last row
+% - Parameter orderOfAccuracy: positive stencil-accuracy target
+% - Returns D: `n x n` finite-difference matrix on the grid `x`
+arguments
+    numDerivs (1,1) double {mustBeInteger, mustBeNonnegative}
+    x {mustBeNumeric, mustBeReal, mustBeFinite, mustBeVector}
+    leftBCDerivs (1,1) double {mustBeInteger, mustBeNonnegative}
+    rightBCDerivs (1,1) double {mustBeInteger, mustBeNonnegative}
+    orderOfAccuracy (1,1) double {mustBeInteger, mustBePositive}
+end
 
+x = x(:);
 n = length(x);
+if n < 2
+    error("FiniteDifferenceMatrix:GridTooShort", "x must contain at least two grid points.");
+end
+
+if any(diff(x) <= 0)
+    error("FiniteDifferenceMatrix:GridNotStrictlyIncreasing", "x must be strictly increasing.");
+end
+
+if orderOfAccuracy + leftBCDerivs > n
+    error("FiniteDifferenceMatrix:LeftStencilTooWide", "The left boundary stencil requires %d points, but x only contains %d points.", orderOfAccuracy + leftBCDerivs, n);
+end
+
+if orderOfAccuracy + rightBCDerivs > n
+    error("FiniteDifferenceMatrix:RightStencilTooWide", "The right boundary stencil requires %d points, but x only contains %d points.", orderOfAccuracy + rightBCDerivs, n);
+end
+
 D = zeros(n,n);
 
 % left boundary condition

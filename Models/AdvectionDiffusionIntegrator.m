@@ -64,7 +64,11 @@ classdef AdvectionDiffusionIntegrator
                 step = self.stepSize;
             end
 
-            integrator = IntegratorWithObstacles( flux, p0,step,self.kappa,[xMin yMin],[xMax yMax], self.kinematicModel.obstacles, [self.kinematicModel.xIsPeriodic self.kinematicModel.yIsPeriodic] );
+            ymin = [xMin yMin];
+            ymax = [xMax yMax];
+            obstacles = self.kinematicModel.obstacles;
+            periodic = logical([self.kinematicModel.xIsPeriodic self.kinematicModel.yIsPeriodic]);
+            integrator = IntegratorWithObstacles(flux, p0, dt=step, kappa=self.kappa, ymin=ymin, ymax=ymax, obstacles=obstacles, isPeriodic=periodic);
             
             t = zeros(tn+1,1);
             x = zeros(length(t),n);
@@ -74,9 +78,9 @@ classdef AdvectionDiffusionIntegrator
             y(1,:) = y0;
             for i=1:tn
                 if singleIncrement == 1
-                    integrator.StepForwardOneIncrement;
+                    integrator.advanceOneStep();
                 else
-                    integrator.StepForwardToTime(i*dt);
+                    integrator.advanceToTime(i*dt);
                 end
                 p = integrator.currentY;
                 x(i+1,:)=p(:,1).';
@@ -124,7 +128,11 @@ classdef AdvectionDiffusionIntegrator
                 step = self.stepSize;
             end
 
-            integrator = IntegratorWithObstacles( flux, p0,step,self.kappa,[xMin yMin],[xMax yMax], self.kinematicModel.obstacles, [self.kinematicModel.xIsPeriodic self.kinematicModel.yIsPeriodic] );
+            ymin = [xMin yMin];
+            ymax = [xMax yMax];
+            obstacles = self.kinematicModel.obstacles;
+            periodic = logical([self.kinematicModel.xIsPeriodic self.kinematicModel.yIsPeriodic]);
+            integrator = IntegratorWithObstacles(flux, p0, dt=step, kappa=self.kappa, ymin=ymin, ymax=ymax, obstacles=obstacles, isPeriodic=periodic);
             
             t = zeros(tn+1,1);
             x = zeros(length(t),n);
@@ -134,9 +142,9 @@ classdef AdvectionDiffusionIntegrator
             y(1,:) = y0;
             for i=1:tn
                 if singleIncrement == 1
-                    integrator.StepForwardOneIncrement;
+                    integrator.advanceOneStep();
                 else
-                    integrator.StepForwardToTime(i*dt);
+                    integrator.advanceToTime(i*dt);
                 end
                 p = integrator.currentY;
                 x(i+1,:)=p(:,1).';
@@ -147,4 +155,3 @@ classdef AdvectionDiffusionIntegrator
 
     end
 end
-

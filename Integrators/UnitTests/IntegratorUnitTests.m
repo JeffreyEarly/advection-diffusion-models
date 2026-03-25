@@ -5,11 +5,11 @@ classdef IntegratorUnitTests < matlab.unittest.TestCase
             dt = 0.01;
             t = (0:dt:1).';
 
-            integrator = Integrator(@(~, y) y, 1, dt);
+            integrator = Integrator(@(~, y) y, 1, dt=dt);
             y = zeros(size(t));
             y(1) = integrator.currentY;
             for iTime = 2:length(t)
-                y(iTime) = integrator.StepForwardOneIncrement;
+                y(iTime) = integrator.advanceOneStep();
             end
 
             testCase.verifyLessThanOrEqual(max(abs(y - exp(t))), 1e-8);
@@ -23,16 +23,11 @@ classdef IntegratorUnitTests < matlab.unittest.TestCase
             t = (0:dt:5).';
             lowerBound = -1.5;
             upperBound = 1.5;
+            f = @(~, y) zeros(size(y));
 
-            integrator = IntegratorWithDiffusivity( ...
-                @(~, y) zeros(size(y)), ...
-                zeros(nParticles,1), ...
-                dt, ...
-                0.75, ...
-                lowerBound, ...
-                upperBound);
+            integrator = IntegratorWithDiffusivity(f, zeros(nParticles,1), dt=dt, kappa=0.75, ymin=lowerBound, ymax=upperBound);
 
-            y = integrator.IntegrateAlongDimension(t);
+            y = integrator.integrateToTime(t);
             y = squeeze(y(:,1,:));
 
             testCase.verifyGreaterThanOrEqual(min(y,[],"all"), lowerBound - 10*eps(lowerBound));
@@ -48,18 +43,13 @@ classdef IntegratorUnitTests < matlab.unittest.TestCase
             nSteps = 160;
             totalTime = nSteps*dt;
             kappa = 0.75;
+            f = @(~, y) zeros(size(y));
 
-            integrator = IntegratorWithDiffusivity( ...
-                @(~, y) zeros(size(y)), ...
-                zeros(nParticles,nDims), ...
-                dt, ...
-                kappa, ...
-                [-Inf -Inf], ...
-                [Inf Inf]);
+            integrator = IntegratorWithDiffusivity(f, zeros(nParticles,nDims), dt=dt, kappa=kappa);
 
             y = integrator.currentY;
             for iStep = 1:nSteps
-                y = integrator.StepForwardOneIncrement;
+                y = integrator.advanceOneStep();
             end
 
             dimensionVariance = var(y,1,1);
@@ -76,16 +66,11 @@ classdef IntegratorUnitTests < matlab.unittest.TestCase
             nParticles = 20000;
             dt = 0.25;
             kappa = 0.75;
+            f = @(~, y) zeros(size(y));
 
-            integrator = IntegratorWithDiffusivity( ...
-                @(~, y) zeros(size(y)), ...
-                zeros(nParticles,1), ...
-                dt, ...
-                kappa, ...
-                0, ...
-                Inf);
+            integrator = IntegratorWithDiffusivity(f, zeros(nParticles,1), dt=dt, kappa=kappa, ymin=0);
 
-            y = integrator.StepForwardOneIncrement;
+            y = integrator.advanceOneStep();
 
             expectedMean = 2*sqrt(kappa*dt/pi);
             expectedSecondMoment = 2*kappa*dt;
@@ -106,14 +91,12 @@ classdef IntegratorUnitTests < matlab.unittest.TestCase
             dt = 0.25;
             totalTime = 40;
             t = (0:dt:totalTime).';
+            f = @(~, y) zeros(size(y));
+            g = @(~, y) sqrt(2*kappa)*ones(size(y));
 
-            integrator = IntegratorEulerMaruyama( ...
-                @(~, y) zeros(size(y)), ...
-                @(~, y) sqrt(2*kappa)*ones(size(y)), ...
-                zeros(nParticles,nDims), ...
-                dt);
+            integrator = IntegratorEulerMaruyama(f, g, zeros(nParticles,nDims), dt=dt);
 
-            y = integrator.IntegrateAlongDimension(t);
+            y = integrator.integrateToTime(t);
             y = squeeze(y(:,:,end));
 
             dimensionVariance = var(y,1,1);
