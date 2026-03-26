@@ -19,11 +19,11 @@ Convert normal and shear strain to magnitude and orientation.
  [sigma, theta] = sigmaThetaFromNormalAndShear(sigma_n,sigma_s)
 ```
 ## Parameters
-+ `sigma_n`  normal strain component in $$s^-1$$
-+ `sigma_s`  shear strain component in $$s^-1$$
++ `sigma_n`  normal strain component in $$s^{-1}$$
++ `sigma_s`  shear strain component in $$s^{-1}$$
 
 ## Returns
-+ `sigma`  strain magnitude in $$s^-1$$
++ `sigma`  strain magnitude in $$s^{-1}$$
 + `theta`  strain orientation in radians
 
 ## Discussion

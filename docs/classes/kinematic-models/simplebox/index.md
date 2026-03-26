@@ -29,6 +29,16 @@ $$ u(t,x,y) = 0, \qquad v(t,x,y) = 0, $$
 on a finite rectangular domain. Any motion comes from the external
 integrator, typically through the diffusivity term.
 
+```matlab
+model = SimpleBox();
+integrator = AdvectionDiffusionIntegrator(model, 20);
+x0 = [0.25; 0.75] * model.Lx;
+y0 = [0.25; 0.75] * model.Ly;
+[~, x, y] = integrator.particleTrajectories(x0, y0, 6 * 3600, 300);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 

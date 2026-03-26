@@ -9,7 +9,7 @@ mathjax: true
 
 #  U
 
-Velocity scale in $$m s^-1$$.
+Velocity scale in $$m s^{-1}$$.
 
 
 ---

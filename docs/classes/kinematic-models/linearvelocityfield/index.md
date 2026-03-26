@@ -42,7 +42,17 @@ $$ \sigma_n = \sigma \cos(2\theta), \qquad \sigma_s = \sigma \sin(2\theta). $$
 The method `momentTensorEvolution` integrates the corresponding
 second-moment system
 
-$$ \dot{M} = AM + MA^\top + 2\kappa I. $$
+$$ \dot{M} = AM + MA^{\top} + 2\kappa I. $$
+
+```matlab
+model = LinearVelocityField(sigma=1e-5, theta=pi / 8, zeta=0);
+integrator = AdvectionDiffusionIntegrator(model, 0);
+x0 = [-20e3; 20e3];
+y0 = [-10e3; 10e3];
+[~, x, y] = integrator.particleTrajectories(x0, y0, 12 * 3600, 600);
+figure
+model.plotTrajectories(x, y)
+```
 
 
 
@@ -51,13 +61,13 @@ $$ \dot{M} = AM + MA^\top + 2\kappa I. $$
 + Create the model
   + [`LinearVelocityField`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/linearvelocityfield.html) Create a linear velocity field.
 + Inspect model parameters
-  + [`sigma`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/sigma.html) Strain magnitude in $$s^-1$$.
+  + [`sigma`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/sigma.html) Strain magnitude in $$s^{-1}$$.
   + [`sigma_n`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/sigma_n.html) Normal strain component $$\sigma_n = \sigma \cos(2\theta)$$.
   + [`sigma_s`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/sigma_s.html) Shear strain component $$\sigma_s = \sigma \sin(2\theta)$$.
   + [`theta`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/theta.html) Strain orientation in radians.
-  + [`u0`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/u0.html) Uniform background x-velocity in $$m s^-1$$.
-  + [`v0`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/v0.html) Uniform background y-velocity in $$m s^-1$$.
-  + [`zeta`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/zeta.html) Relative vorticity in $$s^-1$$.
+  + [`u0`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/u0.html) Uniform background x-velocity in $$m s^{-1}$$.
+  + [`v0`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/v0.html) Uniform background y-velocity in $$m s^{-1}$$.
+  + [`zeta`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/zeta.html) Relative vorticity in $$s^{-1}$$.
 + Evaluate the velocity field
   + [`u`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/u.html) Evaluate the affine x-velocity.
   + [`v`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/v.html) Evaluate the affine y-velocity.

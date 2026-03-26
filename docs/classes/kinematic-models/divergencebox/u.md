@@ -24,7 +24,7 @@ Evaluate the x-velocity component.
 + `y`  y-coordinate array in meters
 
 ## Returns
-+ `uValue`  x-velocity in $$m s^-1$$ with the same shape as `x`
++ `uValue`  x-velocity in $$m s^{-1}$$ with the same shape as `x`
 
 ## Discussion
 

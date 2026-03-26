@@ -9,7 +9,7 @@ mathjax: true
 
 #  k
 
-Meander wavenumber in $$m^-1$$.
+Meander wavenumber in $$m^{-1}$$.
 
 
 ---

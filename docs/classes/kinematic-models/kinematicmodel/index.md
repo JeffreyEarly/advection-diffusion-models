@@ -31,6 +31,16 @@ domain limits, periodic directions, polygonal obstacles, and plotting
 limits. The base class provides common geometry filtering and
 visualization helpers.
 
+```matlab
+model = KinematicModel();
+integrator = AdvectionDiffusionIntegrator(model, 20);
+x0 = [0; 5e3];
+y0 = [0; 5e3];
+[~, x, y] = integrator.particleTrajectories(x0, y0, 3600, 300);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 

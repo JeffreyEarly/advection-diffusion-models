@@ -2,7 +2,7 @@ function [Mxx, Myy, Mxy] = momentTensorEvolution(self, Mxx0, Myy0, Mxy0, t, kapp
 % Evolve the second-moment tensor for the linear model.
 %
 % The returned moments satisfy the matrix equation
-% $$\dot{M} = AM + MA^\top + 2\kappa I$$ for the affine velocity gradient
+% $$\dot{M} = AM + MA^{\top} + 2\kappa I$$ for the affine velocity gradient
 % `A` defined by the model parameters.
 %
 % - Topic: Analyze particle and moment evolution
@@ -11,7 +11,7 @@ function [Mxx, Myy, Mxy] = momentTensorEvolution(self, Mxx0, Myy0, Mxy0, t, kapp
 % - Parameter Myy0: initial $$M_{yy}$$ entry in m^2
 % - Parameter Mxy0: initial $$M_{xy}$$ entry in m^2
 % - Parameter t: time vector in seconds
-% - Parameter kappa: scalar diffusivity in $$m^2 s^-1$$
+% - Parameter kappa: scalar diffusivity in $$m^2 s^{-1}$$
 % - Returns Mxx: time-dependent $$M_{xx}$$ entry in m^2 with the same shape as `t`
 % - Returns Myy: time-dependent $$M_{yy}$$ entry in m^2 with the same shape as `t`
 % - Returns Mxy: time-dependent $$M_{xy}$$ entry in m^2 with the same shape as `t`

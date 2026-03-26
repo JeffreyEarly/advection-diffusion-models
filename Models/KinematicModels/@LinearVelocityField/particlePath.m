@@ -10,9 +10,9 @@ function [x, y] = particlePath(self, x0, y0, t, kappa, u_0, v_0)
 % - Parameter x0: initial x positions in meters
 % - Parameter y0: initial y positions in meters
 % - Parameter t: output time vector in seconds
-% - Parameter kappa: scalar diffusivity in $$m^2 s^-1$$
-% - Parameter u_0: background x-velocity in $$m s^-1$$ used by the analytical formulas
-% - Parameter v_0: background y-velocity in $$m s^-1$$ used by the analytical formulas
+% - Parameter kappa: scalar diffusivity in $$m^2 s^{-1}$$
+% - Parameter u_0: background x-velocity in $$m s^{-1}$$ used by the analytical formulas
+% - Parameter v_0: background y-velocity in $$m s^{-1}$$ used by the analytical formulas
 % - Returns x: x positions in meters with shape `[length(t) nParticles]`
 % - Returns y: y positions in meters with shape `[length(t) nParticles]`
 arguments

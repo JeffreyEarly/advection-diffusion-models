@@ -31,6 +31,16 @@ $$ v(x,y) = \sum_{i,j} s_i e^{1/2} U \frac{y - y_c}{L_g} \exp\left(-\frac{r^2}{2
 
 where `s_i = (-1)^i` alternates the sign of neighboring cells.
 
+```matlab
+model = DivergenceBox();
+integrator = AdvectionDiffusionIntegrator(model, 0);
+x0 = [0.2; 0.8] * model.Lx;
+y0 = [0.25; 0.75] * model.Ly;
+[~, x, y] = integrator.particleTrajectories(x0, y0, 3600, 300);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 
@@ -41,7 +51,7 @@ where `s_i = (-1)^i` alternates the sign of neighboring cells.
   + [`Lg`](/advection-diffusion-models/classes/kinematic-models/divergencebox/lg.html) Gaussian length scale in meters.
   + [`Lx`](/advection-diffusion-models/classes/kinematic-models/divergencebox/lx.html) Domain width in meters.
   + [`Ly`](/advection-diffusion-models/classes/kinematic-models/divergencebox/ly.html) Domain height in meters.
-  + [`U`](/advection-diffusion-models/classes/kinematic-models/divergencebox/u_.html) Velocity scale in $$m s^-1$$.
+  + [`U`](/advection-diffusion-models/classes/kinematic-models/divergencebox/u_.html) Velocity scale in $$m s^{-1}$$.
   + [`m`](/advection-diffusion-models/classes/kinematic-models/divergencebox/m.html) Number of cells along y.
   + [`n`](/advection-diffusion-models/classes/kinematic-models/divergencebox/n.html) Number of cells along x.
 + Evaluate the velocity field

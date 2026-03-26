@@ -9,7 +9,7 @@ mathjax: true
 
 #  U
 
-Far-field speed in $$m s^-1$$.
+Far-field speed in $$m s^{-1}$$.
 
 
 ---

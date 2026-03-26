@@ -30,6 +30,16 @@ and represents the geometry through polygonal obstacles that leave a
 gap of width `W` in the left wall. The problem is useful for testing
 stochastic escape through a small opening.
 
+```matlab
+model = NarrowEscapeProblem();
+integrator = AdvectionDiffusionIntegrator(model, 20);
+x0 = [0.25; 0.75] * model.L;
+y0 = [0.4; 0.6] * model.L;
+[~, x, y] = integrator.particleTrajectories(x0, y0, 6 * 3600, 300);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 

@@ -9,7 +9,7 @@ mathjax: true
 
 #  kappa
 
-Scalar diffusivity in $$m^2 s^-1$$.
+Scalar diffusivity in $$m^2 s^{-1}$$.
 
 
 ---

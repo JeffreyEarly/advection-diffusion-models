@@ -7,7 +7,7 @@ classdef AdvectionDiffusionIntegrator
     %
     % where $$\mathbf{r}(t) = [x(t)\ y(t)]$$,
     % $$\mathbf{u}(t,\mathbf{r})$$ is supplied by a `KinematicModel`, and
-    % $$\kappa$$ is the scalar tracer diffusivity in $$m^2 s^-1$$. Boundary
+    % $$\kappa$$ is the scalar tracer diffusivity in $$m^2 s^{-1}$$. Boundary
     % limits, periodic wrapping, and polygonal obstacles are delegated to
     % `IntegratorWithObstacles`.
     %
@@ -16,6 +16,16 @@ classdef AdvectionDiffusionIntegrator
     % - `size(t) = [nTimes 1]`
     % - `size(x) = [nTimes nParticles]`
     % - `size(y) = [nTimes nParticles]`
+    %
+    % ```matlab
+    % model = SimpleBox();
+    % integrator = AdvectionDiffusionIntegrator(model, 20);
+    % x0 = [0.25; 0.75] * model.Lx;
+    % y0 = [0.25; 0.75] * model.Ly;
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 6 * 3600, 300);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
     %
     % - Topic: Create particle integrators
     % - Topic: Inspect integrator settings
@@ -31,7 +41,7 @@ classdef AdvectionDiffusionIntegrator
         % - Topic: Inspect integrator settings
         kinematicModel (1,1) KinematicModel
 
-        % Scalar diffusivity in $$m^2 s^-1$$.
+        % Scalar diffusivity in $$m^2 s^{-1}$$.
         %
         % Set `kappa = 0` to recover purely advective trajectories.
         %
@@ -57,7 +67,7 @@ classdef AdvectionDiffusionIntegrator
             % - Topic: Create particle integrators
             % - Declaration: self = AdvectionDiffusionIntegrator(kinematicModel,kappa)
             % - Parameter kinematicModel: `KinematicModel` instance defining `u(t,x,y)` and `v(t,x,y)`
-            % - Parameter kappa: scalar diffusivity in $$m^2 s^-1$$
+            % - Parameter kappa: scalar diffusivity in $$m^2 s^{-1}$$
             % - Returns self: `AdvectionDiffusionIntegrator` instance
             arguments
                 kinematicModel (1,1) KinematicModel

@@ -20,7 +20,7 @@ Create an advection-diffusion integrator.
 ```
 ## Parameters
 + `kinematicModel`  `KinematicModel` instance defining `u(t,x,y)` and `v(t,x,y)`
-+ `kappa`  scalar diffusivity in $$m^2 s^-1$$
++ `kappa`  scalar diffusivity in $$m^2 s^{-1}$$
 
 ## Returns
 + `self`  `AdvectionDiffusionIntegrator` instance

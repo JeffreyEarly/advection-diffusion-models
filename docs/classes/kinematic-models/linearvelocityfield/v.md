@@ -24,7 +24,7 @@ Evaluate the affine y-velocity.
 + `y`  y-coordinate array in meters
 
 ## Returns
-+ `vValue`  y-velocity in $$m s^-1$$ with the same shape as `x` and `y`
++ `vValue`  y-velocity in $$m s^{-1}$$ with the same shape as `x` and `y`
 
 ## Discussion
 

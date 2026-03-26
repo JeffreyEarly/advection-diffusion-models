@@ -37,6 +37,16 @@ References:
   Amy Bower, "A simple kinematic mechanism for mixing fluid parcels
   across a meandering jet."
 
+```matlab
+model = MeanderingJet();
+integrator = AdvectionDiffusionIntegrator(model, 0);
+x0 = [0.25; 1.25] * model.Lx;
+y0 = [-0.5; 0.5] * model.L;
+[~, x, y] = integrator.particleTrajectories(x0, y0, 3 * 86400, 1800);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 
@@ -47,9 +57,9 @@ References:
   + [`A`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/a.html) Meander amplitude in meters.
   + [`L`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/l.html) Jet half-width in meters.
   + [`Lx`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/lx.html) Meander wavelength in meters.
-  + [`U`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/u_.html) Velocity scale in $$m s^-1$$.
-  + [`cx`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/cx.html) Meander phase speed in $$m s^-1$$.
-  + [`k`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/k.html) Meander wavenumber in $$m^-1$$.
+  + [`U`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/u_.html) Velocity scale in $$m s^{-1}$$.
+  + [`cx`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/cx.html) Meander phase speed in $$m s^{-1}$$.
+  + [`k`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/k.html) Meander wavenumber in $$m^{-1}$$.
 + Evaluate meander coordinates
   + [`gamma`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/gamma.html) Evaluate the nondimensional cross-jet coordinate.
   + [`theta`](/advection-diffusion-models/classes/kinematic-models/meanderingjet/theta.html) Evaluate the meander phase.

@@ -10,6 +10,16 @@ classdef DivergenceBox < KinematicModel
     %
     % where `s_i = (-1)^i` alternates the sign of neighboring cells.
     %
+    % ```matlab
+    % model = DivergenceBox();
+    % integrator = AdvectionDiffusionIntegrator(model, 0);
+    % x0 = [0.2; 0.8] * model.Lx;
+    % y0 = [0.25; 0.75] * model.Ly;
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 3600, 300);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
+    %
     % - Topic: Create the model
     % - Topic: Inspect model parameters
     % - Topic: Evaluate the velocity field
@@ -41,7 +51,7 @@ classdef DivergenceBox < KinematicModel
         % - Topic: Inspect model parameters
         m = 1
 
-        % Velocity scale in $$m s^-1$$.
+        % Velocity scale in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         U = 1.0
@@ -76,7 +86,7 @@ classdef DivergenceBox < KinematicModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x`
             uValue = zeros(size(x));
             for i = 1:self.n
                 for j = 1:self.m
@@ -100,7 +110,7 @@ classdef DivergenceBox < KinematicModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `x`
             vValue = zeros(size(x));
             for i = 1:self.n
                 for j = 1:self.m

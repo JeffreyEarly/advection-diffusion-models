@@ -21,7 +21,17 @@ classdef LinearVelocityField < StreamfunctionModel
     % The method `momentTensorEvolution` integrates the corresponding
     % second-moment system
     %
-    % $$ \dot{M} = AM + MA^\top + 2\kappa I. $$
+    % $$ \dot{M} = AM + MA^{\top} + 2\kappa I. $$
+    %
+    % ```matlab
+    % model = LinearVelocityField(sigma=1e-5, theta=pi / 8, zeta=0);
+    % integrator = AdvectionDiffusionIntegrator(model, 0);
+    % x0 = [-20e3; 20e3];
+    % y0 = [-10e3; 10e3];
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 12 * 3600, 600);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
     %
     % - Topic: Create the model
     % - Topic: Inspect model parameters
@@ -32,7 +42,7 @@ classdef LinearVelocityField < StreamfunctionModel
     % - Declaration: classdef LinearVelocityField < StreamfunctionModel
 
     properties
-        % Strain magnitude in $$s^-1$$.
+        % Strain magnitude in $$s^{-1}$$.
         %
         % Together with `theta`, this parameter determines `sigma_n` and
         % `sigma_s`.
@@ -48,7 +58,7 @@ classdef LinearVelocityField < StreamfunctionModel
         % - Topic: Inspect model parameters
         theta (1,1) double = 0
 
-        % Relative vorticity in $$s^-1$$.
+        % Relative vorticity in $$s^{-1}$$.
         %
         % `zeta` controls the antisymmetric part of the affine velocity
         % gradient.
@@ -56,12 +66,12 @@ classdef LinearVelocityField < StreamfunctionModel
         % - Topic: Inspect model parameters
         zeta (1,1) double = 0
 
-        % Uniform background x-velocity in $$m s^-1$$.
+        % Uniform background x-velocity in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         u0 (1,1) double = 0
 
-        % Uniform background y-velocity in $$m s^-1$$.
+        % Uniform background y-velocity in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         v0 (1,1) double = 0
@@ -88,11 +98,11 @@ classdef LinearVelocityField < StreamfunctionModel
             %
             % - Topic: Create the model
             % - Declaration: self = LinearVelocityField(sigma=...,theta=...,zeta=...,u0=...,v0=...)
-            % - Parameter sigma: optional strain magnitude in $$s^-1$$; the default is `0`
+            % - Parameter sigma: optional strain magnitude in $$s^{-1}$$; the default is `0`
             % - Parameter theta: optional strain orientation in radians; the default is `0`
-            % - Parameter zeta: optional relative vorticity in $$s^-1$$; the default is `0`
-            % - Parameter u0: optional uniform background x-velocity in $$m s^-1$$; the default is `0`
-            % - Parameter v0: optional uniform background y-velocity in $$m s^-1$$; the default is `0`
+            % - Parameter zeta: optional relative vorticity in $$s^{-1}$$; the default is `0`
+            % - Parameter u0: optional uniform background x-velocity in $$m s^{-1}$$; the default is `0`
+            % - Parameter v0: optional uniform background y-velocity in $$m s^{-1}$$; the default is `0`
             % - Returns self: `LinearVelocityField` instance
             arguments
                 options.sigma (1,1) {mustBeNumeric, mustBeReal, mustBeFinite} = 0
@@ -163,7 +173,7 @@ classdef LinearVelocityField < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x` and `y`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x` and `y`
             uValue = self.u0 + 0.5 * (self.sigma_n * x + (self.sigma_s - self.zeta) * y);
         end
 
@@ -179,7 +189,7 @@ classdef LinearVelocityField < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x` and `y`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `x` and `y`
             vValue = self.v0 + 0.5 * ((self.sigma_s + self.zeta) * x - self.sigma_n * y);
         end
     end
@@ -193,10 +203,10 @@ classdef LinearVelocityField < StreamfunctionModel
             %
             % - Topic: Convert flow parameters
             % - Declaration: [sigma_n, sigma_s] = normalAndShearFromSigmaTheta(sigma,theta)
-            % - Parameter sigma: strain magnitude in $$s^-1$$
+            % - Parameter sigma: strain magnitude in $$s^{-1}$$
             % - Parameter theta: strain orientation in radians
-            % - Returns sigma_n: normal strain component in $$s^-1$$
-            % - Returns sigma_s: shear strain component in $$s^-1$$
+            % - Returns sigma_n: normal strain component in $$s^{-1}$$
+            % - Returns sigma_s: shear strain component in $$s^{-1}$$
             sigma_n = sigma * cos(2 * theta);
             sigma_s = sigma * sin(2 * theta);
         end
@@ -210,9 +220,9 @@ classdef LinearVelocityField < StreamfunctionModel
             %
             % - Topic: Convert flow parameters
             % - Declaration: [sigma, theta] = sigmaThetaFromNormalAndShear(sigma_n,sigma_s)
-            % - Parameter sigma_n: normal strain component in $$s^-1$$
-            % - Parameter sigma_s: shear strain component in $$s^-1$$
-            % - Returns sigma: strain magnitude in $$s^-1$$
+            % - Parameter sigma_n: normal strain component in $$s^{-1}$$
+            % - Parameter sigma_s: shear strain component in $$s^{-1}$$
+            % - Returns sigma: strain magnitude in $$s^{-1}$$
             % - Returns theta: strain orientation in radians
             sigma = sqrt(sigma_n .* sigma_n + sigma_s .* sigma_s);
             theta = atan2(sigma_s, sigma_n) / 2;

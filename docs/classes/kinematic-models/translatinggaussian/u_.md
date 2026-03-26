@@ -9,7 +9,7 @@ mathjax: true
 
 #  U
 
-Peak velocity scale in $$m s^-1$$.
+Peak velocity scale in $$m s^{-1}$$.
 
 
 ---

@@ -9,7 +9,7 @@ mathjax: true
 
 #  cx
 
-Meander phase speed in $$m s^-1$$.
+Meander phase speed in $$m s^{-1}$$.
 
 
 ---

@@ -39,6 +39,14 @@ where `\eta_n` is standard normal with the same shape as `y_n`.
 `advanceToTime` preserves the existing first-order linear
 interpolation between accepted stochastic steps.
 
+```matlab
+f = @(t, y) -0.1 * y;
+g = @(t, y) 0.05 + zeros(size(y));
+y0 = [1 0; 0 1];
+integrator = IntegratorEulerMaruyama(f, g, y0, dt=0.1);
+y = integrator.advanceOneStep();
+```
+
 
 
 

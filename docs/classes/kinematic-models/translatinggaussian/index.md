@@ -29,6 +29,16 @@ $$ \psi(t,x,y) = e^{1/2} U L \exp\left(-\frac{(x - c_x t)^2 + (y - c_y t)^2}{2L^
 which produces a translating Gaussian vortex with peak velocity scale
 `U` and translation velocity `(cx, cy)`.
 
+```matlab
+model = TranslatingGaussian();
+integrator = AdvectionDiffusionIntegrator(model, 0);
+x0 = [-model.L; model.L];
+y0 = [0; 0];
+[~, x, y] = integrator.particleTrajectories(x0, y0, 5 * 86400, 1800);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 
@@ -37,9 +47,9 @@ which produces a translating Gaussian vortex with peak velocity scale
   + [`TranslatingGaussian`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/translatinggaussian.html) Create the default translating Gaussian model.
 + Inspect model parameters
   + [`L`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/l.html) Eddy length scale in meters.
-  + [`U`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/u_.html) Peak velocity scale in $$m s^-1$$.
-  + [`cx`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/cx.html) Translation speed in x in $$m s^-1$$.
-  + [`cy`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/cy.html) Translation speed in y in $$m s^-1$$.
+  + [`U`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/u_.html) Peak velocity scale in $$m s^{-1}$$.
+  + [`cx`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/cx.html) Translation speed in x in $$m s^{-1}$$.
+  + [`cy`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/cy.html) Translation speed in y in $$m s^{-1}$$.
 + Evaluate the streamfunction
   + [`psi`](/advection-diffusion-models/classes/kinematic-models/translatinggaussian/psi.html) Evaluate the Gaussian streamfunction.
 + Evaluate the velocity field

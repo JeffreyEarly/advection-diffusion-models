@@ -9,7 +9,7 @@ mathjax: true
 
 #  sigma
 
-Strain magnitude in $$s^-1$$.
+Strain magnitude in $$s^{-1}$$.
 
 
 ---

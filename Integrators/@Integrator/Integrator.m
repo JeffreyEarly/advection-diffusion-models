@@ -17,6 +17,13 @@ classdef Integrator < handle
     % The state array `y` is stored as `nParticles x nDims`, and every
     % evaluation of `f(t,y)` must return an array with the same shape.
     %
+    % ```matlab
+    % f = @(t, y) [y(:,2) -y(:,1)];
+    % y0 = [1 0; 0 1];
+    % integrator = Integrator(f, y0, dt=0.1);
+    % y = integrator.advanceToTime(1);
+    % ```
+    %
     % - Topic: Create the integrator
     % - Topic: Inspect integrator state
     % - Topic: Advance the integrator

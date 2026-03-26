@@ -9,7 +9,7 @@ mathjax: true
 
 #  zeta
 
-Relative vorticity in $$s^-1$$.
+Relative vorticity in $$s^{-1}$$.
 
 
 ---

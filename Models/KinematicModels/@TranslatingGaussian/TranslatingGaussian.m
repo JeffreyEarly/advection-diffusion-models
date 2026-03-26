@@ -8,6 +8,16 @@ classdef TranslatingGaussian < StreamfunctionModel
     % which produces a translating Gaussian vortex with peak velocity scale
     % `U` and translation velocity `(cx, cy)`.
     %
+    % ```matlab
+    % model = TranslatingGaussian();
+    % integrator = AdvectionDiffusionIntegrator(model, 0);
+    % x0 = [-model.L; model.L];
+    % y0 = [0; 0];
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 5 * 86400, 1800);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
+    %
     % - Topic: Create the model
     % - Topic: Inspect model parameters
     % - Topic: Evaluate the streamfunction
@@ -20,17 +30,17 @@ classdef TranslatingGaussian < StreamfunctionModel
         % - Topic: Inspect model parameters
         L = 60e3
 
-        % Peak velocity scale in $$m s^-1$$.
+        % Peak velocity scale in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         U = 0.12
 
-        % Translation speed in x in $$m s^-1$$.
+        % Translation speed in x in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         cx = -0.0267
 
-        % Translation speed in y in $$m s^-1$$.
+        % Translation speed in y in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         cy = 0
@@ -74,7 +84,7 @@ classdef TranslatingGaussian < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x`
             r2 = (x - self.cx * t).^2 + (y - self.cy * t).^2;
             gaussian = exp(-r2 / (2 * self.L * self.L));
             uValue = exp(0.5) * self.U * ((y - self.cy * t) / self.L) .* gaussian;
@@ -88,7 +98,7 @@ classdef TranslatingGaussian < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `x`
             r2 = (x - self.cx * t).^2 + (y - self.cy * t).^2;
             gaussian = exp(-r2 / (2 * self.L * self.L));
             vValue = -exp(0.5) * self.U * ((x - self.cx * t) / self.L) .* gaussian;

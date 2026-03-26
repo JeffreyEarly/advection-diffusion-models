@@ -14,6 +14,13 @@ classdef IntegratorWithDiffusivity < Integrator
     % coordinate, using the repository's existing reflected and wrapped
     % increment formulas.
     %
+    % ```matlab
+    % f = @(t, y) zeros(size(y));
+    % y0 = [0.25 0.25; 0.75 0.75];
+    % integrator = IntegratorWithDiffusivity(f, y0, dt=0.1, kappa=0.01, ymin=0, ymax=1);
+    % y = integrator.advanceOneStep();
+    % ```
+    %
     % - Topic: Create the integrator
     % - Topic: Inspect integrator settings
     % - Declaration: classdef IntegratorWithDiffusivity < Integrator

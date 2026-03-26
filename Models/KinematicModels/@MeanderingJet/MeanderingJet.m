@@ -16,6 +16,16 @@ classdef MeanderingJet < StreamfunctionModel
     %   Amy Bower, "A simple kinematic mechanism for mixing fluid parcels
     %   across a meandering jet."
     %
+    % ```matlab
+    % model = MeanderingJet();
+    % integrator = AdvectionDiffusionIntegrator(model, 0);
+    % x0 = [0.25; 1.25] * model.Lx;
+    % y0 = [-0.5; 0.5] * model.L;
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 3 * 86400, 1800);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
+    %
     % - Topic: Create the model
     % - Topic: Inspect model parameters
     % - Topic: Evaluate meander coordinates
@@ -29,7 +39,7 @@ classdef MeanderingJet < StreamfunctionModel
         % - Topic: Inspect model parameters
         L = 40e3
 
-        % Velocity scale in $$m s^-1$$.
+        % Velocity scale in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         U = 100 * (1e3 / 86400)
@@ -44,14 +54,14 @@ classdef MeanderingJet < StreamfunctionModel
         % - Topic: Inspect model parameters
         Lx = 350e3
 
-        % Meander phase speed in $$m s^-1$$.
+        % Meander phase speed in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         cx = 0 * 10 * (1e3 / 86400)
     end
 
     properties (Dependent)
-        % Meander wavenumber in $$m^-1$$.
+        % Meander wavenumber in $$m^{-1}$$.
         %
         % - Topic: Inspect model parameters
         k
@@ -126,7 +136,7 @@ classdef MeanderingJet < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x`
             uValue = self.U * (1 + (self.k * self.A * sin(self.theta(t, x))).^2).^(-1/2) .* sech(self.gamma(t, x, y)).^2;
         end
 
@@ -138,7 +148,7 @@ classdef MeanderingJet < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `x`
             vValue = -self.U * (self.A * self.k * (1 + self.A * self.A * self.k * self.k) * sin(self.theta(t, x))) .* (1 + (self.k * self.A * sin(self.theta(t, x))).^2).^(-3/2) .* sech(self.gamma(t, x, y)).^2;
         end
     end

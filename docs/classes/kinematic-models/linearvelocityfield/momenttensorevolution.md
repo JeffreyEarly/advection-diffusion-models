@@ -23,7 +23,7 @@ Evolve the second-moment tensor for the linear model.
 + `Myy0`  initial $$M_{yy}$$ entry in m^2
 + `Mxy0`  initial $$M_{xy}$$ entry in m^2
 + `t`  time vector in seconds
-+ `kappa`  scalar diffusivity in $$m^2 s^-1$$
++ `kappa`  scalar diffusivity in $$m^2 s^{-1}$$
 
 ## Returns
 + `Mxx`  time-dependent $$M_{xx}$$ entry in m^2 with the same shape as `t`
@@ -33,7 +33,7 @@ Evolve the second-moment tensor for the linear model.
 ## Discussion
 
   The returned moments satisfy the matrix equation
-  $$\dot{M} = AM + MA^\top + 2\kappa I$$ for the affine velocity gradient
+  $$\dot{M} = AM + MA^{\top} + 2\kappa I$$ for the affine velocity gradient
   `A` defined by the model parameters.
 
 

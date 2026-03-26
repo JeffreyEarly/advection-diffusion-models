@@ -22,9 +22,9 @@ Evaluate the analytical particle trajectory solution.
 + `x0`  initial x positions in meters
 + `y0`  initial y positions in meters
 + `t`  output time vector in seconds
-+ `kappa`  scalar diffusivity in $$m^2 s^-1$$
-+ `u_0`  background x-velocity in $$m s^-1$$ used by the analytical formulas
-+ `v_0`  background y-velocity in $$m s^-1$$ used by the analytical formulas
++ `kappa`  scalar diffusivity in $$m^2 s^{-1}$$
++ `u_0`  background x-velocity in $$m s^{-1}$$ used by the analytical formulas
++ `v_0`  background y-velocity in $$m s^{-1}$$ used by the analytical formulas
 
 ## Returns
 + `x`  x positions in meters with shape `[length(t) nParticles]`

@@ -10,6 +10,16 @@ classdef KinematicModel < handle
     % limits. The base class provides common geometry filtering and
     % visualization helpers.
     %
+    % ```matlab
+    % model = KinematicModel();
+    % integrator = AdvectionDiffusionIntegrator(model, 20);
+    % x0 = [0; 5e3];
+    % y0 = [0; 5e3];
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 3600, 300);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
+    %
     % - Topic: Configure model domains
     % - Topic: Inspect model settings
     % - Topic: Evaluate velocity fields
@@ -116,7 +126,7 @@ classdef KinematicModel < handle
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x` and `y`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x` and `y`
             if isempty(self.uFunction)
                 uValue = zeros(size(x));
             else
@@ -134,7 +144,7 @@ classdef KinematicModel < handle
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x` and `y`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `x` and `y`
             if isempty(self.vFunction)
                 vValue = zeros(size(x));
             else

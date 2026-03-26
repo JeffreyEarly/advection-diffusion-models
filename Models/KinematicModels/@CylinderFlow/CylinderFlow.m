@@ -9,6 +9,16 @@ classdef CylinderFlow < StreamfunctionModel
     % cylinder of radius `R`. The cylinder interior is represented as a
     % polygonal obstacle.
     %
+    % ```matlab
+    % model = CylinderFlow();
+    % integrator = AdvectionDiffusionIntegrator(model, 0);
+    % x0 = [-2; -2] * model.R;
+    % y0 = [-0.75; 0.75] * model.R;
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 12 * 3600, 600);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
+    %
     % - Topic: Create the model
     % - Topic: Inspect model parameters
     % - Topic: Evaluate the streamfunction
@@ -21,7 +31,7 @@ classdef CylinderFlow < StreamfunctionModel
         % - Topic: Inspect model parameters
         R = 60e3
 
-        % Far-field speed in $$m s^-1$$.
+        % Far-field speed in $$m s^{-1}$$.
         %
         % - Topic: Inspect model parameters
         U = 100 * (1e3 / 86400)
@@ -71,7 +81,7 @@ classdef CylinderFlow < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x`
             r2 = x.^2 + y.^2;
             uValue = self.U - self.U * self.R * self.R * (x.^2 - y.^2) ./ (r2 .* r2);
         end
@@ -84,7 +94,7 @@ classdef CylinderFlow < StreamfunctionModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `x`
             r2 = x.^2 + y.^2;
             vValue = -self.U * self.R * self.R * (2 * x .* y) ./ (r2 .* r2);
         end

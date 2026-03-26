@@ -9,7 +9,7 @@ mathjax: true
 
 #  cx
 
-Translation speed in x in $$m s^-1$$.
+Translation speed in x in $$m s^{-1}$$.
 
 
 ---

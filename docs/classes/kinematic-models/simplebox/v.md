@@ -24,7 +24,7 @@ Evaluate the zero y-velocity field.
 + `y`  y-coordinate array in meters
 
 ## Returns
-+ `vValue`  y-velocity in $$m s^-1$$ with the same shape as `y`
++ `vValue`  y-velocity in $$m s^{-1}$$ with the same shape as `y`
 
 ## Discussion
 

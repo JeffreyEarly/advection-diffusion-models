@@ -24,7 +24,7 @@ Evaluate the cross-jet velocity component.
 + `y`  y-coordinate array in meters
 
 ## Returns
-+ `vValue`  y-velocity in $$m s^-1$$ with the same shape as `x`
++ `vValue`  y-velocity in $$m s^{-1}$$ with the same shape as `x`
 
 ## Discussion
 

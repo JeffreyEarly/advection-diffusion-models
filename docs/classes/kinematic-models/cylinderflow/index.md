@@ -30,6 +30,16 @@ which gives the classical incompressible potential flow past a
 cylinder of radius `R`. The cylinder interior is represented as a
 polygonal obstacle.
 
+```matlab
+model = CylinderFlow();
+integrator = AdvectionDiffusionIntegrator(model, 0);
+x0 = [-2; -2] * model.R;
+y0 = [-0.75; 0.75] * model.R;
+[~, x, y] = integrator.particleTrajectories(x0, y0, 12 * 3600, 600);
+figure
+model.plotTrajectories(x, y)
+```
+
 
 
 
@@ -38,7 +48,7 @@ polygonal obstacle.
   + [`CylinderFlow`](/advection-diffusion-models/classes/kinematic-models/cylinderflow/cylinderflow.html) Create the default cylinder-flow model.
 + Inspect model parameters
   + [`R`](/advection-diffusion-models/classes/kinematic-models/cylinderflow/r.html) Cylinder radius in meters.
-  + [`U`](/advection-diffusion-models/classes/kinematic-models/cylinderflow/u_.html) Far-field speed in $$m s^-1$$.
+  + [`U`](/advection-diffusion-models/classes/kinematic-models/cylinderflow/u_.html) Far-field speed in $$m s^{-1}$$.
 + Evaluate the streamfunction
   + [`psi`](/advection-diffusion-models/classes/kinematic-models/cylinderflow/psi.html) Evaluate the potential-flow streamfunction.
 + Evaluate the velocity field

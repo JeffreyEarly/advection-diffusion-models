@@ -8,6 +8,16 @@ classdef SimpleBox < KinematicModel
     % on a finite rectangular domain. Any motion comes from the external
     % integrator, typically through the diffusivity term.
     %
+    % ```matlab
+    % model = SimpleBox();
+    % integrator = AdvectionDiffusionIntegrator(model, 20);
+    % x0 = [0.25; 0.75] * model.Lx;
+    % y0 = [0.25; 0.75] * model.Ly;
+    % [~, x, y] = integrator.particleTrajectories(x0, y0, 6 * 3600, 300);
+    % figure
+    % model.plotTrajectories(x, y)
+    % ```
+    %
     % - Topic: Create the model
     % - Topic: Inspect model parameters
     % - Topic: Evaluate the velocity field
@@ -53,7 +63,7 @@ classdef SimpleBox < KinematicModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
+            % - Returns uValue: x-velocity in $$m s^{-1}$$ with the same shape as `x`
             uValue = zeros(size(x));
         end
 
@@ -67,7 +77,7 @@ classdef SimpleBox < KinematicModel
             % - Parameter t: scalar evaluation time in seconds
             % - Parameter x: x-coordinate array in meters
             % - Parameter y: y-coordinate array in meters
-            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `y`
+            % - Returns vValue: y-velocity in $$m s^{-1}$$ with the same shape as `y`
             vValue = zeros(size(y));
         end
     end
