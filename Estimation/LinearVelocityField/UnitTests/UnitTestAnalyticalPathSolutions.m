@@ -35,7 +35,7 @@ for iModel = 1:nModels
     end
     
     for iParameter = 1:nParameters
-        velocityField = LinearVelocityField(sigmaValues(iParameter),thetaValues(iParameter),zetaValues(iParameter));
+        velocityField = LinearVelocityField(sigma=sigmaValues(iParameter), theta=thetaValues(iParameter), zeta=zetaValues(iParameter));
         integrator = AdvectionDiffusionIntegrator(velocityField,0);
         
 %         x = linspace(-500,500,15);

@@ -102,7 +102,7 @@ shouldShowTheoreticalSecondMoment = 1;
 t=(0:30*60:7*86400)';
 sigma_n = sigma*cos(2*theta);
 sigma_s = sigma*sin(2*theta);
-params = LinearVelocityField(zeta,sigma,theta,kappa);
+params = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

@@ -47,7 +47,7 @@ for iModel = 2:2%1:nModels
     end
     
     for iParameter = 1:nParameters
-        velocityField = LinearVelocityField(sigmaValues(iParameter),thetaValues(iParameter),zetaValues(iParameter));
+        velocityField = LinearVelocityField(sigma=sigmaValues(iParameter), theta=thetaValues(iParameter), zeta=zetaValues(iParameter));
         integrator = AdvectionDiffusionIntegrator(velocityField,kappaValues(iParameter));
         
 %         x = linspace(-500,500,15);
@@ -168,4 +168,3 @@ colormap(cmap)
     histogram((kappaEst(:,iEst)),10)
     xlabel('\kappa')
     title('diffusivity estimate')
-

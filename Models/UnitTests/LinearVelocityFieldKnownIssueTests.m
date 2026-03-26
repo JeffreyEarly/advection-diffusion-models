@@ -9,7 +9,7 @@ classdef LinearVelocityFieldKnownIssueTests < matlab.unittest.TestCase
             v0 = -0.05;
 
             [x0, y0] = LinearVelocityFieldKnownIssueTests.legacyInitialPositions();
-            model = LinearVelocityField(sigma,theta,zeta,u0,v0);
+            model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
 
             maxError = LinearVelocityFieldKnownIssueTests.maxPathError(model,x0,y0,2*86400,360,u0,v0);
 
@@ -21,7 +21,7 @@ classdef LinearVelocityFieldKnownIssueTests < matlab.unittest.TestCase
             v0 = -0.05;
 
             [x0, y0] = LinearVelocityFieldKnownIssueTests.legacyInitialPositions();
-            model = LinearVelocityField(0,0,0,u0,v0);
+            model = LinearVelocityField(u0=u0, v0=v0);
 
             maxError = LinearVelocityFieldKnownIssueTests.maxPathError(model,x0,y0,2*86400,360,u0,v0);
 

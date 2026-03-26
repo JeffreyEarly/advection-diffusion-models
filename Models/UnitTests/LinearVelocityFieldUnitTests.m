@@ -8,7 +8,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
             u0 = 0.08;
             v0 = -0.05;
 
-            model = LinearVelocityField(sigma,theta,zeta,u0,v0);
+            model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
 
             testCase.verifyEqual(model.sigma_n, sigma*cos(2*theta), "AbsTol", 1e-15);
             testCase.verifyEqual(model.sigma_s, sigma*sin(2*theta), "AbsTol", 1e-15);
@@ -21,7 +21,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
             u0 = 0.08;
             v0 = -0.05;
 
-            model = LinearVelocityField(sigma,theta,zeta,u0,v0);
+            model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
 
             x = [-600; 0; 450];
             y = [300; -200; 50];
@@ -49,7 +49,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
                         zeta = zetaFactors(iCase)*sigma;
                         T = durations(iCase);
 
-                        model = LinearVelocityField(sigma,theta,zeta,u0,v0);
+                        model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
                         maxError = LinearVelocityFieldUnitTests.maxPathError(model,x0,y0,T,360,u0,v0);
 
                         diagnostic = sprintf('particlePath mismatch for sigma=%g, theta=%g, zeta=%g', sigma, theta, zeta);
@@ -69,7 +69,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
             [x0, y0] = LinearVelocityFieldUnitTests.legacyInitialPositions();
 
             for zeta = zetas
-                model = LinearVelocityField(sigma,theta,zeta,u0,v0);
+                model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
                 maxError = LinearVelocityFieldUnitTests.maxPathError(model,x0,y0,2*86400,360,u0,v0);
 
                 diagnostic = sprintf('Matched-flow particlePath mismatch for sigma=%g, zeta=%g', sigma, zeta);
@@ -79,7 +79,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
 
         function particlePathMatchesIntegratorForZeroFieldWithoutBackgroundVelocity(testCase)
             [x0, y0] = LinearVelocityFieldUnitTests.legacyInitialPositions();
-            model = LinearVelocityField(0,0,0,0,0);
+            model = LinearVelocityField();
             integrator = AdvectionDiffusionIntegrator(model,0);
 
             [t, x, y] = integrator.particleTrajectories(x0,y0,2*86400,360);

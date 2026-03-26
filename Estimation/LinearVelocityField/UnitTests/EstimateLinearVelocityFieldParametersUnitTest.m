@@ -67,7 +67,7 @@ for iModel = 1:nModels
         theta = thetaValues(iParameter);
         u0 = 0;
         v0 = 0;
-        velocityField = LinearVelocityField(sigma,theta,zeta,u0,v0);
+        velocityField = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
         integrator = AdvectionDiffusionIntegrator(velocityField,kappa);
         integrator.stepSize = 1800;
         

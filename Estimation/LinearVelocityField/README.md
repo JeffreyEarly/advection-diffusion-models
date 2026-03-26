@@ -26,7 +26,7 @@ theta = 30*pi/180;
 zeta = 0;
 kappa = 1;
 
-velocityField = LinearVelocityField(sigma,theta,zeta);
+velocityField = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta);
 integrator = AdvectionDiffusionIntegrator(velocityField,kappa);
 
 % Particles placed in a "plus" configuration.
@@ -137,6 +137,5 @@ Attempts to the use B-splines to allow for slowy varying fit parameters. While i
 
 jet = MeanderingJet();
 ```
-
 
 

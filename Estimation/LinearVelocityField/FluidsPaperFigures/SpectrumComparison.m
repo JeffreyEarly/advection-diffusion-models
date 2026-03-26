@@ -13,7 +13,7 @@ y0 = 1000;
 t = (0:dt:(T-dt)).';
 n = length(t);
 
-model = LinearVelocityField(sigma, theta, zeta);
+model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta);
 
 % Without diffusivity
 [x, y] = model.particlePath(x0, y0, t, 0, 0, 0);

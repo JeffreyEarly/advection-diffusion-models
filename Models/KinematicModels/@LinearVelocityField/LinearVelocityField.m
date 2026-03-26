@@ -80,43 +80,35 @@ classdef LinearVelocityField < StreamfunctionModel
     end
 
     methods
-        function self = LinearVelocityField(sigma, theta, zeta, varargin)
+        function self = LinearVelocityField(options)
             % Create a linear velocity field.
             %
-            % Optional `u0` and `v0` specify a uniform background velocity
-            % and must be supplied together.
+            % Pass any subset of the model parameters by name. Omitted
+            % parameters default to zero.
             %
             % - Topic: Create the model
-            % - Declaration: self = LinearVelocityField(sigma,theta,zeta,u0,v0)
-            % - Parameter sigma: strain magnitude in $$s^-1$$
-            % - Parameter theta: strain orientation in radians
-            % - Parameter zeta: relative vorticity in $$s^-1$$
-            % - Parameter u0: optional uniform background x-velocity in $$m s^-1$$
-            % - Parameter v0: optional uniform background y-velocity in $$m s^-1$$
+            % - Declaration: self = LinearVelocityField(sigma=...,theta=...,zeta=...,u0=...,v0=...)
+            % - Parameter sigma: optional strain magnitude in $$s^-1$$; the default is `0`
+            % - Parameter theta: optional strain orientation in radians; the default is `0`
+            % - Parameter zeta: optional relative vorticity in $$s^-1$$; the default is `0`
+            % - Parameter u0: optional uniform background x-velocity in $$m s^-1$$; the default is `0`
+            % - Parameter v0: optional uniform background y-velocity in $$m s^-1$$; the default is `0`
             % - Returns self: `LinearVelocityField` instance
-            validateattributes(sigma, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'sigma');
-            validateattributes(theta, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'theta');
-            validateattributes(zeta, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'zeta');
-
-            if isempty(varargin)
-                u0 = 0;
-                v0 = 0;
-            elseif numel(varargin) == 2
-                u0 = varargin{1};
-                v0 = varargin{2};
-                validateattributes(u0, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'u0');
-                validateattributes(v0, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'v0');
-            else
-                error('LinearVelocityField:InvalidBackgroundVelocity', 'Optional arguments `u0` and `v0` must be supplied together.');
+            arguments
+                options.sigma (1,1) {mustBeNumeric, mustBeReal, mustBeFinite} = 0
+                options.theta (1,1) {mustBeNumeric, mustBeReal, mustBeFinite} = 0
+                options.zeta (1,1) {mustBeNumeric, mustBeReal, mustBeFinite} = 0
+                options.u0 (1,1) {mustBeNumeric, mustBeReal, mustBeFinite} = 0
+                options.v0 (1,1) {mustBeNumeric, mustBeReal, mustBeFinite} = 0
             end
 
             self.xVisualLimits = 1e3 * [-1 1];
             self.yVisualLimits = 1e3 * [-1 1];
-            self.u0 = u0;
-            self.v0 = v0;
-            self.zeta = zeta;
-            self.sigma = sigma;
-            self.theta = theta;
+            self.u0 = options.u0;
+            self.v0 = options.v0;
+            self.zeta = options.zeta;
+            self.sigma = options.sigma;
+            self.theta = options.theta;
             self.updateName();
         end
 

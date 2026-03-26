@@ -9,7 +9,7 @@ T = round(1/sigma/86400)*86400;
 T = 15*86400;
 dt = 2*3600;
 
-velocityField = LinearVelocityField(sigma,0,0);
+velocityField = LinearVelocityField(sigma=sigma);
 integrator = AdvectionDiffusionIntegrator(velocityField,kappa);
 
 x0 = [-500; -250; 0; 0; 0; 0; 0; 250; 500];

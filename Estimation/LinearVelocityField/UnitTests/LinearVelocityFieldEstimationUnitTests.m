@@ -8,7 +8,7 @@ classdef LinearVelocityFieldEstimationUnitTests < matlab.unittest.TestCase
             u0 = 0.08;
             v0 = -0.05;
 
-            model = LinearVelocityField(sigma,theta,zeta,u0,v0);
+            model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
             integrator = AdvectionDiffusionIntegrator(model,0);
 
             [x0, y0] = ndgrid([-600 0 600],[-400 0 400]);

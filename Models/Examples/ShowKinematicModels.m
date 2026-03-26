@@ -31,7 +31,7 @@ end
 
 %%
 
-strain = LinearVelocityField(1e-6, 0, 0);
+strain = LinearVelocityField(sigma=1e-6);
 figureHandle = figure;
 strain.plotStreamfunction();
 hold on
@@ -42,7 +42,7 @@ end
 
 %%
 
-strain = LinearVelocityField(0, 0, 1e-6);
+strain = LinearVelocityField(zeta=1e-6);
 figureHandle = figure;
 strain.plotStreamfunction();
 hold on
