@@ -1,9 +1,9 @@
 classdef LinearVelocityField < StreamfunctionModel
-    % Two-dimensional affine velocity field with analytical solutions.
+    % Two-dimensional linear velocity field with analytical solutions.
     %
-    % This model defines the affine flow
+    % This model defines the linear velocity field
     %
-    % $$ \dot{\mathbf{r}} = \mathbf{u}_0 + A\mathbf{r}, $$
+    % $$ \dot{\mathbf{x}} = \mathbf{u}_0 + A\mathbf{x}, $$
     %
     % with
     %
@@ -18,10 +18,16 @@ classdef LinearVelocityField < StreamfunctionModel
     %
     % $$ \sigma_n = \sigma \cos(2\theta), \qquad \sigma_s = \sigma \sin(2\theta). $$
     %
+    % ### Analytical solutions
+    %
     % The method `momentTensorEvolution` integrates the corresponding
     % second-moment system
     %
     % $$ \dot{M} = AM + MA^{\top} + 2\kappa I. $$
+    %
+    % The method `particlePath` returns the analytical solution for the
+    % particle paths, as computed in [Oscroft, et al.
+    % 2020](https://doi.org/10.3390/fluids6010014).
     %
     % ```matlab
     % model = LinearVelocityField(sigma=1e-5, theta=pi / 8, zeta=0);
@@ -60,7 +66,7 @@ classdef LinearVelocityField < StreamfunctionModel
 
         % Relative vorticity in $$s^{-1}$$.
         %
-        % `zeta` controls the antisymmetric part of the affine velocity
+        % `zeta` controls the antisymmetric part of the velocity
         % gradient.
         %
         % - Topic: Inspect model parameters
@@ -162,7 +168,7 @@ classdef LinearVelocityField < StreamfunctionModel
         end
 
         function uValue = u(self, t, x, y)
-            % Evaluate the affine x-velocity.
+            % Evaluate the x-velocity.
             %
             % The implemented velocity component is
             %
@@ -178,7 +184,7 @@ classdef LinearVelocityField < StreamfunctionModel
         end
 
         function vValue = v(self, t, x, y)
-            % Evaluate the affine y-velocity.
+            % Evaluate the y-velocity.
             %
             % The implemented velocity component is
             %
