@@ -18,12 +18,9 @@ classdef IntegratorEulerMaruyama < Integrator
     % `advanceToTime` preserves the existing first-order linear
     % interpolation between accepted stochastic steps.
     %
-    % - Topic: Integrators
-    % - Declaration: self = IntegratorEulerMaruyama(f,g,y0,dt=...)
-    % - Parameter f: deterministic drift function $$f(t,y)$$ with the same output shape as `y0`
-    % - Parameter g: stochastic amplitude function $$g(t,y)$$ with the same output shape as `y0`
-    % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`
-    % - Parameter dt: positive scalar timestep $$dt$$
+    % - Topic: Create the integrator
+    % - Topic: Advance the integrator
+    % - Declaration: classdef IntegratorEulerMaruyama < Integrator
 
     properties (Access = protected)
         diffusionFunction = []
@@ -38,7 +35,7 @@ classdef IntegratorEulerMaruyama < Integrator
             % The constructor validates both `f(0,y0)` and `g(0,y0)` and
             % requires them to return arrays with the same shape as `y0`.
             %
-            % - Topic: Integrators
+            % - Topic: Create the integrator
             % - Declaration: self = IntegratorEulerMaruyama(f,g,y0,dt=...)
             % - Parameter f: deterministic drift function $$f(t,y)$$
             % - Parameter g: stochastic amplitude function $$g(t,y)$$
@@ -81,7 +78,7 @@ classdef IntegratorEulerMaruyama < Integrator
             % accepted stochastic states, the returned value is the current
             % first-order linear interpolation between them.
             %
-            % - Topic: Integrators
+            % - Topic: Advance the integrator
             % - Declaration: y = advanceToTime(self,t)
             % - Parameter t: scalar target time in the same units as `dt`
             % - Returns y: state estimate $$y(t)$$ returned with first-order interpolation between accepted steps
@@ -114,7 +111,7 @@ classdef IntegratorEulerMaruyama < Integrator
             % call to `advanceToTime` can apply the same linear
             % interpolation used by the legacy implementation.
             %
-            % - Topic: Integrators
+            % - Topic: Advance the integrator
             % - Declaration: y = advanceOneStep(self)
             % - Returns y: accepted state array $$y_{n+1}$$ after one stochastic timestep
             self.previousY = self.currentY;

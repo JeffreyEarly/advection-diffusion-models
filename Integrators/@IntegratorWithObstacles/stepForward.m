@@ -6,7 +6,7 @@ function y = stepForward(self, y, t, dt)
 % periodic coordinates, and repeatedly reflects any step segment that would
 % enter a polygonal obstacle.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: y = stepForward(self,y,t,dt)
 % - Parameter y: accepted state array at time `t`

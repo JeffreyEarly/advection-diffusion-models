@@ -1,7 +1,7 @@
 function isLeft = isLeft(obstacle, iEdge, x, y)
 % Compute the signed left-of-edge test for one polygon edge.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: isLeft = isLeft(obstacle,iEdge,x,y)
 % - Parameter obstacle: cached polygon geometry

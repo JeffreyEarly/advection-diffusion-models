@@ -6,7 +6,7 @@ function [y, dy, didReflect] = updateWithReflection(self, obstacle, y, yWrapped,
 % inside the obstacle is passed to `reflect` to compute a single
 % reflection.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: [y, dy, didReflect] = updateWithReflection(self,obstacle,y,yWrapped,dy)
 % - Parameter obstacle: cached polygon geometry for one reflecting obstacle

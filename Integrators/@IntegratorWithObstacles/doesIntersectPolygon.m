@@ -1,7 +1,7 @@
 function doesIntersect = doesIntersectPolygon(obstacle, yInitial, yFinal)
 % Test whether a segment intersects any edge of a polygon.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: doesIntersect = doesIntersectPolygon(obstacle,yInitial,yFinal)
 % - Parameter obstacle: cached polygon geometry

@@ -17,11 +17,10 @@ classdef Integrator < handle
     % The state array `y` is stored as `nParticles x nDims`, and every
     % evaluation of `f(t,y)` must return an array with the same shape.
     %
-    % - Topic: Integrators
-    % - Declaration: self = Integrator(f,y0,dt=...)
-    % - Parameter f: function handle that evaluates the ODE right-hand side $$f(t,y)$$ and returns an array with the same shape as `y0`
-    % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`
-    % - Parameter dt: positive scalar timestep $$dt$$ used for every accepted step
+    % - Topic: Create the integrator
+    % - Topic: Inspect integrator state
+    % - Topic: Advance the integrator
+    % - Declaration: classdef Integrator < handle
 
     properties (SetAccess = protected)
         % Fixed timestep `dt` used by every accepted step.
@@ -29,7 +28,7 @@ classdef Integrator < handle
         % This property stores the scalar timestep that appears in the RK4
         % update formulas documented for `Integrator`.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator state
         % - Declaration: self.stepSize
         % - Returns stepSize: positive scalar timestep $$dt$$
         stepSize (1,1) double {mustBePositive} = 1
@@ -40,7 +39,7 @@ classdef Integrator < handle
         % same physical units as the `t` inputs passed to the public
         % stepping methods.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator state
         % - Declaration: self.currentTime
         % - Returns currentTime: scalar time $$t$$ associated with `currentY`
         currentTime (1,1) double = 0
@@ -50,7 +49,7 @@ classdef Integrator < handle
         % `totalIterations` counts accepted fixed-size updates. It does not
         % count interpolated output points requested by `integrateToTime`.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator state
         % - Declaration: self.totalIterations
         % - Returns totalIterations: nonnegative integer count of accepted steps
         totalIterations (1,1) double {mustBeInteger, mustBeNonnegative} = 0
@@ -60,7 +59,7 @@ classdef Integrator < handle
         % `currentY` stores the most recent accepted state array with shape
         % `nParticles x nDims`.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator state
         % - Declaration: self.currentY
         % - Returns currentY: state array $$y$$ with shape `nParticles x nDims`
         currentY double = []
@@ -83,7 +82,7 @@ classdef Integrator < handle
             % `nParticles x nDims` layout becomes the integration contract
             % for all later calls to `f`.
             %
-            % - Topic: Integrators
+            % - Topic: Create the integrator
             % - Declaration: self = Integrator(f,y0,dt=...)
             % - Parameter f: function handle for the deterministic right-hand side $$f(t,y)$$
             % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`
@@ -126,7 +125,7 @@ classdef Integrator < handle
             % time entry. The returned vector `t` records the integrator
             % time after each request.
             %
-            % - Topic: Integrators
+            % - Topic: Advance the integrator
             % - Declaration: [y, t] = integrateToTime(self,t)
             % - Parameter t: vector of requested output times with the same units as `dt`
             % - Returns y: state history $$y(t)$$ stored as `nParticles x nDims x nTimes`
@@ -154,7 +153,7 @@ classdef Integrator < handle
             % interpolation; the returned state is the most recent
             % accepted state `y`.
             %
-            % - Topic: Integrators
+            % - Topic: Advance the integrator
             % - Declaration: y = advanceToTime(self,t)
             % - Parameter t: scalar target time in the same units as `dt`
             % - Returns y: accepted state array $$y$$ after advancing to the requested time
@@ -178,7 +177,7 @@ classdef Integrator < handle
             % This method applies one accepted RK4 update and then returns
             % the new state `y`.
             %
-            % - Topic: Integrators
+            % - Topic: Advance the integrator
             % - Declaration: y = advanceOneStep(self)
             % - Returns y: accepted state array $$y_{n+1}$$ after one timestep
             self.currentY = self.stepForward(self.currentY, self.currentTime, self.stepSize);

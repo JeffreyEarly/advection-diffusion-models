@@ -6,7 +6,7 @@ function [yFinal, yIntersection, didReflect] = reflect(obstacle, yInitial, yFina
 % boundary. At most one reflection is applied per call, so callers repeat
 % the method until no more reflections are needed.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: [yFinal, yIntersection, didReflect] = reflect(obstacle,yInitial,yFinal)
 % - Parameter obstacle: cached polygon geometry for one reflecting obstacle

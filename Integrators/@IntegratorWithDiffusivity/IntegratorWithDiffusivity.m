@@ -14,14 +14,9 @@ classdef IntegratorWithDiffusivity < Integrator
     % coordinate, using the repository's existing reflected and wrapped
     % increment formulas.
     %
-    % - Topic: Integrators
-    % - Declaration: self = IntegratorWithDiffusivity(f,y0,dt=...,kappa=...,ymin=...,ymax=...)
-    % - Parameter f: deterministic drift function $$f(t,y)$$
-    % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`
-    % - Parameter dt: positive scalar timestep $$dt$$
-    % - Parameter kappa: scalar or `1 x nDims` diffusivity vector $$\kappa$$ with units of `y.^2 / t`; defaults to `0`
-    % - Parameter ymin: scalar or `1 x nDims` lower box bounds; defaults to `-Inf`
-    % - Parameter ymax: scalar or `1 x nDims` upper box bounds; defaults to `Inf`
+    % - Topic: Create the integrator
+    % - Topic: Inspect integrator settings
+    % - Declaration: classdef IntegratorWithDiffusivity < Integrator
 
     properties (SetAccess = protected)
         % Componentwise diffusivity `kappa`.
@@ -29,7 +24,7 @@ classdef IntegratorWithDiffusivity < Integrator
         % `kappa` stores either the scalar diffusivity expanded across all
         % dimensions or the supplied `1 x nDims` diffusivity vector.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.kappa
         % - Returns kappa: scalar-expanded or componentwise diffusivity $$\kappa$$ with units of `y.^2 / t`
         kappa double = []
@@ -39,7 +34,7 @@ classdef IntegratorWithDiffusivity < Integrator
         % `ymin` stores the lower coordinate bound for each state
         % dimension. Use `-Inf` for an unbounded lower side.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.ymin
         % - Returns ymin: row vector of lower coordinate bounds
         ymin double = []
@@ -49,7 +44,7 @@ classdef IntegratorWithDiffusivity < Integrator
         % `ymax` stores the upper coordinate bound for each state
         % dimension. Use `Inf` for an unbounded upper side.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.ymax
         % - Returns ymax: row vector of upper coordinate bounds
         ymax double = []
@@ -67,7 +62,7 @@ classdef IntegratorWithDiffusivity < Integrator
             % for `kappa`, `ymin`, and `ymax`, with defaults corresponding
             % to zero diffusivity on an unbounded domain.
             %
-            % - Topic: Integrators
+            % - Topic: Create the integrator
             % - Declaration: self = IntegratorWithDiffusivity(f,y0,dt=...,kappa=...,ymin=...,ymax=...)
             % - Parameter f: deterministic drift function $$f(t,y)$$
             % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`

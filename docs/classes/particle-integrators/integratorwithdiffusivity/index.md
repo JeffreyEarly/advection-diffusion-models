@@ -18,7 +18,7 @@ Integrate $$dy = f(t,y)\,dt + \sqrt{2\kappa}\,dW_t$$ in a box domain.
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>self = IntegratorWithDiffusivity(f,y0,dt=...,kappa=...,ymin=...,ymax=...)</code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef IntegratorWithDiffusivity < Integrator</code></pre></div></div>
 
 ## Overview
 
@@ -35,21 +35,16 @@ independent reflecting or unbounded box conditions along each
 coordinate, using the repository's existing reflected and wrapped
 increment formulas.
 
-    - Parameter f: deterministic drift function $$f(t,y)$$
-- Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`
-- Parameter dt: positive scalar timestep $$dt$$
-- Parameter kappa: scalar or `1 x nDims` diffusivity vector $$\kappa$$ with units of `y.^2 / t`; defaults to `0`
-- Parameter ymin: scalar or `1 x nDims` lower box bounds; defaults to `-Inf`
-- Parameter ymax: scalar or `1 x nDims` upper box bounds; defaults to `Inf`
+
 
 
 ## Topics
-+ Integrators
++ Create the integrator
   + [`IntegratorWithDiffusivity`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/integratorwithdiffusivity.html) Create an additive-diffusion integrator on a box domain.
-  + State
-    + [`kappa`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/kappa.html) Componentwise diffusivity `kappa`.
-    + [`ymax`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/ymax.html) Upper box bounds `ymax`.
-    + [`ymin`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/ymin.html) Lower box bounds `ymin`.
++ Inspect integrator settings
+  + [`kappa`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/kappa.html) Componentwise diffusivity `kappa`.
+  + [`ymax`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/ymax.html) Upper box bounds `ymax`.
+  + [`ymin`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/ymin.html) Lower box bounds `ymin`.
 
 
 ---

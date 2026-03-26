@@ -12,16 +12,10 @@ classdef IntegratorWithObstacles < Integrator
     % segments that cross an obstacle are handled by repeated geometric
     % reflection against the obstacle boundary.
     %
-    % - Topic: Integrators
-    % - Declaration: self = IntegratorWithObstacles(f,y0,dt=...,kappa=...,ymin=...,ymax=...,obstacles=polyshape.empty(0,1),isPeriodic=false)
-    % - Parameter f: deterministic drift function $$f(t,y)$$
-    % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x 2`
-    % - Parameter dt: positive scalar timestep $$dt$$
-    % - Parameter kappa: scalar or `1 x 2` diffusivity vector $$\kappa$$; defaults to `0`
-    % - Parameter ymin: scalar or `1 x 2` lower coordinate bounds; defaults to `-Inf`
-    % - Parameter ymax: scalar or `1 x 2` upper coordinate bounds; defaults to `Inf`
-    % - Parameter obstacles: `polyshape` array of non-overlapping reflecting obstacles
-    % - Parameter isPeriodic: logical scalar or `1 x 2` vector that marks periodic coordinate directions; defaults to `false`
+    % - Topic: Create the integrator
+    % - Topic: Inspect integrator settings
+    % - Topic: Handle obstacle reflections
+    % - Declaration: classdef IntegratorWithObstacles < Integrator
 
     properties (SetAccess = protected)
         % Componentwise diffusivity `kappa`.
@@ -29,7 +23,7 @@ classdef IntegratorWithObstacles < Integrator
         % `kappa` stores either the scalar diffusivity expanded across both
         % state dimensions or the supplied `1 x 2` diffusivity vector.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.kappa
         % - Returns kappa: scalar-expanded or componentwise diffusivity $$\kappa$$ with units of `y.^2 / t`
         kappa double = []
@@ -39,7 +33,7 @@ classdef IntegratorWithObstacles < Integrator
         % `ymin` stores the lower bound for each coordinate. Use `-Inf` to
         % indicate an unbounded lower side.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.ymin
         % - Returns ymin: `1 x 2` row vector of lower coordinate bounds
         ymin double = []
@@ -49,7 +43,7 @@ classdef IntegratorWithObstacles < Integrator
         % `ymax` stores the upper bound for each coordinate. Use `Inf` to
         % indicate an unbounded upper side.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.ymax
         % - Returns ymax: `1 x 2` row vector of upper coordinate bounds
         ymax double = []
@@ -60,7 +54,7 @@ classdef IntegratorWithObstacles < Integrator
         % true entry means the corresponding coordinate is wrapped into the
         % interval `[ymin(i), ymax(i))` before obstacle checks.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.isPeriodic
         % - Returns isPeriodic: logical `1 x 2` vector of periodic-direction flags
         isPeriodic (1,2) logical = [false false]
@@ -70,7 +64,7 @@ classdef IntegratorWithObstacles < Integrator
         % `obstacles` stores the original non-overlapping `polyshape`
         % objects supplied to the constructor.
         %
-        % - Topic: Integrators — State
+        % - Topic: Inspect integrator settings
         % - Declaration: self.obstacles
         % - Returns obstacles: array of reflecting `polyshape` obstacles
         obstacles polyshape = polyshape.empty(0,1)
@@ -90,7 +84,7 @@ classdef IntegratorWithObstacles < Integrator
             % stores the domain bounds, and precomputes polygon and
             % bounding-box geometry used by the reflection algorithm.
             %
-            % - Topic: Integrators
+            % - Topic: Create the integrator
             % - Declaration: self = IntegratorWithObstacles(f,y0,dt=...,kappa=...,ymin=...,ymax=...,obstacles=polyshape.empty(0,1),isPeriodic=false)
             % - Parameter f: deterministic drift function $$f(t,y)$$
             % - Parameter y0: initial condition $$y_0$$ stored as `nParticles x 2`

@@ -18,7 +18,7 @@ Integrate the Itô SDE $$dy = f(t,y)\,dt + g(t,y)\,dW_t$$.
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>self = IntegratorEulerMaruyama(f,g,y0,dt=...)</code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef IntegratorEulerMaruyama < Integrator</code></pre></div></div>
 
 ## Overview
 
@@ -39,15 +39,13 @@ where `\eta_n` is standard normal with the same shape as `y_n`.
 `advanceToTime` preserves the existing first-order linear
 interpolation between accepted stochastic steps.
 
-    - Parameter f: deterministic drift function $$f(t,y)$$ with the same output shape as `y0`
-- Parameter g: stochastic amplitude function $$g(t,y)$$ with the same output shape as `y0`
-- Parameter y0: initial condition $$y_0$$ stored as `nParticles x nDims`
-- Parameter dt: positive scalar timestep $$dt$$
+
 
 
 ## Topics
-+ Integrators
++ Create the integrator
   + [`IntegratorEulerMaruyama`](/advection-diffusion-models/classes/particle-integrators/integratoreulermaruyama/integratoreulermaruyama.html) Create an Euler-Maruyama integrator for $$dy = f\,dt + g\,dW_t$$.
++ Advance the integrator
   + [`advanceOneStep`](/advection-diffusion-models/classes/particle-integrators/integratoreulermaruyama/advanceonestep.html) Advance the SDE by one fixed timestep `dt`.
   + [`advanceToTime`](/advection-diffusion-models/classes/particle-integrators/integratoreulermaruyama/advancetotime.html) Advance the SDE until the requested output time `t`.
 

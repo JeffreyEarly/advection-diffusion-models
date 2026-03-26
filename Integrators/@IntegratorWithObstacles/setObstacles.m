@@ -5,7 +5,7 @@ function setObstacles(self, obstacles)
 % differences, and a rectangular bounding box used for the fast pre-checks
 % in `updateWithReflection`.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: setObstacles(self,obstacles)
 % - Parameter obstacles: array of reflecting `polyshape` obstacles

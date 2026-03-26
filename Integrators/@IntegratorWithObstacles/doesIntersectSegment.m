@@ -5,7 +5,7 @@ function [doesIntersect, yIntersection, r2] = doesIntersectSegment(yInitial, yFi
 % MATLAB to reuse the output arrays `doesIntersect`, `yIntersection`, and
 % `r2` during repeated intersection queries.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: [doesIntersect, yIntersection, r2] = doesIntersectSegment(yInitial,yFinal,vInitial,vFinal,doesIntersect,yIntersection,r2)
 % - Parameter yInitial: initial segment points stored as `nParticles x 2`

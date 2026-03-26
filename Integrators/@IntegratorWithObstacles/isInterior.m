@@ -4,7 +4,7 @@ function isInterior = isInterior(obstacle, x, y)
 % This method evaluates the winding-number test using the cached polygon
 % edge geometry instead of MATLAB's general-purpose polygon query.
 %
-% - Topic: Integrators — Obstacles
+% - Topic: Handle obstacle reflections
 % - Developer: true
 % - Declaration: isInterior = isInterior(obstacle,x,y)
 % - Parameter obstacle: cached polygon geometry
