@@ -4,7 +4,8 @@ title: IntegratorWithObstacles
 has_children: false
 has_toc: false
 mathjax: true
-parent: Class documentation
+parent: Particle integrators
+grand_parent: Class documentation
 nav_order: 4
 ---
 
@@ -44,13 +45,13 @@ reflection against the obstacle boundary.
 
 ## Topics
 + Integrators
-  + [`IntegratorWithObstacles`](/advection-diffusion-models/classes/integratorwithobstacles/integratorwithobstacles.html) Create a 2D obstacle-aware stochastic integrator.
+  + [`IntegratorWithObstacles`](/advection-diffusion-models/classes/particle-integrators/integratorwithobstacles/integratorwithobstacles.html) Create a 2D obstacle-aware stochastic integrator.
   + State
-    + [`isPeriodic`](/advection-diffusion-models/classes/integratorwithobstacles/isperiodic.html) Periodicity flags for each coordinate direction.
-    + [`kappa`](/advection-diffusion-models/classes/integratorwithobstacles/kappa.html) Componentwise diffusivity `kappa`.
-    + [`obstacles`](/advection-diffusion-models/classes/integratorwithobstacles/obstacles.html) Polygonal obstacles used for reflecting boundaries.
-    + [`ymax`](/advection-diffusion-models/classes/integratorwithobstacles/ymax.html) Upper coordinate bounds `ymax`.
-    + [`ymin`](/advection-diffusion-models/classes/integratorwithobstacles/ymin.html) Lower coordinate bounds `ymin`.
+    + [`isPeriodic`](/advection-diffusion-models/classes/particle-integrators/integratorwithobstacles/isperiodic.html) Periodicity flags for each coordinate direction.
+    + [`kappa`](/advection-diffusion-models/classes/particle-integrators/integratorwithobstacles/kappa.html) Componentwise diffusivity `kappa`.
+    + [`obstacles`](/advection-diffusion-models/classes/particle-integrators/integratorwithobstacles/obstacles.html) Polygonal obstacles used for reflecting boundaries.
+    + [`ymax`](/advection-diffusion-models/classes/particle-integrators/integratorwithobstacles/ymax.html) Upper coordinate bounds `ymax`.
+    + [`ymin`](/advection-diffusion-models/classes/particle-integrators/integratorwithobstacles/ymin.html) Lower coordinate bounds `ymin`.
 
 
 ---

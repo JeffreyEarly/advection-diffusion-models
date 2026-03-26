@@ -4,7 +4,8 @@ title: IntegratorWithDiffusivity
 has_children: false
 has_toc: false
 mathjax: true
-parent: Class documentation
+parent: Particle integrators
+grand_parent: Class documentation
 nav_order: 3
 ---
 
@@ -44,11 +45,11 @@ increment formulas.
 
 ## Topics
 + Integrators
-  + [`IntegratorWithDiffusivity`](/advection-diffusion-models/classes/integratorwithdiffusivity/integratorwithdiffusivity.html) Create an additive-diffusion integrator on a box domain.
+  + [`IntegratorWithDiffusivity`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/integratorwithdiffusivity.html) Create an additive-diffusion integrator on a box domain.
   + State
-    + [`kappa`](/advection-diffusion-models/classes/integratorwithdiffusivity/kappa.html) Componentwise diffusivity `kappa`.
-    + [`ymax`](/advection-diffusion-models/classes/integratorwithdiffusivity/ymax.html) Upper box bounds `ymax`.
-    + [`ymin`](/advection-diffusion-models/classes/integratorwithdiffusivity/ymin.html) Lower box bounds `ymin`.
+    + [`kappa`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/kappa.html) Componentwise diffusivity `kappa`.
+    + [`ymax`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/ymax.html) Upper box bounds `ymax`.
+    + [`ymin`](/advection-diffusion-models/classes/particle-integrators/integratorwithdiffusivity/ymin.html) Lower box bounds `ymin`.
 
 
 ---

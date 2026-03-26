@@ -7,6 +7,8 @@ rootDir = char(java.io.File(char(options.rootDir)).getCanonicalPath());
 buildFolder = fullfile(rootDir, "docs");
 sourceFolder = fullfile(rootDir, "Documentation", "WebsiteDocumentation");
 
+addPackageToPath(rootDir);
+
 if isfolder(buildFolder)
     rmdir(buildFolder, "s");
 end
@@ -28,13 +30,43 @@ evalin("base", "rehash");
 
 websiteRootURL = "advection-diffusion-models/";
 classFolderName = "Class documentation";
-websiteFolder = "classes";
-classes = {"Integrator", "IntegratorEulerMaruyama", "IntegratorWithDiffusivity", "IntegratorWithObstacles"};
-classDocumentation = ClassDocumentation.empty(length(classes), 0);
-for iName = 1:length(classes)
-    classDocumentation(iName) = ClassDocumentation(classes{iName}, nav_order=iName, websiteRootURL=websiteRootURL, buildFolder=buildFolder, websiteFolder=websiteFolder, parent=classFolderName);
+classGroups = {
+    struct( ...
+        "parent", "Particle integrators", ...
+        "websiteFolder", "classes/particle-integrators", ...
+        "classes", {{"Integrator", "IntegratorEulerMaruyama", "IntegratorWithDiffusivity", "IntegratorWithObstacles", "AdvectionDiffusionIntegrator"}} ...
+    )
+    struct( ...
+        "parent", "Kinematic models", ...
+        "websiteFolder", "classes/kinematic-models", ...
+        "classes", {{"KinematicModel", "StreamfunctionModel", "CylinderFlow", "DivergenceBox", "LinearVelocityField", "MeanderingJet", "NarrowEscapeProblem", "SimpleBox", "TranslatingGaussian"}} ...
+    )
+};
+
+for iGroup = 1:numel(classGroups)
+    group = classGroups{iGroup};
+    classDocumentation = ClassDocumentation.empty(numel(group.classes), 0);
+    for iName = 1:numel(group.classes)
+        className = group.classes{iName};
+        excludedMethodNames = string.empty(0, 1);
+        switch className
+            case {"KinematicModel", "StreamfunctionModel"}
+                excludedMethodNames = string(className);
+        end
+
+        classDocumentation(iName) = ClassDocumentation( ...
+            className, ...
+            nav_order=iName, ...
+            websiteRootURL=websiteRootURL, ...
+            buildFolder=buildFolder, ...
+            websiteFolder=group.websiteFolder, ...
+            parent=group.parent, ...
+            grandparent=classFolderName, ...
+            excludedMethodNames=excludedMethodNames);
+    end
+    arrayfun(@(a) a.writeToFile(), classDocumentation)
 end
-arrayfun(@(a) a.writeToFile(), classDocumentation)
+
 trimTrailingWhitespaceInMarkdown(buildFolder)
 end
 
@@ -50,5 +82,18 @@ for iFile = 1:numel(markdownFiles)
         fwrite(fid, trimmedText);
         fclose(fid);
     end
+end
+end
+
+function addPackageToPath(repoRoot)
+metadataPath = fullfile(repoRoot, "resources", "mpackage.json");
+
+if isfile(metadataPath)
+    metadata = jsondecode(fileread(metadataPath));
+    folderPaths = strings(length(metadata.folders), 1);
+    for iFolder = 1:length(metadata.folders)
+        folderPaths(iFolder) = string(fullfile(repoRoot, metadata.folders(iFolder).path));
+    end
+    addpath(folderPaths{:});
 end
 end

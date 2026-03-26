@@ -12,6 +12,21 @@ classdef StreamfunctionModel < KinematicModel
     % - Topic: Plot streamfunctions
     % - Declaration: classdef StreamfunctionModel < KinematicModel
 
+    methods
+        function self = StreamfunctionModel()
+            % Create a streamfunction-model base instance for subclass setup.
+            %
+            % `StreamfunctionModel` is abstract, so this constructor is
+            % used indirectly by subclasses that implement
+            % `psi(self,t,x,y)`.
+            %
+            % - Topic: Evaluate streamfunctions
+            % - Declaration: self = StreamfunctionModel()
+            % - Returns self: `StreamfunctionModel` instance
+            % - Developer: true
+        end
+    end
+
     methods (Abstract)
         % Evaluate the streamfunction.
         %

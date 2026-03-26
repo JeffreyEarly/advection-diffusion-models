@@ -4,7 +4,8 @@ title: IntegratorEulerMaruyama
 has_children: false
 has_toc: false
 mathjax: true
-parent: Class documentation
+parent: Particle integrators
+grand_parent: Class documentation
 nav_order: 2
 ---
 
@@ -46,9 +47,9 @@ interpolation between accepted stochastic steps.
 
 ## Topics
 + Integrators
-  + [`IntegratorEulerMaruyama`](/advection-diffusion-models/classes/integratoreulermaruyama/integratoreulermaruyama.html) Create an Euler-Maruyama integrator for $$dy = f\,dt + g\,dW_t$$.
-  + [`advanceOneStep`](/advection-diffusion-models/classes/integratoreulermaruyama/advanceonestep.html) Advance the SDE by one fixed timestep `dt`.
-  + [`advanceToTime`](/advection-diffusion-models/classes/integratoreulermaruyama/advancetotime.html) Advance the SDE until the requested output time `t`.
+  + [`IntegratorEulerMaruyama`](/advection-diffusion-models/classes/particle-integrators/integratoreulermaruyama/integratoreulermaruyama.html) Create an Euler-Maruyama integrator for $$dy = f\,dt + g\,dW_t$$.
+  + [`advanceOneStep`](/advection-diffusion-models/classes/particle-integrators/integratoreulermaruyama/advanceonestep.html) Advance the SDE by one fixed timestep `dt`.
+  + [`advanceToTime`](/advection-diffusion-models/classes/particle-integrators/integratoreulermaruyama/advancetotime.html) Advance the SDE until the requested output time `t`.
 
 
 ---

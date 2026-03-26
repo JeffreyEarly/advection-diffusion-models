@@ -6,4 +6,5 @@ has_children: true
 permalink: /classes
 ---
 
-This section is the API reference for the integrator classes currently documented on the site.
+This section is the API reference for the particle-integrator and
+kinematic-model classes published with the package.

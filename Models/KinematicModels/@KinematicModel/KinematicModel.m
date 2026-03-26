@@ -95,6 +95,17 @@ classdef KinematicModel < handle
     end
 
     methods
+        function self = KinematicModel()
+            % Create an empty kinematic-model base instance.
+            %
+            % Configure velocity closures and domain properties after
+            % construction when deriving custom models from `KinematicModel`.
+            %
+            % - Topic: Configure model domains
+            % - Declaration: self = KinematicModel()
+            % - Returns self: `KinematicModel` instance
+        end
+
         function uValue = u(self, t, x, y)
             % Evaluate the x-velocity component.
             %
