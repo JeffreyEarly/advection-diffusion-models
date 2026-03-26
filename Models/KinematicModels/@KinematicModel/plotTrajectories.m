@@ -47,7 +47,9 @@ if self.isXPeriodic
         scatter((xShifted + xMin) / self.visualScale, yShifted / self.visualScale, 8^2, 'k', 'filled')
     end
 else
-    plot(x / self.visualScale, y / self.visualScale, varargin{:})
+    if size(x,1) > 1
+        plot(x / self.visualScale, y / self.visualScale, varargin{:})
+    end
     hold on
     scatter(x(end,:) / self.visualScale, y(end,:) / self.visualScale, 8^2, 'k', 'filled')
     axis equal
