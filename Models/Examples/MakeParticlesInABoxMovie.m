@@ -8,53 +8,57 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 showEndStateOnly = 0;
-FramesFolder = './FramesScratch';
-if exist(FramesFolder,'dir') == 0
-	mkdir(FramesFolder);
-end
+videoPath = 'particles_in_a_box.mp4';
 
 box = SimpleBox();
 
 kappa = 100;
-integrator = AdvectionDiffusionIntegrator(box,kappa);
+integrator = AdvectionDiffusionIntegrator(box, kappa);
 
 % determine reasonable integration time scales
-T = 2*86400;
+T = 2 * 86400;
 dt = 864;
 
 % place particles on the left-quarter of the domain
-x = linspace(min(box.xlim),max(box.xlim)/4,20);
-y = linspace(min(box.ylim),max(box.ylim),10);
-[x0,y0] = ndgrid(x,y);
+x = linspace(min(box.xlim), max(box.xlim) / 4, 20);
+y = linspace(min(box.ylim), max(box.ylim), 10);
+[x0, y0] = ndgrid(x, y);
 
-[t,x,y] = integrator.particleTrajectories(x0,y0,T,dt);
+[t, x, y] = integrator.particleTrajectories(x0, y0, T, dt);
 
-figure('Position', [50 50 680 400])
-set(gcf,'PaperPositionMode','auto')
-set(gcf, 'Color', 'w');
-
+figureHandle = figure('Position', [50 50 680 400]);
+set(figureHandle, 'PaperPositionMode', 'auto')
+set(figureHandle, 'Color', 'w');
 
 if showEndStateOnly == 1
     iTime0 = length(t);
 else
     iTime0 = 1;
+    videoWriter = VideoWriter(videoPath, 'MPEG-4');
+    videoWriter.FrameRate = 30;
+    open(videoWriter);
 end
-for iTime=iTime0:length(t)
+
+for iTime = iTime0:length(t)
     clf
     
-    box.plotBounds(), hold on
+    box.plotBounds();
+    hold on
     axis equal
     xticks([])
     yticks([])
     axis off
     
-    scatter( box.visualScale*x(iTime,:), box.visualScale*y(iTime,:), 8^2, 'r', 'fill')
+    scatter(x(iTime,:) / box.visualScale, y(iTime,:) / box.visualScale, 8^2, 'r', 'filled')
     
     if showEndStateOnly == 1
         continue;
     end
-    
-    % write everything out
-    output = sprintf('%s/t_%03d', FramesFolder,iTime-1);
-    print('-depsc2', output)
+
+    drawnow
+    writeVideo(videoWriter, getframe(figureHandle));
+end
+
+if ~showEndStateOnly
+    close(videoWriter);
 end

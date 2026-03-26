@@ -1,51 +1,52 @@
 shouldSaveImages = false;
 
 eddy = TranslatingGaussian();
-figure
-eddy.plotStreamfunction(), hold on
-eddy.plotVelocityField(N=20);
-
+figureHandle = figure;
+eddy.plotStreamfunction();
+hold on
+eddy.plotVelocityField(numPoints=20);
 if shouldSaveImages
-    exportgraphics('figures/kinematic_model_eddy.png')
+    exportgraphics(figureHandle, 'figures/kinematic_model_eddy.png')
 end
 
 jet = MeanderingJet();
-figure
-jet.plotStreamfunction(), hold on
-jet.plotVelocityField(N=20);
-
+figureHandle = figure;
+jet.plotStreamfunction();
+hold on
+jet.plotVelocityField(numPoints=20);
 if shouldSaveImages
-    exportgraphics('figures/kinematic_model_jet.png','-dpng')
+    exportgraphics(figureHandle, 'figures/kinematic_model_jet.png')
 end
 
 %%
 
 cylinder = CylinderFlow();
-figure
-cylinder.plotStreamfunction(), hold on
-cylinder.plotVelocityField(N=20);
-
+figureHandle = figure;
+cylinder.plotStreamfunction();
+hold on
+cylinder.plotVelocityField(numPoints=20);
 if shouldSaveImages
-    exportgraphics('figures/kinematic_model_cylinder.png')
+    exportgraphics(figureHandle, 'figures/kinematic_model_cylinder.png')
 end
 
 %%
 
-strain = LinearVelocityField(1e-6,0,0);
-figure
-strain.plotStreamfunction(), hold on
-strain.plotVelocityField(N=20);
-
+strain = LinearVelocityField(1e-6, 0, 0);
+figureHandle = figure;
+strain.plotStreamfunction();
+hold on
+strain.plotVelocityField(numPoints=20);
 if shouldSaveImages
-    exportgraphics('figures/kinematic_model_strain.png')
+    exportgraphics(figureHandle, 'figures/kinematic_model_strain.png')
 end
 
 %%
-strain = LinearVelocityField(0,0,1e-6);
-figure
-strain.plotStreamfunction(), hold on
-strain.plotVelocityField(N=20);
 
+strain = LinearVelocityField(0, 0, 1e-6);
+figureHandle = figure;
+strain.plotStreamfunction();
+hold on
+strain.plotVelocityField(numPoints=20);
 if shouldSaveImages
-    exportgraphics('figures/kinematic_model_vorticity.png')
+    exportgraphics(figureHandle, 'figures/kinematic_model_vorticity.png')
 end

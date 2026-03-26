@@ -46,7 +46,7 @@ for iModel = 1:nModels
          y0 = [0; 0; -500; -250; 0; 250; 500; 0; 0;];
         
         [t,x,y] = integrator.particleTrajectories(x0,y0,T,dt/10);
-        [x_a,y_a] = velocityField.ParticlePath(x0,y0,t,0,0,0);
+        [x_a, y_a] = velocityField.particlePath(x0, y0, t, 0, 0, 0);
         
         dx = x - x_a;
         dy = y - y_a;
@@ -55,4 +55,3 @@ for iModel = 1:nModels
         
     end
 end
-

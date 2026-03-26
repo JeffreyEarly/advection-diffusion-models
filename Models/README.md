@@ -15,10 +15,10 @@ Quick start
 
 Start by initializing and visualizing a kinematic model,
 ```matlab
-
 jet = MeanderingJet();
 figure
-jet.plotStreamfunction(), hold on
+jet.plotStreamfunction()
+hold on
 jet.plotVelocityField()
 ```
 <p align="left"><img src="Examples/figures/kinematic_model_jet.png" width="600" /></p>
@@ -45,7 +45,8 @@ Finally, we now use the integrator to generate some trajectories
 [t,x,y] = integrator.particleTrajectories(x0,y0,T,dt);
 
 figure
-jet.plotVelocityField(), hold on
+jet.plotVelocityField()
+hold on
 jet.plotTrajectories(x,y)
 ```
 <p align="left"><img src="Examples/figures/trajectories_jet.png" width="600" /></p>

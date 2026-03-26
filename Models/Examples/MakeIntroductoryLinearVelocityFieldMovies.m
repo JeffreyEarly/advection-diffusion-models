@@ -15,7 +15,7 @@ theta = 0;
 
 if scenario == 1
     name = 'Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/diffusion_100_particles';
+	videoPath = '/Users/jearly/Desktop/diffusion_100_particles.mp4';
 	kappa = 0.5;
 	N=100;
 	shouldShowTails = 0;
@@ -23,7 +23,7 @@ if scenario == 1
     shouldShowVelocityField = 0;
 elseif scenario == 2
     name = 'Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/diffusion_500_particles';
+	videoPath = '/Users/jearly/Desktop/diffusion_500_particles.mp4';
 	kappa = 0.5;
 	N=500;
 	shouldShowTails = 0;
@@ -31,7 +31,7 @@ elseif scenario == 2
     shouldShowVelocityField = 0;
 elseif scenario == 3
     name = 'Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/diffusion_concentration';
+	videoPath = '/Users/jearly/Desktop/diffusion_concentration.mp4';
 	kappa = 0.5;
 	N=500;
 	shouldShowTails = 0;
@@ -39,7 +39,7 @@ elseif scenario == 3
     shouldShowVelocityField = 0;
 elseif scenario == 4
     name = 'Strain-Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/strain_diffusion_100_particles';
+	videoPath = '/Users/jearly/Desktop/strain_diffusion_100_particles.mp4';
 	kappa = 0.5;
 	N=20;
     sigma = 4E-6;
@@ -49,7 +49,7 @@ elseif scenario == 4
     shouldShowVelocityField = 1;
 elseif scenario == 5
     name = 'Vorticity-Strain Dominated-Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/vorticity_strain_diffusion_100_particles';
+	videoPath = '/Users/jearly/Desktop/vorticity_strain_diffusion_100_particles.mp4';
 	kappa = 0.5;
 	N=20;
     s=2E-6;
@@ -62,7 +62,7 @@ elseif scenario == 5
     shouldShowVelocityField = 1;
 elseif scenario == 6
     name = 'Vorticity Dominated-Strain-Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/vorticity_dominated_strain_diffusion_100_particles';
+	videoPath = '/Users/jearly/Desktop/vorticity_dominated_strain_diffusion_100_particles.mp4';
 	kappa = 0.5;
 	N=20;
     s=2*2*pi/(7*86400);
@@ -75,7 +75,7 @@ elseif scenario == 6
     shouldShowVelocityField = 1;
 elseif scenario == 7
     name = 'Vorticity-Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/vorticity_diffusion_100_particles';
+	videoPath = '/Users/jearly/Desktop/vorticity_diffusion_100_particles.mp4';
 	kappa = 0.5;
 	N=20;
     sigma = 0;
@@ -86,7 +86,7 @@ elseif scenario == 7
     shouldShowVelocityField = 1;
 elseif scenario == 8
     name = 'Vorticity-Strain-Matched-Diffusion';
-	FramesFolder ='/Users/jearly/Desktop/vorticity_strain_matched_diffusion_100_particles';
+	videoPath = '/Users/jearly/Desktop/vorticity_strain_matched_diffusion_100_particles.mp4';
 	kappa = 0.5;
 	N=20;
     sigma = 4.0E-6;
@@ -122,16 +122,6 @@ y0 = reshape(Y,1,N*N);
 
 [x, y] = ParticlePathInLinearVelocityField( x0, y0, t, params );
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% 	Make the frames folder
-%
-if showEndStateOnly == 0
-    if exist(FramesFolder, 'dir') == 0
-        mkdir(FramesFolder);
-    end
-end
 
 numDrifters = size(x,2);
 days = t/86400;
@@ -228,6 +218,9 @@ if showEndStateOnly == 1
     iTime0 = length(t);
 else
     iTime0 = 1;
+    videoWriter = VideoWriter(videoPath, 'MPEG-4');
+    videoWriter.FrameRate = 30;
+    open(videoWriter);
 end
 
 for iTime=iTime0:length(t)
@@ -285,12 +278,10 @@ for iTime=iTime0:length(t)
         continue;
     end
 
-	% write everything out
-	output = sprintf('%s/t_%03d', FramesFolder,iTime-1);
-	ScaleFactor=4;
-	if (shouldShowAsConcentration == 1)
-		print(sprintf('-r%d',72*ScaleFactor), '-dpng', output );
-	else
-		print('-depsc2', output)
-	end
+    drawnow
+    writeVideo(videoWriter, getframe(gcf));
+end
+
+if showEndStateOnly == 0
+    close(videoWriter);
 end

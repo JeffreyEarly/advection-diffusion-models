@@ -53,8 +53,8 @@ x0 = cat(2,x0,y0,zeros(length(x0),1),zeros(length(x0),1));
 
 integrator = IntegratorEulerMaruyama(f, g, x0, dt=deltaT);
 pn = integrator.integrateToTime(t);
-x = squeeze(pn(:,1,:)).';
-y = squeeze(pn(:,2,:)).';
+x = real(squeeze(pn(:,1,:)).');
+y = real(squeeze(pn(:,2,:)).');
 
 figure
 plot(x,y)

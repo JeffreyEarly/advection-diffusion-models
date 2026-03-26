@@ -52,11 +52,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
                         model = LinearVelocityField(sigma,theta,zeta,u0,v0);
                         maxError = LinearVelocityFieldUnitTests.maxPathError(model,x0,y0,T,360,u0,v0);
 
-                        diagnostic = sprintf( ...
-                            'ParticlePath mismatch for sigma=%g, theta=%g, zeta=%g', ...
-                            sigma, ...
-                            theta, ...
-                            zeta);
+                        diagnostic = sprintf('particlePath mismatch for sigma=%g, theta=%g, zeta=%g', sigma, theta, zeta);
                         testCase.verifyLessThanOrEqual(maxError, 5e-6, diagnostic);
                     end
                 end
@@ -76,10 +72,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
                 model = LinearVelocityField(sigma,theta,zeta,u0,v0);
                 maxError = LinearVelocityFieldUnitTests.maxPathError(model,x0,y0,2*86400,360,u0,v0);
 
-                diagnostic = sprintf( ...
-                    'Matched-flow ParticlePath mismatch for sigma=%g, zeta=%g', ...
-                    sigma, ...
-                    zeta);
+                diagnostic = sprintf('Matched-flow particlePath mismatch for sigma=%g, zeta=%g', sigma, zeta);
                 testCase.verifyLessThanOrEqual(maxError, 5e-6, diagnostic);
             end
         end
@@ -90,7 +83,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
             integrator = AdvectionDiffusionIntegrator(model,0);
 
             [t, x, y] = integrator.particleTrajectories(x0,y0,2*86400,360);
-            [xAnalytical, yAnalytical] = model.ParticlePath(x0,y0,t,0,0,0);
+            [xAnalytical, yAnalytical] = model.particlePath(x0, y0, t, 0, 0, 0);
 
             xExpected = repmat(x0.', length(t), 1);
             yExpected = repmat(y0.', length(t), 1);
@@ -111,7 +104,7 @@ classdef LinearVelocityFieldUnitTests < matlab.unittest.TestCase
         function maxError = maxPathError(model,x0,y0,T,dt,u0,v0)
             integrator = AdvectionDiffusionIntegrator(model,0);
             [t, x, y] = integrator.particleTrajectories(x0,y0,T,dt);
-            [xAnalytical, yAnalytical] = model.ParticlePath(x0,y0,t,0,u0,v0);
+            [xAnalytical, yAnalytical] = model.particlePath(x0, y0, t, 0, u0, v0);
 
             maxError = max(hypot(x - xAnalytical, y - yAnalytical), [], "all");
         end

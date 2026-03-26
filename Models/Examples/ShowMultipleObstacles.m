@@ -5,10 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 showEndStateOnly = 0;
-FramesFolder = './FramesScratch';
-if exist(FramesFolder,'dir') == 0
-	mkdir(FramesFolder);
-end
+videoPath = 'narrow_escape_problem_with_star.mp4';
 
 model = NarrowEscapeProblem();
 
@@ -29,10 +26,10 @@ for i=1:(2*np)
         y(i) = 0.6*R*sin(theta(i))+model.L/2;
     end
 end
-model.obstacles = cat(1,model.obstacles, polyshape(x,y));
+model.obstacles = cat(1, model.obstacles, polyshape(x, y));
 
 kappa = 20;
-integrator = AdvectionDiffusionIntegrator(model,kappa);
+integrator = AdvectionDiffusionIntegrator(model, kappa);
 
 maxMovieLength = 20; % seconds
 totalMovieFrames = maxMovieLength*30;
@@ -46,36 +43,42 @@ x = linspace(0,model.L,20);
 y = linspace(0,model.L,20);
 [x0,y0] = ndgrid(x,y);
 
-[t,x,y] = integrator.particleTrajectories(x0,y0,T,dt);
+[t, x, y] = integrator.particleTrajectories(x0, y0, T, dt);
 
 fig = figure('Position', [50 50 800 800]);
-set(gcf,'PaperPositionMode','manual')
-set(gcf, 'Color', 'w');
+set(fig, 'PaperPositionMode', 'manual')
+set(fig, 'Color', 'w');
 
 
 if showEndStateOnly == 1
     iTime0 = length(t);
 else
     iTime0 = 1;
+    videoWriter = VideoWriter(videoPath, 'MPEG-4');
+    videoWriter.FrameRate = 30;
+    open(videoWriter);
 end
 
-tailLength=15;
-for iTime=iTime0:length(t)
+tailLength = 15;
+for iTime = iTime0:length(t)
     clf
     
-    plot(scale(model.obstacles,1/model.visualScale),'FaceColor','black','FaceAlpha',1.0); hold on
+    plot(scale(model.obstacles, 1 / model.visualScale), 'FaceColor', 'black', 'FaceAlpha', 1.0);
+    hold on
     
-    startIndex = iTime-tailLength;
-    if (startIndex < 1) startIndex=1; end
-    range=startIndex:iTime;
+    startIndex = iTime - tailLength;
+    if startIndex < 1
+        startIndex = 1;
+    end
+    range = startIndex:iTime;
     
-    model.plotTrajectories(x(range,:),y(range,:),'LineWidth',1.5)
+    model.plotTrajectories(x(range,:), y(range,:), 'LineWidth', 1.5)
     
-    text(0,(model.L+1.5*model.delta)/model.visualScale,sprintf('total escapees: %d', sum(x(range(end),:)<0)));
+    text(0, (model.L + 1.5 * model.delta) / model.visualScale, sprintf('total escapees: %d', sum(x(range(end),:) < 0)));
     
     axis equal
-    xlim(model.xVisLim/model.visualScale);
-    ylim(model.xVisLim/model.visualScale);
+    xlim(model.xVisualLimits / model.visualScale);
+    ylim(model.yVisualLimits / model.visualScale);
     xticks([])
     yticks([])
     axis off
@@ -86,10 +89,13 @@ for iTime=iTime0:length(t)
     if showEndStateOnly == 1
         continue;
     end
-    
-    % write everything out
-    output = sprintf('%s/t_%03d', FramesFolder,iTime-1);
-    print('-dpng','-r300', output)
+
+    drawnow
+    writeVideo(videoWriter, getframe(fig));
+end
+
+if ~showEndStateOnly
+    close(videoWriter);
 end
 
 % figure

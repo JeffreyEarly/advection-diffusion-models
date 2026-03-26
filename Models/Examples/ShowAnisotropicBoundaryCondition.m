@@ -29,15 +29,18 @@ x0 = cat(2,linspace(.1,L-.1,reps).',zeros(reps,1));
 
 integrator = IntegratorEulerMaruyama(f, g, x0, dt=0.1*deltaT);
 pn = integrator.integrateToTime(t);
-x = squeeze(pn(:,1,:)).';
+x = real(squeeze(pn(:,1,:)).');
 u = squeeze(pn(:,2,:)).';
 
 D2 = x(end,:).^2 ;
 kappa_out = mean(D2)/(2*t(end))
 
 figure
-subplot(2,1,1)
-plot(t,x)
+tiledlayout(2, 1)
+
+nexttile
+plot(t, x)
 ylim([0 L])
-subplot(2,1,2)
+
+nexttile
 histogram(x(end,:))

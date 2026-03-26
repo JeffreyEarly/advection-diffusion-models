@@ -16,7 +16,7 @@ n = length(t);
 model = LinearVelocityField(sigma, theta, zeta);
 
 % Without diffusivity
-[x,y] = model.ParticlePath(x0,y0,t,0,0,0);
+[x, y] = model.particlePath(x0, y0, t, 0, 0, 0);
 dt = t(2)-t(1);
 v = diff(x)/dt + sqrt(-1)*diff(y)/dt;
 

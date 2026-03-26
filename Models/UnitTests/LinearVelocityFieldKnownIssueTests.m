@@ -38,7 +38,7 @@ classdef LinearVelocityFieldKnownIssueTests < matlab.unittest.TestCase
         function maxError = maxPathError(model,x0,y0,T,dt,u0,v0)
             integrator = AdvectionDiffusionIntegrator(model,0);
             [t, x, y] = integrator.particleTrajectories(x0,y0,T,dt);
-            [xAnalytical, yAnalytical] = model.ParticlePath(x0,y0,t,0,u0,v0);
+            [xAnalytical, yAnalytical] = model.particlePath(x0, y0, t, 0, u0, v0);
 
             maxError = max(hypot(x - xAnalytical, y - yAnalytical), [], "all");
         end
