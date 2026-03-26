@@ -1,11 +1,11 @@
 function regenerateObstacles(self)
-% regenerateObstacles Rebuild the chamber walls and escape opening.
-%
-% Declaration:
-%   `regenerateObstacles(self)`
+% Rebuild the chamber walls and escape opening.
 %
 % The geometry consists of five rectangular wall sections whose union
 % leaves an opening of width `W` in the left wall.
+%
+% - Topic: Rebuild model geometry
+% - Declaration: regenerateObstacles(self)
 a = self.L;
 d = self.delta;
 topWindow = (a - self.W) / 2 + self.W;

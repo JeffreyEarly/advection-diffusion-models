@@ -1,5 +1,5 @@
 classdef SimpleBox < KinematicModel
-    % SimpleBox Rectangular box with zero deterministic velocity.
+    % Rectangular box with zero deterministic velocity.
     %
     % This model defines
     %
@@ -8,20 +8,30 @@ classdef SimpleBox < KinematicModel
     % on a finite rectangular domain. Any motion comes from the external
     % integrator, typically through the diffusivity term.
     %
-    % Topic:
-    %   Models
+    % - Topic: Create the model
+    % - Topic: Inspect model parameters
+    % - Topic: Evaluate the velocity field
+    % - Declaration: classdef SimpleBox < KinematicModel
 
     properties
-        Lx = 10e3
         % Domain width in meters.
+        %
+        % - Topic: Inspect model parameters
+        Lx = 10e3
 
-        Ly = 5e3
         % Domain height in meters.
+        %
+        % - Topic: Inspect model parameters
+        Ly = 5e3
     end
 
     methods
         function self = SimpleBox()
-            % SimpleBox Create the default box model.
+            % Create the default box model.
+            %
+            % - Topic: Create the model
+            % - Declaration: self = SimpleBox()
+            % - Returns self: `SimpleBox` instance
             self.xlim = [0 self.Lx];
             self.ylim = [0 self.Ly];
 
@@ -34,12 +44,30 @@ classdef SimpleBox < KinematicModel
         end
 
         function uValue = u(self, t, x, y)
-            % u Evaluate the zero x-velocity field.
+            % Evaluate the zero x-velocity field.
+            %
+            % This model sets $$u(t,x,y) = 0$$ everywhere in the box.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: uValue = u(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
             uValue = zeros(size(x));
         end
 
         function vValue = v(self, t, x, y)
-            % v Evaluate the zero y-velocity field.
+            % Evaluate the zero y-velocity field.
+            %
+            % This model sets $$v(t,x,y) = 0$$ everywhere in the box.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: vValue = v(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `y`
             vValue = zeros(size(y));
         end
     end

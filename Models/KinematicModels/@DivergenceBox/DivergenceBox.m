@@ -1,5 +1,5 @@
 classdef DivergenceBox < KinematicModel
-    % DivergenceBox Box with alternating Gaussian convergence and divergence cells.
+    % Box with alternating Gaussian convergence and divergence cells.
     %
     % The model defines a steady velocity field by summing Gaussian cells
     % centered at `(x_c, y_c)`:
@@ -10,32 +10,50 @@ classdef DivergenceBox < KinematicModel
     %
     % where `s_i = (-1)^i` alternates the sign of neighboring cells.
     %
-    % Topic:
-    %   Models
+    % - Topic: Create the model
+    % - Topic: Inspect model parameters
+    % - Topic: Evaluate the velocity field
+    % - Declaration: classdef DivergenceBox < KinematicModel
 
     properties
-        Lx = 10e3
         % Domain width in meters.
+        %
+        % - Topic: Inspect model parameters
+        Lx = 10e3
 
-        Ly = 5e3
         % Domain height in meters.
+        %
+        % - Topic: Inspect model parameters
+        Ly = 5e3
 
-        Lg = 0.5e3
         % Gaussian length scale in meters.
+        %
+        % - Topic: Inspect model parameters
+        Lg = 0.5e3
 
-        n = 2
         % Number of cells along x.
+        %
+        % - Topic: Inspect model parameters
+        n = 2
 
-        m = 1
         % Number of cells along y.
+        %
+        % - Topic: Inspect model parameters
+        m = 1
 
+        % Velocity scale in $$m s^-1$$.
+        %
+        % - Topic: Inspect model parameters
         U = 1.0
-        % Velocity scale in m s^-1.
     end
 
     methods
         function self = DivergenceBox()
-            % DivergenceBox Create the default divergence-box model.
+            % Create the default divergence-box model.
+            %
+            % - Topic: Create the model
+            % - Declaration: self = DivergenceBox()
+            % - Returns self: `DivergenceBox` instance
             self.xlim = [0 self.Lx];
             self.ylim = [0 self.Ly];
 
@@ -48,7 +66,17 @@ classdef DivergenceBox < KinematicModel
         end
 
         function uValue = u(self, t, x, y)
-            % u Evaluate the x-velocity component.
+            % Evaluate the x-velocity component.
+            %
+            % Neighboring Gaussian cells alternate sign along the
+            % x-direction.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: uValue = u(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
             uValue = zeros(size(x));
             for i = 1:self.n
                 for j = 1:self.m
@@ -62,7 +90,17 @@ classdef DivergenceBox < KinematicModel
         end
 
         function vValue = v(self, t, x, y)
-            % v Evaluate the y-velocity component.
+            % Evaluate the y-velocity component.
+            %
+            % Neighboring Gaussian cells alternate sign along the
+            % x-direction.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: vValue = v(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x`
             vValue = zeros(size(x));
             for i = 1:self.n
                 for j = 1:self.m

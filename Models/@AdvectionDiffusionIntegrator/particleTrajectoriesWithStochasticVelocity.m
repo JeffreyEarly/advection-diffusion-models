@@ -1,8 +1,5 @@
 function [t, x, y] = particleTrajectoriesWithStochasticVelocity(self, x0, y0, T, dt, u, v)
-% particleTrajectoriesWithStochasticVelocity Integrate particles with extra stochastic velocity terms.
-%
-% Declaration:
-%   `[t, x, y] = particleTrajectoriesWithStochasticVelocity(self, x0, y0, T, dt, u, v)`
+% Integrate particles with extra stochastic velocity terms.
 %
 % This method integrates
 %
@@ -11,11 +8,17 @@ function [t, x, y] = particleTrajectoriesWithStochasticVelocity(self, x0, y0, T,
 % where `u(t)` and `v(t)` return column vectors with one value per active
 % particle at the current output time.
 %
-% Parameters:
-%   `x0`, `y0`, `T`, `dt` - See `particleTrajectories`.
-%
-%   `u`, `v` - Function handles of the form `u(t)` and `v(t)` that return
-%   column vectors with one value per particle.
+% - Topic: Integrate particle trajectories
+% - Declaration: [t, x, y] = particleTrajectoriesWithStochasticVelocity(self,x0,y0,T,dt,u,v)
+% - Parameter x0: initial x positions in meters; any input shape is flattened to a column vector
+% - Parameter y0: initial y positions in meters; any input shape is flattened to a column vector
+% - Parameter T: total integration duration in seconds
+% - Parameter dt: output time increment in seconds
+% - Parameter u: function handle `u(t)` returning one stochastic x-velocity value per particle
+% - Parameter v: function handle `v(t)` returning one stochastic y-velocity value per particle
+% - Returns t: column vector of output times in seconds
+% - Returns x: x positions in meters with shape `[length(t) nParticles]`
+% - Returns y: y positions in meters with shape `[length(t) nParticles]`
 arguments
     self (1,1) AdvectionDiffusionIntegrator
     x0 {mustBeNumeric}

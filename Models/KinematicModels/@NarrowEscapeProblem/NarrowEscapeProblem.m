@@ -1,5 +1,5 @@
 classdef NarrowEscapeProblem < KinematicModel
-    % NarrowEscapeProblem Rectangular chamber with a narrow opening in the left wall.
+    % Rectangular chamber with a narrow opening in the left wall.
     %
     % This model has zero deterministic velocity,
     %
@@ -9,23 +9,35 @@ classdef NarrowEscapeProblem < KinematicModel
     % gap of width `W` in the left wall. The problem is useful for testing
     % stochastic escape through a small opening.
     %
-    % Topic:
-    %   Models
+    % - Topic: Create the model
+    % - Topic: Inspect model parameters
+    % - Topic: Rebuild model geometry
+    % - Declaration: classdef NarrowEscapeProblem < KinematicModel
 
     properties
-        L = 10e3
         % Chamber length in meters.
+        %
+        % - Topic: Inspect model parameters
+        L = 10e3
 
-        delta = 1e3
         % Wall thickness in meters.
+        %
+        % - Topic: Inspect model parameters
+        delta = 1e3
 
-        W = 3e3
         % Opening width in meters.
+        %
+        % - Topic: Inspect model parameters
+        W = 3e3
     end
 
     methods
         function self = NarrowEscapeProblem()
-            % NarrowEscapeProblem Create the default narrow-escape geometry.
+            % Create the default narrow-escape geometry.
+            %
+            % - Topic: Create the model
+            % - Declaration: self = NarrowEscapeProblem()
+            % - Returns self: `NarrowEscapeProblem` instance
             self.xVisualLimits = 0.1 * (self.L + 2 * self.delta) * [-1 1] + [-self.delta self.L + self.delta];
             self.yVisualLimits = 0.1 * (self.L + 2 * self.delta) * [-1 1] + [-self.delta self.L + self.delta];
             self.visualScale = 1e3;

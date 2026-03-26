@@ -1,15 +1,14 @@
 function varargout = plotStreamfunction(self, t)
-% plotStreamfunction Plot streamfunction contours on the current axes.
+% Plot streamfunction contours on the current axes.
 %
-% Declaration:
-%   `plotStreamfunction(self)`
-%   `plotStreamfunction(self, t)`
+% The contour grid spans `xVisualLimits` and `yVisualLimits` and excludes
+% obstacle interiors when polygonal obstacles are present.
 %
-% Parameters:
-%   `t` - Scalar plotting time in seconds. The default is `0`.
-%
-% Returns:
-%   `X`, `Y` - Optional plotting grids in meters.
+% - Topic: Plot streamfunctions
+% - Declaration: plotStreamfunction(self,t)
+% - Parameter t: scalar plotting time in seconds; the default is `0`
+% - Returns X: optional x-grid in meters when two outputs are requested
+% - Returns Y: optional y-grid in meters when two outputs are requested
 arguments
     self (1,1) StreamfunctionModel
     t (1,1) double = 0

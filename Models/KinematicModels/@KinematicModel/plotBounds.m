@@ -1,11 +1,12 @@
 function plotBounds(self, varargin)
-% plotBounds Plot domain boundaries on the current axes.
+% Plot domain boundaries on the current axes.
 %
-% Declaration:
-%   `plotBounds(self, varargin)`
+% Finite rectangular domains are drawn as a closed box. Semi-infinite
+% domains with finite `ylim` are drawn as vertical boundary lines.
 %
-% Parameters:
-%   `varargin` - Forwarded line or rectangle styling arguments.
+% - Topic: Plot model diagnostics
+% - Declaration: plotBounds(self,varargin)
+% - Parameter varargin: forwarded line or rectangle styling arguments
 if all(~isinf(self.xlim)) && all(~isinf(self.ylim)) && ~self.isXPeriodic && ~self.isYPeriodic
     rectangle('Position', [min(self.xlim) min(self.ylim) max(self.xlim) - min(self.xlim) max(self.ylim) - min(self.ylim)] / self.visualScale, varargin{:});
 elseif all(~isinf(self.ylim)) && ~self.isYPeriodic

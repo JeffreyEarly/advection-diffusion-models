@@ -1,26 +1,19 @@
 function [t, x, y] = particleTrajectories(self, x0, y0, T, dt)
-% particleTrajectories Integrate particles from initial positions.
-%
-% Declaration:
-%   `[t, x, y] = particleTrajectories(self, x0, y0, T, dt)`
+% Integrate particles from initial positions.
 %
 % This method removes any initial positions that lie outside the model
 % domain or inside model obstacles before integrating. The trajectories are
 % sampled on the uniform output grid `0:dt:T`.
 %
-% Parameters:
-%   `x0`, `y0` - Initial particle positions in meters. These inputs may
-%   have any shape and are flattened into column vectors.
-%
-%   `T` - Total integration duration in seconds.
-%
-%   `dt` - Output time increment in seconds.
-%
-% Returns:
-%   `t` - Column vector of output times in seconds.
-%
-%   `x`, `y` - Particle positions in meters with shape
-%   `[length(t) nParticles]`.
+% - Topic: Integrate particle trajectories
+% - Declaration: [t, x, y] = particleTrajectories(self,x0,y0,T,dt)
+% - Parameter x0: initial x positions in meters; any input shape is flattened to a column vector
+% - Parameter y0: initial y positions in meters; any input shape is flattened to a column vector
+% - Parameter T: total integration duration in seconds
+% - Parameter dt: output time increment in seconds
+% - Returns t: column vector of output times in seconds
+% - Returns x: x positions in meters with shape `[length(t) nParticles]`
+% - Returns y: y positions in meters with shape `[length(t) nParticles]`
 arguments
     self (1,1) AdvectionDiffusionIntegrator
     x0 {mustBeNumeric}

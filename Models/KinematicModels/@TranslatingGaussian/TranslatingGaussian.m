@@ -1,5 +1,5 @@
 classdef TranslatingGaussian < StreamfunctionModel
-    % TranslatingGaussian Translating Gaussian eddy streamfunction.
+    % Translating Gaussian eddy streamfunction.
     %
     % The streamfunction is
     %
@@ -8,26 +8,41 @@ classdef TranslatingGaussian < StreamfunctionModel
     % which produces a translating Gaussian vortex with peak velocity scale
     % `U` and translation velocity `(cx, cy)`.
     %
-    % Topic:
-    %   Models
+    % - Topic: Create the model
+    % - Topic: Inspect model parameters
+    % - Topic: Evaluate the streamfunction
+    % - Topic: Evaluate the velocity field
+    % - Declaration: classdef TranslatingGaussian < StreamfunctionModel
 
     properties
-        L = 60e3
         % Eddy length scale in meters.
+        %
+        % - Topic: Inspect model parameters
+        L = 60e3
 
+        % Peak velocity scale in $$m s^-1$$.
+        %
+        % - Topic: Inspect model parameters
         U = 0.12
-        % Peak velocity scale in m s^-1.
 
+        % Translation speed in x in $$m s^-1$$.
+        %
+        % - Topic: Inspect model parameters
         cx = -0.0267
-        % Translation speed in x in m s^-1.
 
+        % Translation speed in y in $$m s^-1$$.
+        %
+        % - Topic: Inspect model parameters
         cy = 0
-        % Translation speed in y in m s^-1.
     end
 
     methods
         function self = TranslatingGaussian()
-            % TranslatingGaussian Create the default translating Gaussian model.
+            % Create the default translating Gaussian model.
+            %
+            % - Topic: Create the model
+            % - Declaration: self = TranslatingGaussian()
+            % - Returns self: `TranslatingGaussian` instance
             self.xVisualLimits = 3 * self.L * [-1 1];
             self.yVisualLimits = 3 * self.L * [-1 1];
             self.visualScale = 1e3;
@@ -35,21 +50,45 @@ classdef TranslatingGaussian < StreamfunctionModel
         end
 
         function psiValue = psi(self, t, x, y)
-            % psi Evaluate the Gaussian streamfunction.
+            % Evaluate the Gaussian streamfunction.
+            %
+            % The eddy center translates at the constant speed
+            % `[(cx) (cy)]`.
+            %
+            % - Topic: Evaluate the streamfunction
+            % - Declaration: psiValue = psi(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns psiValue: streamfunction values with the same shape as `x` and `y`
             r2 = (x - self.cx * t).^2 + (y - self.cy * t).^2;
             gaussian = exp(-r2 / (2 * self.L * self.L));
             psiValue = exp(0.5) * self.U * self.L * gaussian;
         end
 
         function uValue = u(self, t, x, y)
-            % u Evaluate the x-velocity component.
+            % Evaluate the x-velocity component.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: uValue = u(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x`
             r2 = (x - self.cx * t).^2 + (y - self.cy * t).^2;
             gaussian = exp(-r2 / (2 * self.L * self.L));
             uValue = exp(0.5) * self.U * ((y - self.cy * t) / self.L) .* gaussian;
         end
 
         function vValue = v(self, t, x, y)
-            % v Evaluate the y-velocity component.
+            % Evaluate the y-velocity component.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: vValue = v(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x`
             r2 = (x - self.cx * t).^2 + (y - self.cy * t).^2;
             gaussian = exp(-r2 / (2 * self.L * self.L));
             vValue = -exp(0.5) * self.U * ((x - self.cx * t) / self.L) .* gaussian;

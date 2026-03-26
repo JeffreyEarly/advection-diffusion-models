@@ -1,19 +1,20 @@
 function [Mxx, Myy, Mxy] = momentTensorEvolution(self, Mxx0, Myy0, Mxy0, t, kappa)
-% momentTensorEvolution Integrate the second-moment tensor for the linear model.
+% Evolve the second-moment tensor for the linear model.
 %
-% Declaration:
-%   `[Mxx, Myy, Mxy] = momentTensorEvolution(self, Mxx0, Myy0, Mxy0, t, kappa)`
+% The returned moments satisfy the matrix equation
+% $$\dot{M} = AM + MA^\top + 2\kappa I$$ for the affine velocity gradient
+% `A` defined by the model parameters.
 %
-% Parameters:
-%   `Mxx0`, `Myy0`, `Mxy0` - Initial moment tensor entries in m^2.
-%
-%   `t` - Time vector in seconds.
-%
-%   `kappa` - Scalar diffusivity in m^2 s^-1.
-%
-% Returns:
-%   `Mxx`, `Myy`, `Mxy` - Time-dependent moment tensor entries in m^2
-%   with the same shape as `t`.
+% - Topic: Analyze particle and moment evolution
+% - Declaration: [Mxx, Myy, Mxy] = momentTensorEvolution(self,Mxx0,Myy0,Mxy0,t,kappa)
+% - Parameter Mxx0: initial $$M_{xx}$$ entry in m^2
+% - Parameter Myy0: initial $$M_{yy}$$ entry in m^2
+% - Parameter Mxy0: initial $$M_{xy}$$ entry in m^2
+% - Parameter t: time vector in seconds
+% - Parameter kappa: scalar diffusivity in $$m^2 s^-1$$
+% - Returns Mxx: time-dependent $$M_{xx}$$ entry in m^2 with the same shape as `t`
+% - Returns Myy: time-dependent $$M_{yy}$$ entry in m^2 with the same shape as `t`
+% - Returns Mxy: time-dependent $$M_{xy}$$ entry in m^2 with the same shape as `t`
 arguments
     self (1,1) LinearVelocityField
     Mxx0 (1,1) double

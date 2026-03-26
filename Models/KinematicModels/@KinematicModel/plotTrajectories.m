@@ -1,14 +1,14 @@
 function plotTrajectories(self, x, y, varargin)
-% plotTrajectories Plot particle trajectories on the current axes.
+% Plot particle trajectories on the current axes.
 %
-% Declaration:
-%   `plotTrajectories(self, x, y, varargin)`
+% When `isXPeriodic` is true, trajectories are redrawn in wrapped copies
+% so the visible path remains continuous across the plotting window.
 %
-% Parameters:
-%   `x`, `y` - Trajectory arrays in meters with shape
-%   `[nTimes nParticles]`.
-%
-%   `varargin` - Forwarded line styling arguments.
+% - Topic: Plot model diagnostics
+% - Declaration: plotTrajectories(self,x,y,varargin)
+% - Parameter x: trajectory x positions in meters with shape `[nTimes nParticles]`
+% - Parameter y: trajectory y positions in meters with shape `[nTimes nParticles]`
+% - Parameter varargin: forwarded line styling arguments
 arguments
     self (1,1) KinematicModel
     x double

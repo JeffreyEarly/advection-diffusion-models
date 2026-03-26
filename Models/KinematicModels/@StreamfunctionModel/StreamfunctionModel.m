@@ -1,30 +1,28 @@
 classdef StreamfunctionModel < KinematicModel
-    % StreamfunctionModel Base class for incompressible two-dimensional streamfunction models.
+    % Base class for incompressible two-dimensional streamfunction models.
     %
-    % Streamfunction models define a scalar field $\psi(t,x,y)$ such that
+    % Streamfunction models define a scalar field $$\psi(t,x,y)$$ such that
     %
     % $$ u(t,x,y) = -\frac{\partial \psi}{\partial y}, \qquad v(t,x,y) = \frac{\partial \psi}{\partial x}. $$
     %
     % Subclasses implement `psi(self, t, x, y)` and inherit the common
     % streamfunction plotting helper.
     %
-    % Topic:
-    %   Models
+    % - Topic: Evaluate streamfunctions
+    % - Topic: Plot streamfunctions
+    % - Declaration: classdef StreamfunctionModel < KinematicModel
 
     methods (Abstract)
-        % psi Evaluate the streamfunction.
+        % Evaluate the streamfunction.
         %
-        % Declaration:
-        %   `psiValue = psi(self, t, x, y)`
+        % Output shape matches the input `x` and `y` arrays.
         %
-        % Parameters:
-        %   `t` - Scalar evaluation time in seconds.
-        %
-        %   `x`, `y` - Position arrays in meters.
-        %
-        % Returns:
-        %   `psiValue` - Streamfunction values with the same shape as the
-        %   input arrays.
+        % - Topic: Evaluate streamfunctions
+        % - Declaration: psiValue = psi(self,t,x,y)
+        % - Parameter t: scalar evaluation time in seconds
+        % - Parameter x: x-coordinate array in meters
+        % - Parameter y: y-coordinate array in meters
+        % - Returns psiValue: streamfunction values with the same shape as `x` and `y`
         psiValue = psi(self, t, x, y);
     end
 end

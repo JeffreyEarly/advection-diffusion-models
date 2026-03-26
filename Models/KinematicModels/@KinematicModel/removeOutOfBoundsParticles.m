@@ -1,12 +1,16 @@
 function [x0, y0] = removeOutOfBoundsParticles(self, x0, y0)
-% removeOutOfBoundsParticles Remove initial particles outside the valid domain.
-%
-% Declaration:
-%   `[x0, y0] = removeOutOfBoundsParticles(self, x0, y0)`
+% Remove initial particles outside the valid domain.
 %
 % Particles are removed when they lie outside `xlim` and `ylim` or inside
 % any polygonal obstacle. Periodic directions are wrapped before obstacle
 % intersection tests.
+%
+% - Topic: Work with particle domains
+% - Declaration: [x0, y0] = removeOutOfBoundsParticles(self,x0,y0)
+% - Parameter x0: column vector of initial x positions in meters
+% - Parameter y0: column vector of initial y positions in meters
+% - Returns x0: filtered column vector of x positions in meters
+% - Returns y0: filtered column vector of y positions in meters
 arguments
     self (1,1) KinematicModel
     x0 (:,1) double

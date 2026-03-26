@@ -1,5 +1,5 @@
 classdef LinearVelocityField < StreamfunctionModel
-    % LinearVelocityField Two-dimensional affine velocity field with analytical solutions.
+    % Two-dimensional affine velocity field with analytical solutions.
     %
     % This model defines the affine flow
     %
@@ -23,51 +23,77 @@ classdef LinearVelocityField < StreamfunctionModel
     %
     % $$ \dot{M} = AM + MA^\top + 2\kappa I. $$
     %
-    % Topic:
-    %   Models
+    % - Topic: Create the model
+    % - Topic: Inspect model parameters
+    % - Topic: Evaluate the velocity field
+    % - Topic: Evaluate the streamfunction
+    % - Topic: Analyze particle and moment evolution
+    % - Topic: Convert flow parameters
+    % - Declaration: classdef LinearVelocityField < StreamfunctionModel
 
     properties
+        % Strain magnitude in $$s^-1$$.
+        %
+        % Together with `theta`, this parameter determines `sigma_n` and
+        % `sigma_s`.
+        %
+        % - Topic: Inspect model parameters
         sigma (1,1) double = 0
-        % Strain magnitude in s^-1.
 
-        theta (1,1) double = 0
         % Strain orientation in radians.
+        %
+        % The angle enters through the doubled-angle relations for
+        % `sigma_n` and `sigma_s`.
+        %
+        % - Topic: Inspect model parameters
+        theta (1,1) double = 0
 
+        % Relative vorticity in $$s^-1$$.
+        %
+        % `zeta` controls the antisymmetric part of the affine velocity
+        % gradient.
+        %
+        % - Topic: Inspect model parameters
         zeta (1,1) double = 0
-        % Relative vorticity in s^-1.
 
+        % Uniform background x-velocity in $$m s^-1$$.
+        %
+        % - Topic: Inspect model parameters
         u0 (1,1) double = 0
-        % Uniform background x-velocity in m s^-1.
 
+        % Uniform background y-velocity in $$m s^-1$$.
+        %
+        % - Topic: Inspect model parameters
         v0 (1,1) double = 0
-        % Uniform background y-velocity in m s^-1.
     end
 
     properties (Dependent)
+        % Normal strain component $$\sigma_n = \sigma \cos(2\theta)$$.
+        %
+        % - Topic: Inspect model parameters
         sigma_n
-        % Normal strain component in s^-1.
 
+        % Shear strain component $$\sigma_s = \sigma \sin(2\theta)$$.
+        %
+        % - Topic: Inspect model parameters
         sigma_s
-        % Shear strain component in s^-1.
     end
 
     methods
         function self = LinearVelocityField(sigma, theta, zeta, varargin)
-            % LinearVelocityField Create a linear velocity field.
+            % Create a linear velocity field.
             %
-            % Declaration:
-            %   `self = LinearVelocityField(sigma, theta, zeta)`
-            %   `self = LinearVelocityField(sigma, theta, zeta, u0, v0)`
+            % Optional `u0` and `v0` specify a uniform background velocity
+            % and must be supplied together.
             %
-            % Parameters:
-            %   `sigma` - Strain magnitude in s^-1.
-            %
-            %   `theta` - Strain orientation in radians.
-            %
-            %   `zeta` - Relative vorticity in s^-1.
-            %
-            %   `u0`, `v0` - Optional uniform background velocity in
-            %   m s^-1. These must be supplied together.
+            % - Topic: Create the model
+            % - Declaration: self = LinearVelocityField(sigma,theta,zeta,u0,v0)
+            % - Parameter sigma: strain magnitude in $$s^-1$$
+            % - Parameter theta: strain orientation in radians
+            % - Parameter zeta: relative vorticity in $$s^-1$$
+            % - Parameter u0: optional uniform background x-velocity in $$m s^-1$$
+            % - Parameter v0: optional uniform background y-velocity in $$m s^-1$$
+            % - Returns self: `LinearVelocityField` instance
             validateattributes(sigma, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'sigma');
             validateattributes(theta, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'theta');
             validateattributes(zeta, {'numeric'}, {'real', 'finite', 'scalar'}, mfilename, 'zeta');
@@ -118,57 +144,84 @@ classdef LinearVelocityField < StreamfunctionModel
         end
 
         function psiValue = psi(self, t, x, y)
-            % psi Evaluate the quadratic streamfunction.
-            %
-            % Declaration:
-            %   `psiValue = psi(self, t, x, y)`
+            % Evaluate the quadratic streamfunction.
             %
             % The implemented streamfunction is
             %
             % $$ \psi = -u_0 y + v_0 x + \frac{1}{4}(\sigma_s + \zeta)x^2 - \frac{1}{2}\sigma_n xy - \frac{1}{4}(\sigma_s - \zeta)y^2. $$
+            %
+            % - Topic: Evaluate the streamfunction
+            % - Declaration: psiValue = psi(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns psiValue: streamfunction values with the same shape as `x` and `y`
             psiValue = -self.u0 * y + self.v0 * x + 0.25 * (self.sigma_s + self.zeta) * x .* x - 0.5 * self.sigma_n * x .* y - 0.25 * (self.sigma_s - self.zeta) * y .* y;
         end
 
         function uValue = u(self, t, x, y)
-            % u Evaluate the affine x-velocity.
-            %
-            % Declaration:
-            %   `uValue = u(self, t, x, y)`
+            % Evaluate the affine x-velocity.
             %
             % The implemented velocity component is
             %
             % $$ u = u_0 + \frac{1}{2}\left(\sigma_n x + (\sigma_s - \zeta)y\right). $$
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: uValue = u(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns uValue: x-velocity in $$m s^-1$$ with the same shape as `x` and `y`
             uValue = self.u0 + 0.5 * (self.sigma_n * x + (self.sigma_s - self.zeta) * y);
         end
 
         function vValue = v(self, t, x, y)
-            % v Evaluate the affine y-velocity.
-            %
-            % Declaration:
-            %   `vValue = v(self, t, x, y)`
+            % Evaluate the affine y-velocity.
             %
             % The implemented velocity component is
             %
             % $$ v = v_0 + \frac{1}{2}\left((\sigma_s + \zeta)x - \sigma_n y\right). $$
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: vValue = v(self,t,x,y)
+            % - Parameter t: scalar evaluation time in seconds
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns vValue: y-velocity in $$m s^-1$$ with the same shape as `x` and `y`
             vValue = self.v0 + 0.5 * ((self.sigma_s + self.zeta) * x - self.sigma_n * y);
         end
     end
 
     methods (Static)
         function [sigma_n, sigma_s] = normalAndShearFromSigmaTheta(sigma, theta)
-            % normalAndShearFromSigmaTheta Convert strain magnitude and orientation to components.
+            % Convert strain magnitude and orientation to strain components.
             %
-            % Declaration:
-            %   `[sigma_n, sigma_s] = normalAndShearFromSigmaTheta(sigma, theta)`
+            % This helper evaluates $$\sigma_n = \sigma \cos(2\theta)$$ and
+            % $$\sigma_s = \sigma \sin(2\theta)$$.
+            %
+            % - Topic: Convert flow parameters
+            % - Declaration: [sigma_n, sigma_s] = normalAndShearFromSigmaTheta(sigma,theta)
+            % - Parameter sigma: strain magnitude in $$s^-1$$
+            % - Parameter theta: strain orientation in radians
+            % - Returns sigma_n: normal strain component in $$s^-1$$
+            % - Returns sigma_s: shear strain component in $$s^-1$$
             sigma_n = sigma * cos(2 * theta);
             sigma_s = sigma * sin(2 * theta);
         end
 
         function [sigma, theta] = sigmaThetaFromNormalAndShear(sigma_n, sigma_s)
-            % sigmaThetaFromNormalAndShear Convert normal and shear strain to magnitude and orientation.
+            % Convert normal and shear strain to magnitude and orientation.
             %
-            % Declaration:
-            %   `[sigma, theta] = sigmaThetaFromNormalAndShear(sigma_n, sigma_s)`
+            % This helper inverts the relations
+            % $$\sigma_n = \sigma \cos(2\theta)$$ and
+            % $$\sigma_s = \sigma \sin(2\theta)$$.
+            %
+            % - Topic: Convert flow parameters
+            % - Declaration: [sigma, theta] = sigmaThetaFromNormalAndShear(sigma_n,sigma_s)
+            % - Parameter sigma_n: normal strain component in $$s^-1$$
+            % - Parameter sigma_s: shear strain component in $$s^-1$$
+            % - Returns sigma: strain magnitude in $$s^-1$$
+            % - Returns theta: strain orientation in radians
             sigma = sqrt(sigma_n .* sigma_n + sigma_s .* sigma_s);
             theta = atan2(sigma_s, sigma_n) / 2;
         end

@@ -1,23 +1,20 @@
 function [x, y] = particlePath(self, x0, y0, t, kappa, u_0, v_0)
-% particlePath Integrate the linear velocity field with an Euler-Maruyama random walk term.
+% Evaluate the analytical particle trajectory solution.
 %
-% Declaration:
-%   `[x, y] = particlePath(self, x0, y0, t, kappa, u_0, v_0)`
+% Initial particle positions are normalized to row vectors, and the output
+% time vector is normalized to a column vector before the analytical
+% update is applied.
 %
-% Parameters:
-%   `x0`, `y0` - Initial particle positions in meters. These inputs may be
-%   vectors for multiple particles and are normalized to row vectors.
-%
-%   `t` - Output time vector in seconds with shape `[nTimes 1]` or
-%   `[1 nTimes]`.
-%
-%   `kappa` - Scalar diffusivity in m^2 s^-1.
-%
-%   `u_0`, `v_0` - Background velocities in m s^-1 used by the analytical
-%   formulas.
-%
-% Returns:
-%   `x`, `y` - Position arrays in meters with shape `[length(t) nParticles]`.
+% - Topic: Analyze particle and moment evolution
+% - Declaration: [x, y] = particlePath(self,x0,y0,t,kappa,u_0,v_0)
+% - Parameter x0: initial x positions in meters
+% - Parameter y0: initial y positions in meters
+% - Parameter t: output time vector in seconds
+% - Parameter kappa: scalar diffusivity in $$m^2 s^-1$$
+% - Parameter u_0: background x-velocity in $$m s^-1$$ used by the analytical formulas
+% - Parameter v_0: background y-velocity in $$m s^-1$$ used by the analytical formulas
+% - Returns x: x positions in meters with shape `[length(t) nParticles]`
+% - Returns y: y positions in meters with shape `[length(t) nParticles]`
 arguments
     self (1,1) LinearVelocityField
     x0 {mustBeNumeric}

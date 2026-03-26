@@ -1,20 +1,16 @@
 function varargout = plotVelocityField(self, options)
-% plotVelocityField Plot the model velocity field with quivers.
+% Plot the model velocity field with quivers.
 %
-% Declaration:
-%   `plotVelocityField(self)`
-%   `plotVelocityField(self, t=..., quiverScale=..., numPoints=...)`
+% The plotting grid uses `2*numPoints` points in x and `numPoints` points
+% in y to preserve the typical wide aspect ratio.
 %
-% Parameters:
-%   `t` - Scalar time in seconds.
-%
-%   `quiverScale` - Scale factor forwarded to `quiver`.
-%
-%   `numPoints` - Number of points in the y-direction. The x-direction
-%   uses `2*numPoints` to preserve the typical wide aspect ratio.
-%
-% Returns:
-%   `X`, `Y` - Optional plotting grids in meters.
+% - Topic: Plot model diagnostics
+% - Declaration: plotVelocityField(self,options)
+% - Parameter options.t: scalar plotting time in seconds
+% - Parameter options.quiverScale: scale factor forwarded to `quiver`
+% - Parameter options.numPoints: number of points in the y-direction
+% - Returns X: optional x-grid in meters when two outputs are requested
+% - Returns Y: optional y-grid in meters when two outputs are requested
 arguments
     self (1,1) KinematicModel
     options.t (1,1) double = 0
