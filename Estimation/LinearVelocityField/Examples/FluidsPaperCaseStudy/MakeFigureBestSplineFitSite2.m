@@ -1,15 +1,19 @@
+scriptDir = fileparts(mfilename('fullpath'));
+sourceDataDir = fullfile(scriptDir,'SourceData');
+bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
+
 % Load our giant list of possible paths.
 SiteNumber=2;
-dof = 1;
+dof = 4;
 totalPermutations = 1000;
 shouldSaveFigures = 0;
 
-load(sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber));
-load(sprintf('BootstrapData/Rho%dDrifterSplineFits%d_dof%d-nou1v1.mat',SiteNumber,totalPermutations,dof));
-% load(sprintf('BootstrapData/Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof));
+load(fullfile(sourceDataDir,sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber)));
+% load(fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d-nou1v1.mat',SiteNumber,totalPermutations,dof)));
+load(fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof)));
 
 scaleFactor = 1;
-LoadFigureDefaults
+run(fullfile(scriptDir,'LoadFigureDefaults.m'));
 
 f0 = 2 * 7.2921E-5 * sin( lat0*pi/180. );
 x = x(:,1:(end-1));
@@ -33,7 +37,7 @@ meanColor = [0 0 1];
 fixedColor = [1 0 0];
 meanLineWidth = 2.0;
 
-iModel = 3;
+iModel = 5;
 
 % Values from COM estimates, fit to the entire dataset
 sigmaFixed = 0.0642*f0;
@@ -171,7 +175,7 @@ sp4.Position = [p(1) p(2)+0.4*p(4) p(3) 0.6*p(4)];
 tightfig
 
 if shouldSaveFigures == 1
-    print('Site2Parameters.eps','-depsc2');
+    print(fullfile(scriptDir,'Site2Parameters.eps'),'-depsc2');
 end
 
 
@@ -237,7 +241,7 @@ sp1.XLabel.FontSize = figure_axis_label_size;
 sp1.YLabel.FontSize = figure_axis_label_size;
 
 if shouldSaveFigures == 1
-    print('Site2DecompFigA.eps','-depsc2');
+    print(fullfile(scriptDir,'Site2DecompFigA.eps'),'-depsc2');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -260,7 +264,7 @@ sp1.XLabel.FontSize = figure_axis_label_size;
 sp1.YLabel.FontSize = figure_axis_label_size;
 
 if shouldSaveFigures == 1
-    print('Site2DecompFigC.eps','-depsc2');
+    print(fullfile(scriptDir,'Site2DecompFigC.eps'),'-depsc2');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -314,6 +318,5 @@ sp3.XLabel.FontSize = figure_axis_label_size;
 sp3.YLabel.FontSize = figure_axis_label_size;
 
 if shouldSaveFigures == 1
-    print('Site2DecompFigB.eps','-depsc2');
+    print(fullfile(scriptDir,'Site2DecompFigB.eps'),'-depsc2');
 end
-

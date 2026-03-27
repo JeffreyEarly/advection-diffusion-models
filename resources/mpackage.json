@@ -26,7 +26,43 @@
             ]
         },
         {
+            "path": "Estimation/LinearVelocityField/DensityEstimation",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/Examples/FluidsPaperCaseStudy",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
             "path": "Estimation/LinearVelocityField/SecondMomentMethod",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Ellipses",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/UnitTests",
             "languages": [
                 "matlab"
             ]
@@ -69,12 +105,6 @@
         },
         {
             "path": "Models/UnitTests",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Ellipses",
             "languages": [
                 "matlab"
             ]

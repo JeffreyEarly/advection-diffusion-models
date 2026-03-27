@@ -1,5 +1,9 @@
+scriptDir = fileparts(mfilename('fullpath'));
+sourceDataDir = fullfile(scriptDir,'SourceData');
+bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
+
 SiteNumber=1;
-load(sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber));
+load(fullfile(sourceDataDir,sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber)));
 % The last drifter at both sites is only partial time series.
 x = x(:,1:(end-1));
 y = y(:,1:(end-1));
@@ -8,9 +12,8 @@ nT = size(x,1);
 
 shouldFitToSecondMomentOnly = 0;
 
-FramesFolder = './BootstrapData';
-if exist(FramesFolder,'dir') == 0
-	mkdir(FramesFolder);
+if exist(bootstrapDataDir,'dir') == 0
+	mkdir(bootstrapDataDir);
 end
 
 % How many bootstrap combinations?
@@ -19,10 +22,10 @@ totalPermutations = 1000;
 for dof = 1:6
     
     if shouldFitToSecondMomentOnly == 1
-        filename = sprintf('BootstrapData/Rho%dDrifterSpline2ndMomFits%d_dof%d.mat',SiteNumber,totalPermutations,dof);
+        filename = fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSpline2ndMomFits%d_dof%d.mat',SiteNumber,totalPermutations,dof));
         u0v0 = [];
     else
-        filename = sprintf('BootstrapData/Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof);
+        filename = fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof));
         u0v0 = ModelParameter.u0v0;
     end
     % Pre-allocate our arrays

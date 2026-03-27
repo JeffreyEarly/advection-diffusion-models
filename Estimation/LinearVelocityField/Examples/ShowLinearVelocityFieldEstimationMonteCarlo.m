@@ -1,12 +1,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% 1. Generate particles in a linear velocity field
-% 2. Fit estimate the linear velocity field parameters
-% 3. Plot the estimates for a range of ensembles
+% Show direct linear velocity field estimation across Monte Carlo trials.
+%
+% This example generates synthetic trajectories for several strain-only and
+% strain-plus-vorticity cases, estimates the direct linear velocity field
+% parameters, and plots the recovered parameter distributions.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 nModels = 3;
+referenceLineColor = [0 0 0];
+referenceLineWidth = 2;
 
 for iModel = 1:nModels
     if iModel == 1
@@ -65,6 +69,8 @@ for iModel = 1:nModels
         zeta = zetaValues(iParameter);
         kappa = kappaValues(iParameter);
         theta = thetaValues(iParameter);
+        plainFigureName = sprintf('%s | case %d of %d', modelName, iParameter, nParameters);
+        latexFigureTitle = sprintf('%s, case %d of %d, $\\kappa = %s$, $\\sigma = %s$, $\\theta = %s$, $\\zeta = %s$', modelName, iParameter, nParameters, latexScalar(kappa), latexScalar(sigma), latexAngleDegrees(theta*180/pi), latexScalar(zeta));
         u0 = 0;
         v0 = 0;
         velocityField = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
@@ -110,7 +116,7 @@ for iModel = 1:nModels
         data = cat(2,sigma_nEst,sigma_sEst);
         [bandwidth,density,X,Y]=kde2d(data);
         
-        figure('Position', [50 50 900 400])
+        figure('Name', plainFigureName, 'NumberTitle', 'off', 'Position', [50 50 900 400])
         subplot(2,4,[1 2 5 6])
         contourf(X,Y,density);
         hold on
@@ -121,8 +127,8 @@ for iModel = 1:nModels
         scatter(sigma*cos(2*theta), sigma*sin(2*theta), 20^2, 1*[1 1 1],'LineWidth',5);
         scatter(sigma*cos(2*theta), sigma*sin(2*theta), 20^2, 0*[1 1 1],'LineWidth',3);
         axis equal
-        xlabel('$\sigma_n$')
-        ylabel('$\sigma_s$')
+        xlabel('$\sigma_n$','Interpreter','latex')
+        ylabel('$\sigma_s$','Interpreter','latex')
         
         % make the zeros be white
         cmap = colormap;
@@ -131,22 +137,55 @@ for iModel = 1:nModels
         
         subplot(2,4,3)
         histogram(u0Est,'Normalization','pdf')
-        vlines(u0,'k--')
-        title('$u_0$')
+        xline(u0, 'Color', referenceLineColor, 'LineStyle', '--', 'LineWidth', referenceLineWidth)
+        title('$u_0$','Interpreter','latex')
         
         subplot(2,4,4)
         histogram(v0Est,'Normalization','pdf')
-        vlines(v0,'k--')
-        title('$v_0$')
+        xline(v0, 'Color', referenceLineColor, 'LineStyle', '--', 'LineWidth', referenceLineWidth)
+        title('$v_0$','Interpreter','latex')
         
         subplot(2,4,7)
         histogram(zetaEst,'Normalization','pdf')
-        vlines(zeta,'k--')
-        title('$\zeta$')
+        xline(zeta, 'Color', referenceLineColor, 'LineStyle', '--', 'LineWidth', referenceLineWidth)
+        title('$\zeta$','Interpreter','latex')
         
         subplot(2,4,8)
         histogram(kappaEst,'Normalization','pdf')
-        vlines(kappa,'k--')
-        title('$\kappa$')
+        xline(kappa, 'Color', referenceLineColor, 'LineStyle', '--', 'LineWidth', referenceLineWidth)
+        title('$\kappa$','Interpreter','latex')
+
+        sgtitle(latexFigureTitle,'Interpreter','latex')
     end
+end
+
+function valueString = latexScalar(value)
+if value == 0
+    valueString = '0';
+    return
+end
+
+if abs(value) >= 1e-2 && abs(value) < 1e2
+    valueString = sprintf('%.2g', value);
+    return
+end
+
+exponent = floor(log10(abs(value)));
+mantissa = value/10^exponent;
+
+if abs(mantissa - round(mantissa)) < 1e-12
+    mantissaString = sprintf('%d', round(mantissa));
+else
+    mantissaString = sprintf('%.2g', mantissa);
+end
+
+valueString = sprintf('%s \\times 10^{%d}', mantissaString, exponent);
+end
+
+function angleString = latexAngleDegrees(angleDegrees)
+if abs(angleDegrees - round(angleDegrees)) < 1e-12
+    angleString = sprintf('%d^\\circ', round(angleDegrees));
+else
+    angleString = sprintf('%.1f^\\circ', angleDegrees);
+end
 end

@@ -1,6 +1,10 @@
+scriptDir = fileparts(mfilename('fullpath'));
+sourceDataDir = fullfile(scriptDir,'SourceData');
+bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
+
 % AMS figure widths, given in picas, converted to points (1 pica=12 points)
 scaleFactor = 1;
-LoadFigureDefaults
+run(fullfile(scriptDir,'LoadFigureDefaults.m'));
 
 figure('Units', 'points', 'Position', [50 50 figure_width_1col+22 250*scaleFactor])
 set(gcf,'PaperPositionMode','auto')
@@ -18,12 +22,12 @@ for Site=1:2
         ylimit = [2e-2 5e4];
     end
     
-    load(sprintf('smoothedGriddedRho%dDrifters.mat',Site));
+    load(fullfile(sourceDataDir,sprintf('smoothedGriddedRho%dDrifters.mat',Site)));
     % The last drifter at both sites is only partial time series.
     x = x(:,1:(end-1));
     y = y(:,1:(end-1));
 
-    filename = sprintf('BootstrapData/Rho%dDrifterSplineFits1000_dof%d.mat',Site,dof);
+    filename = fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits1000_dof%d.mat',Site,dof));
     load(filename);
     [~,mostLikelyIndices] = sort(bootstraps{iModel}.jointlikelihood,'descend');
     p = bootstraps{iModel};
@@ -95,4 +99,4 @@ for Site=1:2
 end
 
 packfig(2,1)
-print('-depsc', 'site1and2_decomposed_spectra.eps')
+print('-depsc', fullfile(scriptDir,'site1and2_decomposed_spectra.eps'))

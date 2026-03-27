@@ -6,6 +6,7 @@ This directory contains tools for estimating the flow field of the advection-dif
 ### Table of contents
 1. [Overview](#overview)
 1. [Least squares fits](#least-squares-fits)
+1. [Density estimation support](#density-estimation-support)
 1. [Second moment fits](#second-moment-fits)
 
 
@@ -15,6 +16,13 @@ Overview
 -----------
 
 Both estimation methods estimate linear velocity field parameters such as  strain rate, vorticity, and divergence from a cluster of drifters. The `ModelParameter` class contains a list of these (and other) parameters that can be estimated from the drifters.
+
+The package is organized into four buckets:
+
+1. core direct-estimator APIs in the `LinearVelocityField` root
+2. shared density-estimation helpers in [DensityEstimation](DensityEstimation)
+3. curated runnable scripts in [Examples](Examples), including the premier worked example in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy)
+4. second-moment estimation tools in [SecondMomentMethod](SecondMomentMethod)
 
 The simplest example of how this works is to either a) generate trajectories using the [advection-diffusion models](../../AdvectionDiffusionModels), or b) use your own trajectories and then use those trajectories to estimate parameters.
 
@@ -43,12 +51,12 @@ parametersToEstimate = [ModelParameter.strain];
 parameterEstimates = EstimateLinearVelocityFieldParameters( x, y, t, parametersToEstimate );
 ```
 
-The structure `parameterEstimates` now contains values for `sigma_n` and `sigma_s` which, hopefully, give you back something close to what you put in.
+The structure `parameterEstimates` now contains values for `sigma_n` and `sigma_s` which, hopefully, give you back something close to what you put in. For a runnable script version of this workflow, see [Examples/ShowBasicLinearVelocityFieldEstimation.m](Examples/ShowBasicLinearVelocityFieldEstimation.m).
 
 Recommended approach for least squares fits
 ------------
 
-To reproduce the results from the Latmix Site 1 drifter fits, try the following approach using the code in the folder `AdvectionDiffusionEstimation/LinearVelocityField/FluidsPaperFigures/`. The data is found in `AdvectionDiffusionEstimation/Fluid Paper Code`.
+To reproduce the results from the Latmix drifter fits, use the scripts in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy). These scripts expect local source-data `.mat` files under `Examples/FluidsPaperCaseStudy/SourceData/`, write bootstrap outputs into `BootstrapData/`, and write movie outputs into `Movies/`.
 
 1. Run `GenerateBootstrapFits.m`, which will read the `smoothedGriddedRho1Drifters.mat` file and then perform estimation of all the models, with 1000 different drifter permutations, with time variation from 1 to 6 degrees-of-freedom. The data will be stored in 6 different `.mat` files in the BootstrapData folder. Note that the velocity is computed from the positions with a second-order finite difference matrix, i.e., line 80 in `EstimateLinearVelocityFieldParametersBSpline.m` calls `D = FiniteDifferenceMatrix(1,t,1,1,2);`.
 
@@ -62,7 +70,7 @@ To reproduce the results from the Latmix Site 1 drifter fits, try the following 
 ...
 [u_meso,v_meso,u_bg,v_bg,u_sm,v_sm,dmxdt,dmydt] = DecomposeTrajectories(x, y, t, parameterEstimates);
 ```
-which is done in, e.g., the script `MakeFigureBestSplineFitSite1.m` or `Website/MakeSite1DecompositionMovie`.
+which is done in, for example, [Examples/FluidsPaperCaseStudy/MakeFigureBestSplineFitSite1.m](Examples/FluidsPaperCaseStudy/MakeFigureBestSplineFitSite1.m) or [Examples/FluidsPaperCaseStudy/MakeSite1DecompositionMovie.m](Examples/FluidsPaperCaseStudy/MakeSite1DecompositionMovie.m).
 
 
 
@@ -77,7 +85,7 @@ This function estimates linear velocity field parameters strain, vorticity and d
 
 The degrees-of-freedom (dof) can optionally be given in order to set how many degrees-of-freedom each parameter is allowed to have. Anything above 1 will generate a B-spline basis to allow for time variation in the parameter estimates, which will then call `EstimateLinearVelocityFieldParametersBSplines`.
 
-The unit test [EstimateLinearVelocityFieldParametersUnitTest](UnitTests/EstimateLinearVelocityFieldParametersUnitTest.m) demonstrates the estimation procedure on a range of different parameters.
+The example [ShowLinearVelocityFieldEstimationMonteCarlo.m](Examples/ShowLinearVelocityFieldEstimationMonteCarlo.m) demonstrates the estimation procedure on a range of different parameters. Formal automated coverage lives in [UnitTests/LinearVelocityFieldEstimationUnitTests.m](UnitTests/LinearVelocityFieldEstimationUnitTests.m).
 
 ### [EstimateLinearVelocityFieldParametersBSplines.m](EstimateLinearVelocityFieldParametersBSplines.m)
 
@@ -87,7 +95,7 @@ This is a more primative function than `EstimateLinearVelocityFieldParameters`, 
 
 Given a Lagrangian trajectories and a set of parameter estimates, this will decompose the velocity time series of each trajectory into background, mesoscale, and submesoscale parts, following the approach in the manuscript.
 
-The unit test [EstimateLinearVelocityFieldParametersUnitTest](UnitTests/EstimateLinearVelocityFieldParametersUnitTest.m) demonstrates how estimated parameters can be used to decompose the signal, and then estimate submesoscale diffusivity.
+The example [ShowLinearVelocityFieldEstimationMonteCarlo.m](Examples/ShowLinearVelocityFieldEstimationMonteCarlo.m) demonstrates how estimated parameters can be used to decompose the signal, and then estimate submesoscale diffusivity.
 
 ### [EstimateSolutionLikelihoodFromBootstraps.m](EstimateSolutionLikelihoodFromBootstraps.m)
 
@@ -95,10 +103,15 @@ Given a struct of bootstrap estimates, this will construct PDFs from the estimat
 
 
 
+Density estimation support
+------------
+
+The helper functions [DensityEstimation/kde.m](DensityEstimation/kde.m), [DensityEstimation/kde2d.m](DensityEstimation/kde2d.m), and [DensityEstimation/DensityLevelForCDF.m](DensityEstimation/DensityLevelForCDF.m) provide the shared density-estimation and contour-level support used by bootstrap likelihood scoring and example visualizations.
+
 Second moment fits
 ------------
 
-The following scripts are all related to using the second moment solutions to estimate strain rate, vorticity, and diffusivity.
+The following scripts are all related to using the second moment solutions to estimate strain rate, vorticity, and diffusivity. Curated examples live in [SecondMomentMethod/Examples](SecondMomentMethod/Examples), and deterministic automated coverage lives in [SecondMomentMethod/UnitTests/SecondMomentMethodUnitTests.m](SecondMomentMethod/UnitTests/SecondMomentMethodUnitTests.m).
 
 ### MomentTensorEvolutionInStrainVorticityField.m
 
@@ -125,17 +138,16 @@ Very lightweight script that simply wraps around FitSecondMomentToEllipseModel.m
 
 Essentially the same as FitTrajectoriesToEllipseModel.m, but performs the fits using N-1 drifter combinations..
 
+The example [CompareJackknifeEllipseFits.m](SecondMomentMethod/Examples/CompareJackknifeEllipseFits.m) compares the standard and jackknife fits on repeated synthetic trajectory ensembles.
+
+### FitSecondMomentToLinearizedEllipseModel.m and FitTrajectoriesToLinearizedEllipseModel.m
+
+These functions provide a linearized second-moment recovery path for strain-diffusive trajectories.
+
+The example [ShowLinearizedEllipseFitRecovery.m](SecondMomentMethod/Examples/ShowLinearizedEllipseFitRecovery.m) demonstrates this workflow.
+
 ### MomentTensorModelErrorForBSplines.m and FitSecondMomentToTimeVaryingEllipseModel.m
 
 Attempts to the use B-splines to allow for slowy varying fit parameters. While it does work, it doesn't work well. The primary problem seems to be finding the minimum with fminsearch. Overall, I suspect this just isn't a good approach.
 
-
-
-
-
-```matlab
-
-jet = MeanderingJet();
-```
-
-
+This path remains experimental, so there is no longer a curated example script for it.

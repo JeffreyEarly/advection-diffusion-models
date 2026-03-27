@@ -1,8 +1,8 @@
 scriptDir = fileparts(mfilename("fullpath"));
 
-SiteNumber = 1;
+SiteNumber = 2;
 dof = 4;
-iModel = 3;
+iModel = 5;
 bootstrapCount = 1000;
 tailLength = 12;
 distanceScale = 1000;
@@ -13,13 +13,13 @@ if exist(movieDir, "dir") == 0
     mkdir(movieDir);
 end
 
-moviePath = fullfile(movieDir, "Site1Movie.mp4");
+moviePath = fullfile(movieDir, "Site2Movie.mp4");
 videoWriter = VideoWriter(moviePath, "MPEG-4");
 videoWriter.FrameRate = 24;
 videoWriter.Quality = 100;
 open(videoWriter);
 
-load(fullfile(scriptDir, sprintf("smoothedGriddedRho%dDrifters.mat", SiteNumber)));
+load(fullfile(scriptDir, "SourceData", sprintf("smoothedGriddedRho%dDrifters.mat", SiteNumber)));
 x = x(:, 1:end-1);
 y = y(:, 1:end-1);
 
@@ -48,6 +48,11 @@ dy = y - y_camera;
 cameraXLimits = 1.1 * [min(dx(:)) max(dx(:))];
 cameraYLimits = 1.1 * [min(dy(:)) max(dy(:))];
 
+dt = t(2)-t(1);
+u_camera = gradient(x_camera, dt);
+v_camera = gradient(y_camera, dt);
+speed_camera = hypot(u_camera, v_camera);
+
 figureHandle = figure('Units', 'points', 'Position', figurePosition, 'Color', 'w');
 
 for iTime = 1:length(t)
@@ -65,8 +70,10 @@ for iTime = 1:length(t)
     sp1.YGrid = 'on';
     sp1.XMinorGrid = 'on';
     sp1.YMinorGrid = 'on';
-    xlim(sp1, [-2.5 20]);
-    ylim(sp1, [-2.5 37.5]);
+    sp1.XTick = -25:20:125;
+    sp1.YTick = 0:20:230;
+    xlim(sp1, [-30 130]);
+    ylim(sp1, [-5 230]);
 
     sp2 = subplot(1, 2, 2);
     hold(sp2, 'on');
@@ -77,27 +84,30 @@ for iTime = 1:length(t)
     axis(sp2, 'equal');
     xlim(sp2, (x_camera(iTime)+cameraXLimits)/distanceScale);
     ylim(sp2, (y_camera(iTime)+cameraYLimits)/distanceScale);
+    sp2.Box = 'on';
     sp2.XGrid = 'on';
     sp2.YGrid = 'on';
     sp2.XMinorGrid = 'on';
     sp2.YMinorGrid = 'on';
     sp2.GridAlpha = 0.5;
     sp2.MinorGridAlpha = 0.5;
-    sp2.XTick = -5:5:25;
-    sp2.YTick = 0:5:35;
+    sp2.XTick = -25:5:125;
+    sp2.YTick = -25:5:225;
     sp2.XTickLabel = [];
     sp2.YTickLabel = [];
-    title(sp2, sprintf('LatMix 2011 Site 1 Day %d at %2d:%02d', floor(t(iTime)/86400), floor(mod(t(iTime)/3600, 24)), floor(mod(t(iTime)/60, 60))), 'FontSize', 24, 'FontName', 'Helvetica');
+    title(sp2, sprintf('LatMix 2011 Site 2 Day %d at %2d:%02d', floor(t(iTime)/86400), floor(mod(t(iTime)/3600, 24)), floor(mod(t(iTime)/60, 60))), 'FontSize', 21, 'FontName', 'Helvetica');
 
-    b = 0.05;
+    sp1.Position = [0.07 0.04 0.38 0.93];
     p1 = sp1.Position;
-    sp1.Position = [b/2 b p1(3) 1-2*b];
-    p1 = sp1.Position;
-    sp2.Position = [p1(1)+p1(3) p1(2) 1-p1(3)-b 1-2*b];
+    sp2.Position = [0.5 0.03 0.38 0.9];
 
-    banner = annotation('textarrow', [p1(1)+p1(3) b], [0.075 b], 'String', {' Separating Mesoscale and Submesoscale Flows from Clustered Drifter Trajectories.', 'Oscroft, Sykulski, & Early (2021)'}, 'HeadStyle', 'none', 'LineStyle', 'none', 'TextRotation', 0);
-    banner.FontSize = 16;
-    banner.FontName = 'Times';
+    banner = annotation('textarrow', 0.96*[1 1], [1 1], 'String', {' Separating Mesoscale and Submesoscale Flows from Clustered Drifter Trajectories.', 'Oscroft, Sykulski, & Early (2021)'}, 'HeadStyle', 'none', 'LineStyle', 'none', 'TextRotation', 90);
+    banner.FontSize = 14;
+    banner.FontName = 'Helvetica';
+
+    speedLabel = annotation('textarrow', 0.85*[1 1], 0.9*[1 1], 'String', sprintf('%.1f cm/s', speed_camera(iTime)*100), 'HeadStyle', 'none', 'LineStyle', 'none', 'TextRotation', 0);
+    speedLabel.FontSize = 18;
+    speedLabel.FontName = 'Helvetica';
 
     drawnow;
     writeVideo(videoWriter, getframe(figureHandle));

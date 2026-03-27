@@ -1,4 +1,4 @@
-% Use these parameters to generate a few synthetic trajectories.
+% Show the direct estimator on synthetic strain-only trajectories.
 sigma = 8e-6;
 theta = 30*pi/180;
 zeta = 0;
@@ -19,3 +19,5 @@ dt = 4*3600;
 % And then try to estimate the parameters 
 parametersToEstimate = [ModelParameter.strain];
 parameterEstimates = EstimateLinearVelocityFieldParameters( x, y, t, parametersToEstimate );
+
+disp(parameterEstimates)

@@ -1,9 +1,14 @@
+scriptDir = fileparts(mfilename('fullpath'));
+sourceDataDir = fullfile(scriptDir,'SourceData');
+bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
+
 % Load our giant list of possible paths.
-K = 4;
 dof = 4;
 totalPermutations = 1000;
 shouldSaveFigures = 0;
 
+scaleFactor = 1;
+run(fullfile(scriptDir,'LoadFigureDefaults.m'));
 
 figure('Units', 'points', 'Position', [50 50 figure_width_1col 175*scaleFactor])
 set(gcf,'PaperPositionMode','auto')
@@ -11,11 +16,8 @@ set(gcf, 'Color', 'w');
 
 for SiteNumber = 1:2
 
-    load(sprintf('../observations/smoothedGriddedRho%dDrifters.mat',SiteNumber));
-    load(sprintf('Rho%dDrifterSplineFits%d_K%d_dof%d.mat',SiteNumber,totalPermutations,K,dof));
-    
-    scaleFactor = 1;
-    LoadFigureDefaults
+    load(fullfile(sourceDataDir,sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber)));
+    load(fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof)));
     
     f0 = 2 * 7.2921E-5 * sin( lat0*pi/180. );
     x = x(:,1:(end-1));
@@ -113,5 +115,5 @@ end
 legend('Site 1', 'Site 2')
 
 if shouldSaveFigures == 1
-    print('CoherenceSite1Site2.eps','-depsc2');
+    print(fullfile(scriptDir,'CoherenceSite1Site2.eps'),'-depsc2');
 end

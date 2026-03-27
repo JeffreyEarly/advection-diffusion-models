@@ -1,3 +1,7 @@
+scriptDir = fileparts(mfilename('fullpath'));
+sourceDataDir = fullfile(scriptDir,'SourceData');
+bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
+
 % Load our giant list of possible paths.
 SiteNumber=1;
 K = 4;
@@ -5,11 +9,11 @@ dof = 4;
 totalPermutations = 1000;
 shouldSaveFigures = 0;
 
-load(sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber));
-load(sprintf('BootstrapData/Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof));
+load(fullfile(sourceDataDir,sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber)));
+load(fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof)));
 
 scaleFactor = 1;
-LoadFigureDefaults
+run(fullfile(scriptDir,'LoadFigureDefaults.m'));
 
 f0 = 2 * 7.2921E-5 * sin( lat0*pi/180. );
 x = x(:,1:(end-1));
@@ -141,7 +145,7 @@ sp4.Position = [p(1) p(2)+0.4*p(4) p(3) 0.6*p(4)];
 tightfig
 
 if shouldSaveFigures == 1
-    print('Site1Parameters.eps','-depsc2');
+    print(fullfile(scriptDir,'Site1Parameters.eps'),'-depsc2');
 end
 
 
@@ -224,7 +228,7 @@ sp1.XLabel.FontSize = figure_axis_label_size;
 sp1.YLabel.FontSize = figure_axis_label_size;
 
 if shouldSaveFigures == 1
-    print('Site1DecompFigA.eps','-depsc2');
+    print(fullfile(scriptDir,'Site1DecompFigA.eps'),'-depsc2');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -275,7 +279,7 @@ sp3.XLabel.FontSize = figure_axis_label_size;
 sp3.YLabel.FontSize = figure_axis_label_size;
 
 if shouldSaveFigures == 1
-    print('Site1DecompFigB.eps','-depsc2');
+    print(fullfile(scriptDir,'Site1DecompFigB.eps'),'-depsc2');
 end
 
 
@@ -299,6 +303,5 @@ sp1.XLabel.FontSize = figure_axis_label_size;
 sp1.YLabel.FontSize = figure_axis_label_size;
 
 if shouldSaveFigures == 1
-    print('Site1DecompFigC.eps','-depsc2');
+    print(fullfile(scriptDir,'Site1DecompFigC.eps'),'-depsc2');
 end
-

@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Jacknife
+% Compare standard and jackknife second-moment ellipse fits.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -13,31 +13,26 @@ dt = 3600;
 velocityField = LinearVelocityField(sigma=sigma);
 integrator = AdvectionDiffusionIntegrator(velocityField,kappa);
 
-x = linspace(-500,500,5);
-y = linspace(-500,500,5);
-[x0,y0] = ndgrid(x,y);
-
-x0 = [-500; -250; 0; 0; 0; 0; 0; 250; 500];
+x0 = 5*[-500; -250; 0; 0; 0; 0; 0; 250; 500];
 y0 = [0; 0; -500; -250; 0; 250; 500; 0; 0;];
 
-x0 = x0+5000;
-y0 = y0+5000;
 
 totalIterations = 100;
 kappaEst = zeros(totalIterations,2);
 sigmaEst = zeros(totalIterations,2);
 thetaEst = zeros(totalIterations,2);
+fitLabels = {'Standard ellipse fit', 'Jackknife ellipse fit'};
 
 for i=1:totalIterations
     [t,x,y] = integrator.particleTrajectories(x0,y0,T,dt);
         
-    parameters = FitTrajectoriesToConstantLinearVelocityField( x-15000, y+1000, t, 'strain-diffusive' );
+    parameters = FitTrajectoriesToEllipseModel( x, y, t, 'strain-diffusive' );
         
     kappaEst(i,1) = parameters.kappa;
     sigmaEst(i,1) = parameters.sigma;
     thetaEst(i,1) = parameters.theta;
     
-    parameters = FitTrajectoriesToConstantLinearVelocityField( x, y, t, 'strain-diffusive' );
+    parameters = FitTrajectoriesToEllipseModelWithJacknife( x, y, t, 'strain-diffusive' );
     
     kappaEst(i,2) = parameters.kappa;
     sigmaEst(i,2) = parameters.sigma;
@@ -76,8 +71,8 @@ for iEst=1:2
     ylim([-1e-5 1e-5])
     
     axis equal
-    xlabel('\sigma_n')
-    ylabel('\sigma_s')
+    xlabel('$\sigma_n$')
+    ylabel('$\sigma_s$')
     title('Kernel density estimate')
     cb = colorbar('eastoutside');
     cb.Ticks = dLevels;
@@ -85,8 +80,9 @@ for iEst=1:2
     
     subplot(1,2,2)
     histogram((kappaEst(:,iEst)),10)
-    xlabel('\kappa')
+    xlabel('$\kappa$')
     title('diffusivity estimate')
+    sgtitle(fitLabels{iEst})
     
 end
 toc

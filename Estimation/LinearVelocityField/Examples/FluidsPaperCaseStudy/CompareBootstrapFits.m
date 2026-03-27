@@ -1,7 +1,11 @@
+scriptDir = fileparts(mfilename('fullpath'));
+sourceDataDir = fullfile(scriptDir,'SourceData');
+bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
+
 % Load our giant list of possible paths.
 SiteNumber=1;
 totalPermutations = 1000;
-load(sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber));
+load(fullfile(sourceDataDir,sprintf('smoothedGriddedRho%dDrifters.mat',SiteNumber)));
 % The last drifter at both sites is only partial time series.
 x = x(:,1:(end-1));
 y = y(:,1:(end-1));
@@ -14,9 +18,9 @@ kappa = @(u_sm,v_sm) (t(2)-t(1))*mean(abs(sum(u_sm+1i*v_sm,1)).^2)/size(u_sm,1)/
 
 for dof = 1:6
     if shouldFitToSecondMomentOnly == 1
-        filename = sprintf('BootstrapData/Rho%dDrifterSpline2ndMomFits%d_dof%d.mat',SiteNumber,totalPermutations,dof);
+        filename = fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSpline2ndMomFits%d_dof%d.mat',SiteNumber,totalPermutations,dof));
     else
-        filename = sprintf('BootstrapData/Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof);
+        filename = fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof));
     end
     load(filename);
         
@@ -93,12 +97,12 @@ for dof = 1:6
 end
 fprintf('\\end{tabular}\n');
 
-return
+%%
     
-shouldShowFigure = 0;
+shouldShowFigure = 1;
 
-
-load(sprintf('Rho%dDrifterSplineFits%d_K%d_dof%d.mat',SiteNumber,totalPermutations,K,dof));
+load(fullfile(bootstrapDataDir,sprintf('Rho%dDrifterSplineFits%d_dof%d.mat',SiteNumber,totalPermutations,dof)));
+% load(sprintf('BootstrapData/Rho%dDrifterSplineFits%d_K%d_dof%d.mat',SiteNumber,totalPermutations,K,dof));
 
 f0 = 2 * 7.2921E-5 * sin( lat0*pi/180. );
 x = x(:,1:(end-1));

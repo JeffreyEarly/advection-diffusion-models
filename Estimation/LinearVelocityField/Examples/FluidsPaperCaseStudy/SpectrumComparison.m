@@ -1,3 +1,5 @@
+scriptDir = fileparts(mfilename('fullpath'));
+
 sigma = 1e-5;
 theta = 30*pi/180;
 zeta = 0;
@@ -80,7 +82,7 @@ frequencyScale = 86400;
 % particle.
 
 scaleFactor = 1;
-LoadFigureDefaults
+run(fullfile(scriptDir,'LoadFigureDefaults.m'));
 
 figure('Units', 'points', 'Position', [50 50 figure_width_1col 175*scaleFactor])
 set(gcf,'PaperPositionMode','auto')
@@ -96,4 +98,4 @@ ylabel('power (m^2/s)', 'FontSize', figure_axis_label_size, 'FontName', figure_f
 p1 = gca;
 p1.FontSize = figure_axis_tick_size;
 
-print('SpectrumStrainOnlyJJE.eps','-depsc2')
+print(fullfile(scriptDir,'SpectrumStrainOnlyJJE.eps'),'-depsc2')
