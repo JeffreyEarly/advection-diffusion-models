@@ -337,6 +337,54 @@ classdef TensorSplineStreamfunction < StreamfunctionModel
             % streamfunction fit uses only the derivative relations
             % `u = -psi_r` and `v = psi_q`.
             %
+            % The centered-frame streamfunction is represented as
+            %
+            % $$
+            % \psi(q,r,t) = \sum_{k=1}^{M_t} \sum_{j=1}^{M_r} \sum_{i=1}^{M_q}
+            % c_{ijk} B_i(q) B_j(r) T_k(t),
+            % $$
+            %
+            % where `B_i`, `B_j`, and `T_k` are the tensor-product B-spline
+            % basis functions. Because the fit uses only `u = -psi_r` and
+            % `v = psi_q`, the coefficients are unchanged if
+            %
+            % $$
+            % \psi(q,r,t) \mapsto \psi(q,r,t) + a(t).
+            % $$
+            %
+            % The implementation removes this gauge directly in
+            % coefficient space. Let `c_k \in \mathbb{R}^{M_q M_r}` be the
+            % spatial coefficient block for one time basis function and
+            %
+            % $$
+            % P = \begin{bmatrix}
+            % I_{M_q M_r - 1} \\
+            % -\mathbf{1}^T
+            % \end{bmatrix},
+            % \qquad
+            % c_k = P \alpha_k.
+            % $$
+            %
+            % Then every retained spatial coefficient block satisfies
+            % `\mathbf{1}^T c_k = 0`, which removes the spatially constant
+            % mode associated with `a(t)`. Stacking all time blocks gives
+            %
+            % $$
+            % c = Z \alpha, \qquad Z = I_{M_t} \otimes P,
+            % $$
+            %
+            % and the fitted coefficients come from the unconstrained
+            % reduced least-squares problem
+            %
+            % $$
+            % \hat{\alpha} = \arg\min_{\alpha} \|R Z \alpha - U\|_2^2,
+            % \qquad
+            % \hat{c} = Z \hat{\alpha},
+            % $$
+            %
+            % where `R` is the spline derivative design matrix and `U`
+            % stacks the centered drifter velocities.
+            %
             % When `psiKnotPoints` is omitted or empty, the fitter uses the
             % default degree `psiS = [2 2 0]` and builds padded terminated
             % knot vectors from the centered observations.
@@ -462,6 +510,13 @@ classdef TensorSplineStreamfunction < StreamfunctionModel
                 end
             end
 
+            try
+                psiBasisSize = TensorSpline.basisSizeFromKnotCell(psiKnotPoints, psiS + 1);
+            catch
+                error("TensorSplineStreamfunction:InvalidPsiKnotPoints", ...
+                    "psiKnotPoints must define at least one basis function in each dimension.");
+            end
+
             qDomain = [psiKnotPoints{1}(1), psiKnotPoints{1}(end)];
             rDomain = [psiKnotPoints{2}(1), psiKnotPoints{2}(end)];
             tDomain = [psiKnotPoints{3}(1), psiKnotPoints{3}(end)];
@@ -484,22 +539,24 @@ classdef TensorSplineStreamfunction < StreamfunctionModel
             Rv = sparse(TensorSpline.matrixForPointMatrix(pointMatrix, knotPoints=psiKnotPoints, S=psiS, D=[1 0 0]));
             R = [Ru; Rv];
             U = [qdotAll; rdotAll];
-
-            tGauge = BSpline.pointsOfSupportFromKnotPoints(psiKnotPoints{3}, S=psiS(3));
-            gaugePoints = [zeros(numel(tGauge), 2), tGauge];
-            gaugeConstraint = PointConstraint.equal(gaugePoints, D=[0 0 0], value=0);
-            [Aeq, beq, ~, ~] = ConstrainedSpline.compilePointConstraints(gaugeConstraint, psiKnotPoints, psiS + 1);
-            if ~isempty(Aeq)
-                [~, Rqr, p] = qr(Aeq.', "vector");
-                tolerance = max(size(Aeq)) * eps(max(abs(diag(Rqr))));
-                rankA = sum(abs(diag(Rqr)) > tolerance);
-                independentRows = sort(p(1:rankA));
-                Aeq = Aeq(independentRows, :);
-                beq = beq(independentRows, :);
+            numSpatialCoefficients = prod(psiBasisSize(1:2));
+            numTimeCoefficients = psiBasisSize(3);
+            if numSpatialCoefficients == 1
+                reducedSpatialBasis = sparse(1, 0);
+                reducedBasisMatrix = sparse(prod(psiBasisSize), 0);
+                reducedDesignMatrix = sparse(size(R, 1), 0);
+                xi = zeros(prod(psiBasisSize), 1);
+            else
+                reducedSpatialBasis = spalloc(numSpatialCoefficients, numSpatialCoefficients - 1, ...
+                    2 * (numSpatialCoefficients - 1));
+                reducedSpatialBasis(1:(numSpatialCoefficients - 1), :) = speye(numSpatialCoefficients - 1);
+                reducedSpatialBasis(numSpatialCoefficients, :) = -1;
+                reducedBasisMatrix = kron(speye(numTimeCoefficients), reducedSpatialBasis);
+                reducedDesignMatrix = R * reducedBasisMatrix;
+                reducedCoefficients = reducedDesignMatrix \ U;
+                xi = reducedBasisMatrix * reducedCoefficients;
             end
 
-            [normalMatrix, rhs] = ConstrainedSpline.weightedNormalEquations(R, U, 1);
-            [xi, ~] = ConstrainedSpline.constrainedWeightedSolution(normalMatrix, rhs, Aeq, beq, [], []);
             streamfunctionSpline = TensorSpline(S=psiS, knotPoints=psiKnotPoints, xi=xi);
 
             self = TensorSplineStreamfunction(streamfunctionSpline, centerXSpline, centerYSpline);
@@ -510,9 +567,10 @@ classdef TensorSplineStreamfunction < StreamfunctionModel
                 "centerBasisMatrix", centerBasisMatrix, ...
                 "psiS", psiS, ...
                 "psiKnotPoints", psiKnotPoints, ...
-                "gaugeTimes", tGauge, ...
-                "Aeq", Aeq, ...
-                "beq", beq, ...
+                "psiBasisSize", psiBasisSize, ...
+                "psiReducedSpatialBasis", reducedSpatialBasis, ...
+                "psiReducedBasisMatrix", reducedBasisMatrix, ...
+                "psiReducedDesignMatrix", reducedDesignMatrix, ...
                 "psiDesignMatrix", R, ...
                 "psiObservedVelocities", U);
         end

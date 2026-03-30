@@ -106,6 +106,16 @@ classdef TensorSplineStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(fitDefault.streamfunctionSpline.xi, fitExplicit.streamfunctionSpline.xi, "AbsTol", 1e-12);
         end
 
+        function reducedBasisGaugeHasZeroSpatialCoefficientSum(testCase)
+            [~, t, x, y] = TensorSplineStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = TensorSplineStreamfunction.fitFromSynchronousTrajectories(x, y, t);
+
+            basisSize = fit.streamfunctionSpline.basisSize;
+            xiByTime = reshape(fit.streamfunctionSpline.xi, prod(basisSize(1:2)), basisSize(3));
+
+            testCase.verifyEqual(sum(xiByTime, 1), zeros(1, basisSize(3)), "AbsTol", 1e-12);
+        end
+
         function evaluationInputShapes(testCase)
             [~, t, x, y] = TensorSplineStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = TensorSplineStreamfunction.fitFromSynchronousTrajectories(x, y, t);
