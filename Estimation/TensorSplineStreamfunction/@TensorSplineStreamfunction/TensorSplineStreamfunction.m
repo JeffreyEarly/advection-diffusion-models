@@ -1,0 +1,514 @@
+classdef TensorSplineStreamfunction < StreamfunctionModel
+    % Tensor-spline streamfunction fit in a moving center-of-mass frame.
+    %
+    % `TensorSplineStreamfunction` stores a streamfunction spline in the
+    % centered coordinates
+    %
+    % $$
+    % q = x - x_c(t), \qquad r = y - y_c(t),
+    % $$
+    %
+    % together with 1-D splines for the center trajectory $$x_c(t)$$ and
+    % $$y_c(t)$$. The total velocity field is then
+    %
+    % $$
+    % u(t,x,y) = \frac{d x_c}{dt} - \frac{\partial \psi}{\partial r}(q,r,t),
+    % \qquad
+    % v(t,x,y) = \frac{d y_c}{dt} + \frac{\partial \psi}{\partial q}(q,r,t).
+    % $$
+    %
+    % Use `fitFromTrajectories(...)` to estimate the center trajectory and
+    % centered-frame streamfunction from drifter positions.
+    %
+    % ```matlab
+    % model = TensorSplineStreamfunction.fitFromTrajectories(x, y, t, ...
+    %     psiKnotPoints=psiKnotPoints, psiS=[2 2 0]);
+    % u = model.u(t, x, y);
+    % ```
+    %
+    % - Topic: Create the model
+    % - Topic: Fit the model
+    % - Topic: Inspect fitted components
+    % - Topic: Evaluate the streamfunction
+    % - Topic: Evaluate the velocity field
+    % - Topic: Evaluate fitted diagnostics
+    % - Declaration: classdef TensorSplineStreamfunction < StreamfunctionModel
+
+    properties (SetAccess = private)
+        % Centered-frame streamfunction spline $$\psi(q,r,t)$$.
+        %
+        % This 3-D spline is evaluated on the centered coordinates
+        % `q = x - xCenter(t)` and `r = y - yCenter(t)`.
+        %
+        % - Topic: Inspect fitted components
+        streamfunctionSpline
+
+        % Center-trajectory spline $$x_c(t)$$ in meters.
+        %
+        % - Topic: Inspect fitted components
+        centerXSpline
+
+        % Center-trajectory spline $$y_c(t)$$ in meters.
+        %
+        % - Topic: Inspect fitted components
+        centerYSpline
+    end
+
+    properties (SetAccess = private, Hidden)
+        fitState struct = struct()
+    end
+
+    methods
+        function self = TensorSplineStreamfunction(streamfunctionSpline, centerXSpline, centerYSpline)
+            % Create a fitted tensor-spline streamfunction model.
+            %
+            % Pass a 3-D streamfunction spline in centered coordinates and
+            % 1-D splines for the center trajectory components.
+            %
+            % - Topic: Create the model
+            % - Declaration: self = TensorSplineStreamfunction(streamfunctionSpline,centerXSpline,centerYSpline)
+            % - Parameter streamfunctionSpline: 3-D `TensorSpline` for $$\psi(q,r,t)$$
+            % - Parameter centerXSpline: 1-D `TensorSpline` for $$x_c(t)$$
+            % - Parameter centerYSpline: 1-D `TensorSpline` for $$y_c(t)$$
+            % - Returns self: `TensorSplineStreamfunction` instance
+            arguments
+                streamfunctionSpline (1,1) TensorSpline
+                centerXSpline (1,1) TensorSpline
+                centerYSpline (1,1) TensorSpline
+            end
+
+            if streamfunctionSpline.numDimensions ~= 3
+                error("TensorSplineStreamfunction:InvalidStreamfunctionSpline", ...
+                    "streamfunctionSpline must be a 3-D TensorSpline with dimensions [q r t].");
+            end
+            if centerXSpline.numDimensions ~= 1 || centerYSpline.numDimensions ~= 1
+                error("TensorSplineStreamfunction:InvalidCenterSpline", ...
+                    "centerXSpline and centerYSpline must be 1-D TensorSpline objects.");
+            end
+
+            self.streamfunctionSpline = streamfunctionSpline;
+            self.centerXSpline = centerXSpline;
+            self.centerYSpline = centerYSpline;
+            self.name = "Tensor-spline streamfunction";
+        end
+
+        function values = xCenter(self, t)
+            % Evaluate the fitted center trajectory $$x_c(t)$$.
+            %
+            % - Topic: Inspect fitted components
+            % - Declaration: values = xCenter(self,t)
+            % - Parameter self: `TensorSplineStreamfunction` instance
+            % - Parameter t: evaluation times in seconds
+            % - Returns values: fitted center x-position in meters
+            values = self.centerXSpline.valueAtPoints(t);
+        end
+
+        function values = yCenter(self, t)
+            % Evaluate the fitted center trajectory $$y_c(t)$$.
+            %
+            % - Topic: Inspect fitted components
+            % - Declaration: values = yCenter(self,t)
+            % - Parameter self: `TensorSplineStreamfunction` instance
+            % - Parameter t: evaluation times in seconds
+            % - Returns values: fitted center y-position in meters
+            values = self.centerYSpline.valueAtPoints(t);
+        end
+
+        function values = uBackground(self, t)
+            % Evaluate the background x-velocity $$d x_c / dt$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: values = uBackground(self,t)
+            % - Parameter self: `TensorSplineStreamfunction` instance
+            % - Parameter t: evaluation times in seconds
+            % - Returns values: background x-velocity in $$m s^{-1}$$
+            values = self.centerXSpline.valueAtPoints(t, D=1);
+        end
+
+        function values = vBackground(self, t)
+            % Evaluate the background y-velocity $$d y_c / dt$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: values = vBackground(self,t)
+            % - Parameter self: `TensorSplineStreamfunction` instance
+            % - Parameter t: evaluation times in seconds
+            % - Returns values: background y-velocity in $$m s^{-1}$$
+            values = self.centerYSpline.valueAtPoints(t, D=1);
+        end
+
+        function psiValue = psi(self, t, x, y)
+            % Evaluate the centered-frame streamfunction on absolute coordinates.
+            %
+            % The implementation shifts the query points to
+            % `q = x - xCenter(t)` and `r = y - yCenter(t)` before
+            % evaluating the stored streamfunction spline.
+            %
+            % - Topic: Evaluate the streamfunction
+            % - Declaration: psiValue = psi(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns psiValue: streamfunction values with the same shape as `x`
+            [tEval, q, r] = centeredCoordinates(self, t, x, y);
+            psiValue = self.streamfunctionSpline.valueAtPoints(q, r, tEval);
+        end
+
+        function uValue = uMesoscale(self, t, x, y)
+            % Evaluate the mesoscale x-velocity $$-\psi_r$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: uValue = uMesoscale(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns uValue: mesoscale x-velocity in $$m s^{-1}$$
+            [tEval, q, r] = centeredCoordinates(self, t, x, y);
+            uValue = -self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[0 1 0]);
+        end
+
+        function vValue = vMesoscale(self, t, x, y)
+            % Evaluate the mesoscale y-velocity $$\psi_q$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: vValue = vMesoscale(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns vValue: mesoscale y-velocity in $$m s^{-1}$$
+            [tEval, q, r] = centeredCoordinates(self, t, x, y);
+            vValue = self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[1 0 0]);
+        end
+
+        function uValue = u(self, t, x, y)
+            % Evaluate the total x-velocity.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: uValue = u(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns uValue: total x-velocity in $$m s^{-1}$$
+            [tEval, ~, ~] = centeredCoordinates(self, t, x, y);
+            uValue = self.uBackground(tEval) + self.uMesoscale(tEval, x, y);
+        end
+
+        function vValue = v(self, t, x, y)
+            % Evaluate the total y-velocity.
+            %
+            % - Topic: Evaluate the velocity field
+            % - Declaration: vValue = v(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns vValue: total y-velocity in $$m s^{-1}$$
+            [tEval, ~, ~] = centeredCoordinates(self, t, x, y);
+            vValue = self.vBackground(tEval) + self.vMesoscale(tEval, x, y);
+        end
+
+        function values = sigma_n(self, t, x, y)
+            % Evaluate the normal strain field $$\sigma_n = -2\psi_{qr}$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: values = sigma_n(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns values: normal strain in $$s^{-1}$$
+            [tEval, q, r] = centeredCoordinates(self, t, x, y);
+            values = -2 * self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[1 1 0]);
+        end
+
+        function values = sigma_s(self, t, x, y)
+            % Evaluate the shear strain field $$\sigma_s = \psi_{qq} - \psi_{rr}$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: values = sigma_s(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns values: shear strain in $$s^{-1}$$
+            [tEval, q, r] = centeredCoordinates(self, t, x, y);
+            dqq = self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[2 0 0]);
+            drr = self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[0 2 0]);
+            values = dqq - drr;
+        end
+
+        function values = zeta(self, t, x, y)
+            % Evaluate the relative-vorticity field $$\zeta = \psi_{qq} + \psi_{rr}$$.
+            %
+            % - Topic: Evaluate fitted diagnostics
+            % - Declaration: values = zeta(self,t,x,y)
+            % - Parameter t: scalar time or array matching `x` and `y`
+            % - Parameter x: x-coordinate array in meters
+            % - Parameter y: y-coordinate array in meters
+            % - Returns values: relative vorticity in $$s^{-1}$$
+            [tEval, q, r] = centeredCoordinates(self, t, x, y);
+            dqq = self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[2 0 0]);
+            drr = self.streamfunctionSpline.valueAtPoints(q, r, tEval, D=[0 2 0]);
+            values = dqq + drr;
+        end
+    end
+
+    methods (Static)
+        function self = fitFromTrajectories(x, y, t, options)
+            % Fit the center trajectory and centered-frame streamfunction from drifter positions.
+            %
+            % The center trajectory splines are estimated first from all
+            % x and y observations, then each drifter trajectory is
+            % differentiated with a cubic-or-lower interpolating spline to
+            % obtain centered velocities. The final streamfunction fit uses
+            % only the derivative relations `u = -psi_r` and `v = psi_q`.
+            %
+            % - Topic: Fit the model
+            % - Declaration: self = fitFromTrajectories(x,y,t,options)
+            % - Parameter x: per-drifter x observations as cells or a synchronous `[nT nDrifters]` matrix
+            % - Parameter y: per-drifter y observations as cells or a synchronous `[nT nDrifters]` matrix
+            % - Parameter t: per-drifter time observations as cells or a synchronous `[nT 1]` vector
+            % - Parameter options.psiKnotPoints: cell array `{qKnot, rKnot, tKnot}` for the streamfunction basis
+            % - Parameter options.psiS: spline degree vector `[Sq Sr St]`
+            % - Returns self: fitted `TensorSplineStreamfunction`
+            arguments
+                x
+                y
+                t
+                options.psiKnotPoints
+                options.psiS (1,3) double {mustBeInteger,mustBeNonnegative}
+            end
+
+            [xCell, yCell, tCell, wasMatrixInput] = normalizeTrajectoryInputs(x, y, t);
+            psiKnotPoints = normalizePsiKnotPoints(options.psiKnotPoints);
+            psiS = reshape(options.psiS, 1, []);
+
+            nDrifters = numel(tCell);
+            allT = vertcat(tCell{:});
+            allX = vertcat(xCell{:});
+            allY = vertcat(yCell{:});
+
+            tCenterData = pooledCenterSupportTimes(tCell, nDrifters);
+            [centerXSpline, centerXInfo] = leastSquaresTimeSpline(allT, allX, tCenterData);
+            [centerYSpline, centerYInfo] = leastSquaresTimeSpline(allT, allY, tCenterData);
+
+            [qAll, rAll, tAll, qdotAll, rdotAll] = centeredObservationData(xCell, yCell, tCell, centerXSpline, centerYSpline);
+            validateCenteredObservationDomain(qAll, rAll, tAll, psiKnotPoints);
+
+            pointMatrix = [qAll, rAll, tAll];
+            Ru = -sparse(TensorSpline.matrixForPointMatrix(pointMatrix, knotPoints=psiKnotPoints, S=psiS, D=[0 1 0]));
+            Rv = sparse(TensorSpline.matrixForPointMatrix(pointMatrix, knotPoints=psiKnotPoints, S=psiS, D=[1 0 0]));
+            R = [Ru; Rv];
+            U = [qdotAll; rdotAll];
+
+            tGauge = BSpline.pointsOfSupportFromKnotPoints(psiKnotPoints{3}, S=psiS(3));
+            gaugePoints = [zeros(numel(tGauge), 2), tGauge];
+            gaugeConstraint = PointConstraint.equal(gaugePoints, D=[0 0 0], value=0);
+            [Aeq, beq, ~, ~] = ConstrainedSpline.compilePointConstraints(gaugeConstraint, psiKnotPoints, psiS + 1);
+            [Aeq, beq] = reduceEqualityConstraints(Aeq, beq);
+
+            [normalMatrix, rhs] = ConstrainedSpline.weightedNormalEquations(R, U, 1);
+            [xi, ~] = ConstrainedSpline.constrainedWeightedSolution(normalMatrix, rhs, Aeq, beq, [], []);
+            streamfunctionSpline = TensorSpline(S=psiS, knotPoints=psiKnotPoints, xi=xi);
+
+            self = TensorSplineStreamfunction(streamfunctionSpline, centerXSpline, centerYSpline);
+            self.fitState = struct( ...
+                "wasMatrixInput", wasMatrixInput, ...
+                "centerSupportTimes", tCenterData, ...
+                "centerXInfo", centerXInfo, ...
+                "centerYInfo", centerYInfo, ...
+                "gaugeTimes", tGauge, ...
+                "Aeq", Aeq, ...
+                "beq", beq, ...
+                "psiDesignMatrix", R, ...
+                "psiObservedVelocities", U);
+        end
+    end
+
+    methods (Access = private)
+        function [tEval, q, r] = centeredCoordinates(self, t, x, y)
+            [tEval, xEval, yEval] = normalizeEvaluationInputs(t, x, y);
+            q = xEval - self.xCenter(tEval);
+            r = yEval - self.yCenter(tEval);
+        end
+    end
+end
+
+function [xCell, yCell, tCell, wasMatrixInput] = normalizeTrajectoryInputs(x, y, t)
+wasMatrixInput = false;
+
+if iscell(x) || iscell(y) || iscell(t)
+    if ~(iscell(x) && iscell(y) && iscell(t))
+        error("TensorSplineStreamfunction:MixedTrajectoryInputTypes", ...
+            "x, y, and t must all be cell arrays or all be numeric arrays.");
+    end
+    if ~(numel(x) == numel(y) && numel(y) == numel(t))
+        error("TensorSplineStreamfunction:CellCountMismatch", ...
+            "x, y, and t must contain the same number of drifter records.");
+    end
+
+    xCell = reshape(x, [], 1);
+    yCell = reshape(y, [], 1);
+    tCell = reshape(t, [], 1);
+else
+    validateattributes(x, {'numeric'}, {'2d','real','finite'});
+    validateattributes(y, {'numeric'}, {'2d','real','finite','size',size(x)});
+    validateattributes(t, {'numeric'}, {'vector','real','finite','numel',size(x,1)});
+
+    tVector = reshape(t, [], 1);
+    xCell = cell(size(x,2), 1);
+    yCell = cell(size(y,2), 1);
+    tCell = cell(size(x,2), 1);
+    for iDrifter = 1:size(x,2)
+        xCell{iDrifter} = x(:,iDrifter);
+        yCell{iDrifter} = y(:,iDrifter);
+        tCell{iDrifter} = tVector;
+    end
+    wasMatrixInput = true;
+end
+
+for iDrifter = 1:numel(tCell)
+    validateattributes(xCell{iDrifter}, {'numeric'}, {'vector','real','finite'});
+    validateattributes(yCell{iDrifter}, {'numeric'}, {'vector','real','finite'});
+    validateattributes(tCell{iDrifter}, {'numeric'}, {'vector','real','finite'});
+
+    xCell{iDrifter} = reshape(xCell{iDrifter}, [], 1);
+    yCell{iDrifter} = reshape(yCell{iDrifter}, [], 1);
+    tCell{iDrifter} = reshape(tCell{iDrifter}, [], 1);
+
+    if ~(numel(xCell{iDrifter}) == numel(yCell{iDrifter}) && numel(yCell{iDrifter}) == numel(tCell{iDrifter}))
+        error("TensorSplineStreamfunction:TrajectoryLengthMismatch", ...
+            "Each drifter record must have matching x, y, and t lengths.");
+    end
+    if numel(tCell{iDrifter}) < 2
+        error("TensorSplineStreamfunction:TrajectoryTooShort", ...
+            "Each drifter record must contain at least two samples.");
+    end
+    if any(diff(tCell{iDrifter}) <= 0)
+        error("TensorSplineStreamfunction:NonmonotonicTime", ...
+            "Each drifter time vector must be strictly increasing.");
+    end
+end
+end
+
+function psiKnotPoints = normalizePsiKnotPoints(psiKnotPoints)
+if ~iscell(psiKnotPoints) || numel(psiKnotPoints) ~= 3
+    error("TensorSplineStreamfunction:InvalidPsiKnotPoints", ...
+        "psiKnotPoints must be a cell array {qKnot, rKnot, tKnot}.");
+end
+
+psiKnotPoints = reshape(psiKnotPoints, 1, []);
+for iDim = 1:3
+    validateattributes(psiKnotPoints{iDim}, {'numeric'}, {'vector','real','finite','nonempty'});
+    psiKnotPoints{iDim} = reshape(psiKnotPoints{iDim}, [], 1);
+    if any(diff(psiKnotPoints{iDim}) < 0)
+        error("TensorSplineStreamfunction:InvalidPsiKnotPoints", ...
+            "Each psi knot vector must be nondecreasing.");
+    end
+end
+end
+
+function tCenterData = pooledCenterSupportTimes(tCell, nDrifters)
+pooledTimes = sort(vertcat(tCell{:}));
+tCenterData = pooledTimes(1:nDrifters:end);
+if tCenterData(end) ~= pooledTimes(end)
+    tCenterData = [tCenterData; pooledTimes(end)];
+end
+end
+
+function [spline, info] = leastSquaresTimeSpline(tObs, values, tSupport)
+centerS = min(numel(tSupport), 4) - 1;
+tKnot = BSpline.knotPointsForDataPoints(tSupport, S=centerS, splineDOF=numel(tSupport));
+B = BSpline.matrixForDataPoints(tObs, knotPoints=tKnot, S=centerS);
+coefficients = B \ values;
+spline = TensorSpline(S=centerS, knotPoints=tKnot, xi=coefficients);
+info = struct("knotPoints", tKnot, "basisMatrix", B, "degree", centerS);
+end
+
+function [qAll, rAll, tAll, qdotAll, rdotAll] = centeredObservationData(xCell, yCell, tCell, centerXSpline, centerYSpline)
+nDrifters = numel(tCell);
+numObservations = sum(cellfun(@numel, tCell));
+qAll = zeros(numObservations, 1);
+rAll = zeros(numObservations, 1);
+tAll = zeros(numObservations, 1);
+qdotAll = zeros(numObservations, 1);
+rdotAll = zeros(numObservations, 1);
+
+offset = 0;
+for iDrifter = 1:nDrifters
+    ti = tCell{iDrifter};
+    xi = xCell{iDrifter};
+    yi = yCell{iDrifter};
+    drifterS = min(numel(ti), 4) - 1;
+
+    xSpline = InterpolatingSpline(ti, xi, S=drifterS);
+    ySpline = InterpolatingSpline(ti, yi, S=drifterS);
+
+    xc = centerXSpline.valueAtPoints(ti);
+    yc = centerYSpline.valueAtPoints(ti);
+    ub = centerXSpline.valueAtPoints(ti, D=1);
+    vb = centerYSpline.valueAtPoints(ti, D=1);
+    dxdt = xSpline.valueAtPoints(ti, D=1);
+    dydt = ySpline.valueAtPoints(ti, D=1);
+
+    indices = offset + (1:numel(ti));
+    qAll(indices) = xi - xc;
+    rAll(indices) = yi - yc;
+    tAll(indices) = ti;
+    qdotAll(indices) = dxdt - ub;
+    rdotAll(indices) = dydt - vb;
+    offset = offset + numel(ti);
+end
+end
+
+function validateCenteredObservationDomain(qAll, rAll, tAll, psiKnotPoints)
+qDomain = [psiKnotPoints{1}(1), psiKnotPoints{1}(end)];
+rDomain = [psiKnotPoints{2}(1), psiKnotPoints{2}(end)];
+tDomain = [psiKnotPoints{3}(1), psiKnotPoints{3}(end)];
+
+if any(qAll < qDomain(1) | qAll > qDomain(2))
+    error("TensorSplineStreamfunction:ObservationOutsidePsiDomain", ...
+        "Centered q observations must lie inside the supplied psi spline domain.");
+end
+if any(rAll < rDomain(1) | rAll > rDomain(2))
+    error("TensorSplineStreamfunction:ObservationOutsidePsiDomain", ...
+        "Centered r observations must lie inside the supplied psi spline domain.");
+end
+if any(tAll < tDomain(1) | tAll > tDomain(2))
+    error("TensorSplineStreamfunction:ObservationOutsidePsiDomain", ...
+        "Observation times must lie inside the supplied psi time domain.");
+end
+end
+
+function [Aeq, beq] = reduceEqualityConstraints(Aeq, beq)
+if isempty(Aeq)
+    return;
+end
+
+[~, R, p] = qr(Aeq.', "vector");
+tolerance = max(size(Aeq)) * eps(max(abs(diag(R))));
+rankA = sum(abs(diag(R)) > tolerance);
+independentRows = sort(p(1:rankA));
+Aeq = Aeq(independentRows, :);
+beq = beq(independentRows, :);
+end
+
+function [tEval, xEval, yEval] = normalizeEvaluationInputs(t, x, y)
+validateattributes(x, {'numeric'}, {'real'});
+validateattributes(y, {'numeric'}, {'real'});
+if ~isequal(size(x), size(y))
+    error("TensorSplineStreamfunction:EvaluationSizeMismatch", ...
+        "x and y must have the same size.");
+end
+
+xEval = x;
+yEval = y;
+if isscalar(t)
+    tEval = repmat(t, size(x));
+elseif isvector(t) && ismatrix(x) && size(x,1) == numel(t)
+    tEval = repmat(reshape(t, [], 1), 1, size(x,2));
+else
+    validateattributes(t, {'numeric'}, {'real'});
+    if ~isequal(size(t), size(x))
+        error("TensorSplineStreamfunction:EvaluationTimeSizeMismatch", ...
+            "t must be scalar or have the same size as x and y.");
+    end
+    tEval = t;
+end
+end

@@ -74,6 +74,18 @@
             ]
         },
         {
+            "path": "Estimation/TensorSplineStreamfunction",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/TensorSplineStreamfunction/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
             "path": "Integrators",
             "languages": [
                 "matlab"
