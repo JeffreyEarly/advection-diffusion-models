@@ -201,7 +201,7 @@ EnergyCrossTerms = (measuredTotalVariance - modelTotalVariance)./measuredTotalVa
 figure
 plot(t/86400,EnergyCrossTerms) %, hold on, plot(t/86400,actualTotalVariance);
 
-return
+%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
