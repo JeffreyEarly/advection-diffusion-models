@@ -56,7 +56,7 @@ The structure `parameterEstimates` now contains values for `sigma_n` and `sigma_
 Recommended approach for least squares fits
 ------------
 
-To reproduce the results from the Latmix drifter fits, use the scripts in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy). These scripts expect local source-data `.mat` files under `Examples/FluidsPaperCaseStudy/SourceData/`, write bootstrap outputs into `BootstrapData/`, and write movie outputs into `Movies/`.
+To reproduce the results from the Latmix drifter fits, use the scripts in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy). These scripts expect local source-data `.mat` files under `../ExampleData/LatMix2011/`, write bootstrap outputs into `BootstrapData/`, and write movie outputs into `Movies/`.
 
 1. Run `GenerateBootstrapFits.m`, which will read the `smoothedGriddedRho1Drifters.mat` file and then perform estimation of all the models, with 1000 different drifter permutations, with time variation from 1 to 6 degrees-of-freedom. The data will be stored in 6 different `.mat` files in the BootstrapData folder. Note that the velocity is computed from the positions with a second-order finite difference matrix, i.e., line 80 in `EstimateLinearVelocityFieldParametersBSpline.m` calls `D = FiniteDifferenceMatrix(1,t,1,1,2);`.
 

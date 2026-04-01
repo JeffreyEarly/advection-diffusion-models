@@ -1,5 +1,5 @@
 scriptDir = fileparts(mfilename('fullpath'));
-sourceDataDir = fullfile(scriptDir,'SourceData');
+sourceDataDir = fullfile(scriptDir, '..', '..', '..', 'ExampleData', 'LatMix2011');
 bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
 
 % AMS figure widths, given in picas, converted to points (1 pica=12 points)

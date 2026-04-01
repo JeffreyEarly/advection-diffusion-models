@@ -80,6 +80,18 @@
             ]
         },
         {
+            "path": "Estimation/GriddedStreamfunction/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/GriddedStreamfunction/Examples/FluidsPaperCaseStudy",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
             "path": "Estimation/GriddedStreamfunction/UnitTests",
             "languages": [
                 "matlab"

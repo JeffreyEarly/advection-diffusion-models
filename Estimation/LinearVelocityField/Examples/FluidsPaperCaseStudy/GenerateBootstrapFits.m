@@ -1,5 +1,5 @@
 scriptDir = fileparts(mfilename('fullpath'));
-sourceDataDir = fullfile(scriptDir,'SourceData');
+sourceDataDir = fullfile(scriptDir, '..', '..', '..', 'ExampleData', 'LatMix2011');
 bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
 
 SiteNumber=1;

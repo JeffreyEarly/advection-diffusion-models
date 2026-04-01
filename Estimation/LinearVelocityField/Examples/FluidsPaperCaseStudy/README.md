@@ -7,7 +7,7 @@ The scripts are intended to be run from MATLAB by name. Each script resolves its
 
 ### Folder layout
 
-- `SourceData/` contains the local drifter `.mat` inputs expected by the case study.
+- `../../../ExampleData/LatMix2011/` contains the local drifter `.mat` inputs shared by the estimation examples.
 - `BootstrapData/` contains generated bootstrap-fit outputs written by `GenerateBootstrapFits.m`.
 - `Movies/` contains generated `.mp4` outputs written by the movie scripts.
 - `LoadFigureDefaults.m` contains the local figure sizing and typography defaults shared by the figure scripts.
