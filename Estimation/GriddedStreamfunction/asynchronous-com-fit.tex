@@ -1,0 +1,721 @@
+\section{Asynchronous COM-Frame Streamfunction Fit with Fast COM/Background Basis and Slow Mesoscale Basis}
+
+We consider an asynchronous Lagrangian dataset in which the drifters are observed over a
+common time window $[t_0,t_f]$, but not necessarily at simultaneous times. The total velocity
+of each drifter is modeled as the sum of a mesoscale component, a background component, and a
+submesoscale component. The mesoscale component is represented by a tensor-product
+streamfunction with a slow temporal spline basis, while the center-of-mass trajectory and the
+background flow are represented using a faster temporal spline basis constructed directly from
+the pooled observation times.
+
+\subsection{Asynchronous observations}
+
+Assume that drifter $k$ is observed at times
+\begin{equation}
+t_{k,1},\dots,t_{k,N_k}, \qquad k=1,\dots,K,
+\end{equation}
+all lying in a common interval $[t_0,t_f]$, but not necessarily with
+$t_{k,n}=t_{k',n'}$ for different drifters.
+
+Let the observed positions be
+\begin{equation}
+x_{k,n} \equiv x_k(t_{k,n}),
+\qquad
+y_{k,n} \equiv y_k(t_{k,n}),
+\qquad
+n=1,\dots,N_k,
+\end{equation}
+and let the corresponding observed velocities be
+\begin{equation}
+\dot{x}_{k,n} \equiv \dot{x}_k(t_{k,n}),
+\qquad
+\dot{y}_{k,n} \equiv \dot{y}_k(t_{k,n}),
+\end{equation}
+obtained either directly or from a separate trajectory-smoothing step.
+
+\subsection{Total velocity model}
+
+We write the full model in the fixed frame as
+\begin{equation}
+\dot{x}_k(t)=u_k^{\mathrm{meso}}(t)+u^{\mathrm{bg}}(t)+u_k^{\mathrm{sm}}(t),
+\qquad
+\dot{y}_k(t)=v_k^{\mathrm{meso}}(t)+v^{\mathrm{bg}}(t)+v_k^{\mathrm{sm}}(t),
+\label{eq:total_model_full}
+\end{equation}
+where
+\begin{itemize}
+    \item $u_k^{\mathrm{meso}},v_k^{\mathrm{meso}}$ are the mesoscale velocities induced by a
+    streamfunction,
+    \item $u^{\mathrm{bg}},v^{\mathrm{bg}}$ are the background velocities, common to all drifters
+    and depending only on time,
+    \item $u_k^{\mathrm{sm}},v_k^{\mathrm{sm}}$ are the remaining submesoscale velocities.
+\end{itemize}
+
+During the core mesoscale fit, however, we do \emph{not} attempt to separate the background
+and submesoscale parts. Instead, we combine them into a single residual:
+\begin{equation}
+r_k^x(t)=u^{\mathrm{bg}}(t)+u_k^{\mathrm{sm}}(t),
+\qquad
+r_k^y(t)=v^{\mathrm{bg}}(t)+v_k^{\mathrm{sm}}(t).
+\label{eq:combined_residual}
+\end{equation}
+Thus the total model used during the mesoscale computation is
+\begin{equation}
+\dot{x}_k(t)=u_k^{\mathrm{meso}}(t)+r_k^x(t),
+\qquad
+\dot{y}_k(t)=v_k^{\mathrm{meso}}(t)+r_k^y(t).
+\label{eq:core_total_model}
+\end{equation}
+
+The background and submesoscale parts are separated only after the mesoscale fit has been
+completed.
+
+\subsection{Fast temporal basis}
+
+Let the full collection of observation times, pooled across all drifters and sorted in
+nondecreasing order, be
+\begin{equation}
+\tau_1 \le \tau_2 \le \cdots \le \tau_{N_{\mathrm{tot}}},
+\qquad
+N_{\mathrm{tot}}=\sum_{k=1}^{K}N_k.
+\end{equation}
+Let
+\begin{equation}
+D(\tau_r)
+\end{equation}
+denote the number of deployed drifters at time $\tau_r$, that is, the number of drifters whose
+lifetimes include $\tau_r$.
+
+We define a subsequence of representative times
+\begin{equation}
+\sigma_1,\sigma_2,\dots,\sigma_Q
+\end{equation}
+recursively from the pooled sorted times by
+\begin{equation}
+q_1=1,
+\qquad
+q_{m+1}=q_m + D(\tau_{q_m}),
+\label{eq:fast_stride_rule}
+\end{equation}
+until $q_m>N_{\mathrm{tot}}$, and then set
+\begin{equation}
+\sigma_m=\tau_{q_m}, \qquad m=1,\dots,Q.
+\label{eq:fast_knot_times}
+\end{equation}
+
+These representative times are used as knot locations for a fast temporal spline basis
+\begin{equation}
+\{B_q(t)\}_{q=1}^{Q_b}.
+\label{eq:fast_basis_def}
+\end{equation}
+This fast basis will be used
+\begin{enumerate}
+    \item to represent the center-of-mass trajectory, and
+    \item to represent the background flow.
+\end{enumerate}
+
+\subsection{Slow temporal basis for the mesoscale streamfunction}
+
+Let
+\begin{equation}
+\{T_\ell(t)\}_{\ell=1}^{L}
+\label{eq:slow_basis_def}
+\end{equation}
+be a slow temporal spline basis on $[t_0,t_f]$. This basis is used only for the mesoscale
+streamfunction.
+
+\subsection{Spline representation of the center of mass in the fast basis}
+
+We represent the center-of-mass coordinates as
+\begin{equation}
+m_x(t)=\sum_{q=1}^{Q_b} b^x_q B_q(t),
+\qquad
+m_y(t)=\sum_{q=1}^{Q_b} b^y_q B_q(t),
+\label{eq:com_fast_basis}
+\end{equation}
+with unknown coefficients $b^x_q$ and $b^y_q$.
+
+At each drifter observation time $t_{k,n}$, define
+\begin{equation}
+m_{x;k,n}=m_x(t_{k,n})=\sum_{q=1}^{Q_b} b^x_q B_q(t_{k,n}),
+\qquad
+m_{y;k,n}=m_y(t_{k,n})=\sum_{q=1}^{Q_b} b^y_q B_q(t_{k,n}).
+\end{equation}
+
+The corresponding COM-frame coordinates are
+\begin{equation}
+\tilde{x}_{k,n}=x_{k,n}-m_{x;k,n},
+\qquad
+\tilde{y}_{k,n}=y_{k,n}-m_{y;k,n}.
+\label{eq:relative_coords_fastcom}
+\end{equation}
+
+Differentiating \eqref{eq:com_fast_basis} gives the COM velocity
+\begin{equation}
+\dot{m}_x(t)=\sum_{q=1}^{Q_b} b^x_q \dot{B}_q(t),
+\qquad
+\dot{m}_y(t)=\sum_{q=1}^{Q_b} b^y_q \dot{B}_q(t).
+\label{eq:com_velocity_fastcom}
+\end{equation}
+
+\subsection{Least-squares fit for the COM coefficients}
+
+We estimate the COM coefficients by fitting a common smooth trajectory to all drifter
+positions:
+\begin{align}
+\min_{\{b^x_q\}}
+\sum_{k=1}^{K}\sum_{n=1}^{N_k}
+\left(
+x_{k,n}-\sum_{q=1}^{Q_b} b^x_q B_q(t_{k,n})
+\right)^2,
+\\
+\min_{\{b^y_q\}}
+\sum_{k=1}^{K}\sum_{n=1}^{N_k}
+\left(
+y_{k,n}-\sum_{q=1}^{Q_b} b^y_q B_q(t_{k,n})
+\right)^2.
+\end{align}
+
+Stack all observations using a single index $r=1,\dots,N_{\mathrm{tot}}$, with associated
+pairs $(k(r),n(r))$, and define
+\begin{equation}
+\mathbf{x}=
+\begin{bmatrix}
+x_{k(r),n(r)}
+\end{bmatrix}_{r=1}^{N_{\mathrm{tot}}},
+\qquad
+\mathbf{y}=
+\begin{bmatrix}
+y_{k(r),n(r)}
+\end{bmatrix}_{r=1}^{N_{\mathrm{tot}}},
+\end{equation}
+together with the fast temporal design matrix
+\begin{equation}
+\mathcal{B}_{rq}=B_q\!\left(t_{k(r),n(r)}\right).
+\label{eq:B_design_matrix}
+\end{equation}
+Then
+\begin{equation}
+\hat{\mathbf{b}}^x=(\mathcal{B}^\top\mathcal{B})^{-1}\mathcal{B}^\top\mathbf{x},
+\qquad
+\hat{\mathbf{b}}^y=(\mathcal{B}^\top\mathcal{B})^{-1}\mathcal{B}^\top\mathbf{y},
+\label{eq:com_fast_coeff_est}
+\end{equation}
+or, with regularization,
+\begin{equation}
+\hat{\mathbf{b}}^x=(\mathcal{B}^\top\mathcal{B}+\lambda_c R_c)^{-1}\mathcal{B}^\top\mathbf{x},
+\qquad
+\hat{\mathbf{b}}^y=(\mathcal{B}^\top\mathcal{B}+\lambda_c R_c)^{-1}\mathcal{B}^\top\mathbf{y}.
+\end{equation}
+
+After estimating $\hat{\mathbf{b}}^x,\hat{\mathbf{b}}^y$, we evaluate
+$\hat{m}_x(t_{k,n})$, $\hat{m}_y(t_{k,n})$ and form the COM-frame coordinates
+$\tilde{x}_{k,n},\tilde{y}_{k,n}$ from \eqref{eq:relative_coords_fastcom}.
+
+\subsection{Tensor-product mesoscale streamfunction in the COM frame}
+
+Let $X_i(\tilde{x})$, $Y_j(\tilde{y})$, and $T_\ell(t)$ denote basis functions in
+$\tilde{x}$, $\tilde{y}$, and $t$, respectively. We represent the mesoscale streamfunction as
+\begin{equation}
+\psi(\tilde{x},\tilde{y},t)
+=
+\sum_{i=1}^{n_x}\sum_{j=1}^{n_y}\sum_{\ell=1}^{L}
+a_{ij\ell}\,
+X_i(\tilde{x})\,Y_j(\tilde{y})\,T_\ell(t).
+\label{eq:psi_slow_meso}
+\end{equation}
+
+The mesoscale velocity is
+\begin{equation}
+u^{\mathrm{meso}}=-\partial_{\tilde{y}}\psi,
+\qquad
+v^{\mathrm{meso}}=\partial_{\tilde{x}}\psi,
+\end{equation}
+hence
+\begin{align}
+u^{\mathrm{meso}}(\tilde{x},\tilde{y},t)
+&=
+-\sum_{i=1}^{n_x}\sum_{j=1}^{n_y}\sum_{\ell=1}^{L}
+a_{ij\ell}\,
+X_i(\tilde{x})\,Y_j'(\tilde{y})\,T_\ell(t),
+\label{eq:u_meso_slow}
+\\
+v^{\mathrm{meso}}(\tilde{x},\tilde{y},t)
+&=
+\sum_{i=1}^{n_x}\sum_{j=1}^{n_y}\sum_{\ell=1}^{L}
+a_{ij\ell}\,
+X_i'(\tilde{x})\,Y_j(\tilde{y})\,T_\ell(t).
+\label{eq:v_meso_slow}
+\end{align}
+
+Evaluated at the drifter observations,
+\begin{align}
+u^{\mathrm{meso}}_{k,n}
+&=
+-\sum_{i,j,\ell}
+a_{ij\ell}\,
+X_i(\tilde{x}_{k,n})\,Y_j'(\tilde{y}_{k,n})\,T_\ell(t_{k,n}),
+\label{eq:u_meso_kn}
+\\
+v^{\mathrm{meso}}_{k,n}
+&=
+\sum_{i,j,\ell}
+a_{ij\ell}\,
+X_i'(\tilde{x}_{k,n})\,Y_j(\tilde{y}_{k,n})\,T_\ell(t_{k,n}).
+\label{eq:v_meso_kn}
+\end{align}
+
+\subsection{Core computation: combine background and submesoscale into a single residual}
+
+Differentiating \eqref{eq:relative_coords_fastcom} gives
+\begin{equation}
+\dot{\tilde{x}}_k(t)=\dot{x}_k(t)-\dot{m}_x(t),
+\qquad
+\dot{\tilde{y}}_k(t)=\dot{y}_k(t)-\dot{m}_y(t).
+\end{equation}
+During the core mesoscale fit, we write
+\begin{align}
+\dot{\tilde{x}}_{k,n}
+&=
+-\sum_{i,j,\ell}
+a_{ij\ell}\,
+X_i(\tilde{x}_{k,n})\,Y_j'(\tilde{y}_{k,n})\,T_\ell(t_{k,n})
++\eta^x_{k,n},
+\label{eq:core_residual_x}
+\\
+\dot{\tilde{y}}_{k,n}
+&=
+\sum_{i,j,\ell}
+a_{ij\ell}\,
+X_i'(\tilde{x}_{k,n})\,Y_j(\tilde{y}_{k,n})\,T_\ell(t_{k,n})
++\eta^y_{k,n},
+\label{eq:core_residual_y}
+\end{align}
+where the combined residual satisfies
+\begin{equation}
+\eta^x_{k,n}
+=
+u^{\mathrm{bg}}(t_{k,n})+u^{\mathrm{sm}}_{k,n},
+\qquad
+\eta^y_{k,n}
+=
+v^{\mathrm{bg}}(t_{k,n})+v^{\mathrm{sm}}_{k,n}.
+\label{eq:eta_decomp}
+\end{equation}
+
+Thus the mesoscale fit is performed without yet distinguishing background and submesoscale
+motions.
+
+\subsection{Linear least-squares problem for the mesoscale coefficients}
+
+Let
+\begin{equation}
+P=n_x n_y L
+\end{equation}
+be the total number of mesoscale streamfunction coefficients, and flatten $(i,j,\ell)$ to a
+single column index $\alpha=1,\dots,P$. Define
+\begin{equation}
+\mathbf{a}=
+\begin{bmatrix}
+a_{111}\\
+a_{211}\\
+\vdots\\
+a_{n_x n_y L}
+\end{bmatrix}.
+\end{equation}
+
+Stack all observed COM-frame velocities:
+\begin{equation}
+\mathbf{u}=
+\begin{bmatrix}
+\dot{\tilde{x}}_{k,n}\\
+\dot{\tilde{y}}_{k,n}
+\end{bmatrix}_{(k,n)},
+\qquad
+\boldsymbol{\eta}=
+\begin{bmatrix}
+\eta^x_{k,n}\\
+\eta^y_{k,n}
+\end{bmatrix}_{(k,n)}.
+\end{equation}
+
+For coefficient $a_{ij\ell}$, define the corresponding design-matrix column
+\begin{equation}
+\mathbf{X}_{:,\,ij\ell}
+=
+\begin{bmatrix}
+-\,X_i(\tilde{x}_{k,n})\,Y_j'(\tilde{y}_{k,n})\,T_\ell(t_{k,n})
+\\[0.25em]
+\phantom{-}\,X_i'(\tilde{x}_{k,n})\,Y_j(\tilde{y}_{k,n})\,T_\ell(t_{k,n})
+\end{bmatrix}_{(k,n)}.
+\label{eq:X_design_meso}
+\end{equation}
+Then
+\begin{equation}
+\mathbf{u}=\mathbf{X}\mathbf{a}+\boldsymbol{\eta}.
+\label{eq:meso_regression}
+\end{equation}
+
+The least-squares estimator is
+\begin{equation}
+\hat{\mathbf{a}}
+=
+(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{u},
+\end{equation}
+or, with regularization,
+\begin{equation}
+\hat{\mathbf{a}}
+=
+(\mathbf{X}^\top\mathbf{X}+\lambda_\psi R_\psi)^{-1}\mathbf{X}^\top\mathbf{u}.
+\label{eq:meso_regression_regularized}
+\end{equation}
+
+\subsection{Recover the combined residual after the mesoscale fit}
+
+Once $\hat{\mathbf{a}}$ is known, the fitted mesoscale velocities are
+\begin{align}
+\hat{u}^{\mathrm{meso}}_{k,n}
+&=
+-\sum_{i,j,\ell}
+\hat{a}_{ij\ell}\,
+X_i(\tilde{x}_{k,n})\,Y_j'(\tilde{y}_{k,n})\,T_\ell(t_{k,n}),
+\\
+\hat{v}^{\mathrm{meso}}_{k,n}
+&=
+\sum_{i,j,\ell}
+\hat{a}_{ij\ell}\,
+X_i'(\tilde{x}_{k,n})\,Y_j(\tilde{y}_{k,n})\,T_\ell(t_{k,n}).
+\end{align}
+
+The combined residual in the fixed frame is then
+\begin{equation}
+\rho^x_{k,n}=\dot{x}_{k,n}-\hat{u}^{\mathrm{meso}}_{k,n},
+\qquad
+\rho^y_{k,n}=\dot{y}_{k,n}-\hat{v}^{\mathrm{meso}}_{k,n}.
+\label{eq:rho_fixed_residual}
+\end{equation}
+By construction, this residual contains both the background and the submesoscale parts:
+\begin{equation}
+\rho^x_{k,n}=u^{\mathrm{bg}}(t_{k,n})+u^{\mathrm{sm}}_{k,n},
+\qquad
+\rho^y_{k,n}=v^{\mathrm{bg}}(t_{k,n})+v^{\mathrm{sm}}_{k,n}.
+\label{eq:rho_decomposition}
+\end{equation}
+
+\subsection{Separate the background from the combined residual}
+
+We now define the background as the projection of the residual mean velocity onto the fast
+basis $B_q(t)$. Specifically,
+\begin{equation}
+u^{\mathrm{bg}}(t)=\sum_{q=1}^{Q_b} c^x_q B_q(t),
+\qquad
+v^{\mathrm{bg}}(t)=\sum_{q=1}^{Q_b} c^y_q B_q(t),
+\label{eq:bg_fast_rep}
+\end{equation}
+with coefficients determined by
+\begin{align}
+\hat{\mathbf{c}}^x
+&=
+\arg\min_{\mathbf{c}^x}
+\sum_{k=1}^{K}\sum_{n=1}^{N_k}
+\left(
+\rho^x_{k,n}-\sum_{q=1}^{Q_b} c^x_q B_q(t_{k,n})
+\right)^2,
+\label{eq:bg_proj_x}
+\\
+\hat{\mathbf{c}}^y
+&=
+\arg\min_{\mathbf{c}^y}
+\sum_{k=1}^{K}\sum_{n=1}^{N_k}
+\left(
+\rho^y_{k,n}-\sum_{q=1}^{Q_b} c^y_q B_q(t_{k,n})
+\right)^2.
+\label{eq:bg_proj_y}
+\end{align}
+
+Equivalently, using the fast design matrix \eqref{eq:B_design_matrix} and the stacked
+residuals
+\begin{equation}
+\boldsymbol{\rho}^x=
+\begin{bmatrix}
+\rho^x_{k(r),n(r)}
+\end{bmatrix}_{r=1}^{N_{\mathrm{tot}}},
+\qquad
+\boldsymbol{\rho}^y=
+\begin{bmatrix}
+\rho^y_{k(r),n(r)}
+\end{bmatrix}_{r=1}^{N_{\mathrm{tot}}},
+\end{equation}
+we have
+\begin{equation}
+\hat{\mathbf{c}}^x=(\mathcal{B}^\top\mathcal{B})^{-1}\mathcal{B}^\top\boldsymbol{\rho}^x,
+\qquad
+\hat{\mathbf{c}}^y=(\mathcal{B}^\top\mathcal{B})^{-1}\mathcal{B}^\top\boldsymbol{\rho}^y,
+\label{eq:bg_proj_closed_form}
+\end{equation}
+or, with regularization,
+\begin{equation}
+\hat{\mathbf{c}}^x=(\mathcal{B}^\top\mathcal{B}+\lambda_b R_b)^{-1}\mathcal{B}^\top\boldsymbol{\rho}^x,
+\qquad
+\hat{\mathbf{c}}^y=(\mathcal{B}^\top\mathcal{B}+\lambda_b R_b)^{-1}\mathcal{B}^\top\boldsymbol{\rho}^y.
+\end{equation}
+
+\subsection{Define the submesoscale component}
+
+The submesoscale signal is defined as the residual that remains after subtracting the
+background from the combined residual:
+\begin{equation}
+\hat{u}^{\mathrm{sm}}_{k,n}
+=
+\rho^x_{k,n}-\hat{u}^{\mathrm{bg}}(t_{k,n}),
+\qquad
+\hat{v}^{\mathrm{sm}}_{k,n}
+=
+\rho^y_{k,n}-\hat{v}^{\mathrm{bg}}(t_{k,n}),
+\label{eq:submeso_final}
+\end{equation}
+or, equivalently,
+\begin{equation}
+\hat{u}^{\mathrm{sm}}_{k,n}
+=
+\dot{x}_{k,n}
+-\hat{u}^{\mathrm{meso}}_{k,n}
+-\hat{u}^{\mathrm{bg}}(t_{k,n}),
+\qquad
+\hat{v}^{\mathrm{sm}}_{k,n}
+=
+\dot{y}_{k,n}
+-\hat{v}^{\mathrm{meso}}_{k,n}
+-\hat{v}^{\mathrm{bg}}(t_{k,n}).
+\end{equation}
+
+\subsection{Consistency with the synchronous fixed-$K$ case}
+
+Suppose all drifters are observed synchronously at times
+\begin{equation}
+t_1,\dots,t_N,
+\end{equation}
+and the number of deployed drifters is constant and equal to $K$. Then the pooled sorted
+time list consists of each common observation time repeated $K$ times, so the stride rule
+\eqref{eq:fast_stride_rule} selects one representative time per synchronous sample. Hence the
+fast-basis knots coincide with the synchronous sampling times, up to spline-order details.
+
+In this case, projecting the pooled residuals onto the common time-only basis $B_q(t)$ is
+equivalent to projecting the synchronous drifter-mean residual velocity onto that basis.
+Thus the present construction reduces to the Oscroft-style background definition when the data
+are synchronous and the number of deployed drifters does not change.
+
+\subsection{Compact three-stage algorithm}
+
+The computation proceeds as follows.
+
+\paragraph{Step 1.}
+Pool and sort all observation times, construct the representative times
+$\sigma_m$ from \eqref{eq:fast_stride_rule}--\eqref{eq:fast_knot_times}, and build the fast
+basis $B_q(t)$.
+
+\paragraph{Step 2.}
+Fit the COM coefficients $b_q^x,b_q^y$ in the fast basis using
+\eqref{eq:com_fast_coeff_est}, and compute the COM-frame coordinates
+$\tilde{x}_{k,n},\tilde{y}_{k,n}$.
+
+\paragraph{Step 3.}
+Choose the slow mesoscale basis $T_\ell(t)$ and the spatial bases $X_i,Y_j$, assemble the
+design matrix \eqref{eq:X_design_meso}, and solve
+\eqref{eq:meso_regression} or \eqref{eq:meso_regression_regularized} for the mesoscale
+coefficients $a_{ij\ell}$.
+
+\paragraph{Step 4.}
+Compute the fixed-frame combined residual \eqref{eq:rho_fixed_residual}.
+
+\paragraph{Step 5.}
+Project that residual onto the fast basis using \eqref{eq:bg_proj_x}--\eqref{eq:bg_proj_closed_form}
+to obtain the background flow.
+
+\paragraph{Step 6.}
+Define the remaining residual by \eqref{eq:submeso_final} as the submesoscale component.
+
+\subsection{Remarks}
+
+\begin{enumerate}
+    \item The fast basis $B_q(t)$ is used for both the COM fit and the background fit.
+    \item The slow basis $T_\ell(t)$ is used only for the mesoscale streamfunction.
+    \item The mesoscale fit remains linear because the background and submesoscale components
+    are grouped together into a single residual during the core computation.
+    \item The separation between background and submesoscale is performed only after the
+    mesoscale coefficients have been estimated.
+    \item In the synchronous fixed-$K$ limit, the present construction reduces to the
+    corresponding Oscroft-style mean-residual definition.
+\end{enumerate}
+
+\subsection{Addendum: numerical implementation details for GriddedStreamfunction}
+
+This addendum records the numerical choices used by the current MATLAB implementation
+`GriddedStreamfunction.fitFromTrajectorySplines(...)`. These choices are sufficient to
+reproduce the shipped algorithm exactly, but some of them are implementation defaults rather
+than mathematically required parts of the formulation above.
+
+\subsubsection{Implemented least-squares path}
+
+The current implementation follows the three-stage least-squares structure above, but uses the
+unregularized branch throughout. In practice,
+\begin{enumerate}
+    \item the COM coefficients are obtained from the pooled fast-basis system
+    \begin{equation}
+    \hat{\mathbf{b}}^x = \mathcal{B} \backslash \mathbf{x},
+    \qquad
+    \hat{\mathbf{b}}^y = \mathcal{B} \backslash \mathbf{y},
+    \end{equation}
+    \item the mesoscale coefficients are obtained from the reduced COM-frame regression
+    \begin{equation}
+    \hat{\mathbf{a}}_{\mathrm{red}} = \mathbf{X}_{\mathrm{red}} \backslash \mathbf{u},
+    \end{equation}
+    \item and the background coefficients are obtained from the fixed-frame residual by
+    \begin{equation}
+    \hat{\mathbf{c}}^x = \mathcal{B} \backslash \boldsymbol{\rho}^x,
+    \qquad
+    \hat{\mathbf{c}}^y = \mathcal{B} \backslash \boldsymbol{\rho}^y.
+    \end{equation}
+\end{enumerate}
+Thus the regularized formulas in
+\eqref{eq:com_fast_coeff_est}, \eqref{eq:meso_regression_regularized}, and
+\eqref{eq:bg_proj_closed_form} should be viewed as possible extensions of the method, not as
+the path currently used by the shipped code.
+
+The implementation is also defined on evaluated trajectory splines rather than on raw stored
+sample arrays. For each drifter, the observed positions are taken as
+\begin{equation}
+x_{k,n} = x_k(t_{k,n}),
+\qquad
+y_{k,n} = y_k(t_{k,n}),
+\end{equation}
+and the observed velocities are taken as first derivatives of the same trajectory splines,
+\begin{equation}
+\dot{x}_{k,n} = \frac{d}{dt}x_k(t_{k,n}),
+\qquad
+\dot{y}_{k,n} = \frac{d}{dt}y_k(t_{k,n}).
+\end{equation}
+This keeps the fitter compatible with trajectory splines that have been smoothed before the
+streamfunction fit is applied.
+
+\subsubsection{Default spline-basis construction}
+
+The fast temporal basis uses spline degree
+\begin{equation}
+S_{\mathrm{fast}} = 3
+\end{equation}
+by default. If no fast knot vector is supplied, the representative times
+\eqref{eq:fast_knot_times} are first reduced to their unique values, and those unique
+representative times are then used as the data sites for the fast spline construction.
+
+The deployed-drifter count in the stride rule is implemented exactly as the number of drifters
+whose support intervals contain the pooled time $\tau_r$, that is,
+\begin{equation}
+D(\tau_r)
+=
+\#\left\{
+k : t_{k,1} \le \tau_r \le t_{k,N_k}
+\right\}.
+\end{equation}
+The recursion \eqref{eq:fast_stride_rule} is then applied literally with that deployed count.
+
+For the mesoscale streamfunction, the default slow basis degree is
+\begin{equation}
+[S_{\tilde{x}}, S_{\tilde{y}}, S_t] = [2,2,0].
+\end{equation}
+If no knot vectors are supplied for the mesoscale basis, the current implementation constructs
+a minimal padded domain in each dimension using only repeated lower and upper endpoints. Let
+\begin{equation}
+q_{\min} = \min \tilde{x}_{k,n}, \qquad q_{\max} = \max \tilde{x}_{k,n},
+\end{equation}
+and define $r_{\min}, r_{\max}, t_{\min}, t_{\max}$ analogously. The implemented paddings are
+\begin{align}
+\Delta_q &= \max\!\left(50,\, 0.25(q_{\max}-q_{\min})\right),
+\\
+\Delta_r &= \max\!\left(50,\, 0.25(r_{\max}-r_{\min})\right),
+\\
+\Delta_t &= \max\!\left(1,\, 0.01(t_{\max}-t_{\min})\right).
+\end{align}
+The knot vectors are then formed as
+\begin{align}
+\Xi_q &= \left[q_{\min}-\Delta_q, \dots, q_{\min}-\Delta_q,\,
+q_{\max}+\Delta_q, \dots, q_{\max}+\Delta_q\right]^\top,
+\\
+\Xi_r &= \left[r_{\min}-\Delta_r, \dots, r_{\min}-\Delta_r,\,
+r_{\max}+\Delta_r, \dots, r_{\max}+\Delta_r\right]^\top,
+\\
+\Xi_t &= \left[t_{\min}-\Delta_t, \dots, t_{\min}-\Delta_t,\,
+t_{\max}+\Delta_t, \dots, t_{\max}+\Delta_t\right]^\top,
+\end{align}
+with each lower and upper endpoint repeated $S_{\tilde{x}}+1$, $S_{\tilde{y}}+1$, and
+$S_t+1$ times, respectively. This is an implementation default rather than a required part of
+the mathematical model.
+
+\subsubsection{Gauge reduction in the mesoscale solve}
+
+The current implementation removes the spatially constant mode separately in each slow-time
+block before solving for the mesoscale coefficients. If
+\begin{equation}
+P_{\mathrm{space}} = n_x n_y,
+\qquad
+L = \text{number of slow-time basis functions},
+\end{equation}
+then one coefficient is removed from each of the $L$ temporal blocks, leaving
+\begin{equation}
+L(P_{\mathrm{space}}-1)
+\end{equation}
+independent mesoscale unknowns.
+
+This is done by introducing a reduced spatial lifting matrix
+\begin{equation}
+G_{\mathrm{space}} =
+\begin{bmatrix}
+I_{P_{\mathrm{space}}-1}
+\\
+-\mathbf{1}^\top
+\end{bmatrix},
+\end{equation}
+so the full coefficient vector is represented as
+\begin{equation}
+\mathbf{a} = G \mathbf{a}_{\mathrm{red}},
+\qquad
+G = I_L \otimes G_{\mathrm{space}}.
+\end{equation}
+The regression is then solved in reduced form,
+\begin{equation}
+\mathbf{u} = \mathbf{X}G \mathbf{a}_{\mathrm{red}} + \boldsymbol{\eta},
+\end{equation}
+after which the full tensor-product coefficient vector is reconstructed by
+\begin{equation}
+\hat{\mathbf{a}} = G \hat{\mathbf{a}}_{\mathrm{red}}.
+\end{equation}
+Equivalently, the spatial coefficients within each slow-time block satisfy a zero-sum gauge.
+
+\subsubsection{Residual-based background and retained diagnostics}
+
+The current implementation defines the background from the fixed-frame residual
+\eqref{eq:rho_fixed_residual}, not from the COM velocity \eqref{eq:com_velocity_fastcom}. In
+particular,
+\begin{equation}
+\rho^x_{k,n} = \dot{x}_{k,n} - \hat{u}^{\mathrm{meso}}_{k,n},
+\qquad
+\rho^y_{k,n} = \dot{y}_{k,n} - \hat{v}^{\mathrm{meso}}_{k,n},
+\end{equation}
+and those residuals are projected directly onto the fast basis to obtain
+$\hat{u}^{\mathrm{bg}}(t)$ and $\hat{v}^{\mathrm{bg}}(t)$. The submesoscale term is then the
+remaining residual after subtracting that fitted background, exactly as in
+\eqref{eq:submeso_final}.
+
+For reproducibility of the examples and decomposition analysis, the implementation also retains
+the following diagnostic quantities after the fit:
+\begin{enumerate}
+    \item the pooled observation times, positions, and velocities,
+    \item the centered coordinates and COM velocity samples,
+    \item the full and reduced mesoscale design matrices together with the reduced and lifted
+    mesoscale coefficient vectors,
+    \item the mesoscale, background, and submesoscale velocity components evaluated at all
+    observation events.
+\end{enumerate}
+These diagnostics are not additional modeling assumptions, but they are part of the current
+numerical realization of the method and therefore affect exact reproducibility of the MATLAB
+implementation.
