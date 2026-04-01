@@ -116,9 +116,9 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             expectedObservedY = zeros(0, 1);
             rawX = zeros(0, 1);
             for iTrajectory = 1:numel(trajectories)
-                expectedObservedX = [expectedObservedX; trajectories(iTrajectory).x(trajectories(iTrajectory).t)]; %#ok<AGROW>
-                expectedObservedY = [expectedObservedY; trajectories(iTrajectory).y(trajectories(iTrajectory).t)]; %#ok<AGROW>
-                rawX = [rawX; trajectories(iTrajectory).x.dataValues]; %#ok<AGROW>
+                expectedObservedX = [expectedObservedX; trajectories(iTrajectory).x(trajectories(iTrajectory).t)];
+                expectedObservedY = [expectedObservedY; trajectories(iTrajectory).y(trajectories(iTrajectory).t)];
+                rawX = [rawX; trajectories(iTrajectory).x.dataValues];
             end
 
             testCase.verifyEqual(fit.fitState.observedX, expectedObservedX, "AbsTol", 1e-12)
@@ -186,8 +186,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             [tFine, xFine, yFine] = integrator.particleTrajectories(x0(:), y0(:), 12*3600, 300);
 
             nDrifters = size(xFine, 2);
-            trajectories = TrajectorySpline.empty(nDrifters, 0);
-            trajectories(nDrifters, 1) = TrajectorySpline();
+            trajectories = TrajectorySpline.empty(0, 1);
             drifterOffset = [-1; 0; 1; 1; 0; 1; 1; 0; -1];
             baseIndices = 3:3:(numel(tFine) - 2);
             jitterPattern = [0; 1; 0; -1; 0; 1; 0; -1; 0; 0];
@@ -196,7 +195,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
             for iDrifter = 1:nDrifters
                 indices = baseIndices + transpose(jitter) + drifterOffset(iDrifter);
-                trajectories(iDrifter) = TrajectorySpline(tFine(indices), xFine(indices, iDrifter), yFine(indices, iDrifter), S=3);
+                trajectories(end+1, 1) = TrajectorySpline(tFine(indices), xFine(indices, iDrifter), yFine(indices, iDrifter), S=3);
             end
         end
 
@@ -206,10 +205,9 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             end
 
             nTrajectories = size(x, 2);
-            trajectories = TrajectorySpline.empty(nTrajectories, 0);
-            trajectories(nTrajectories, 1) = TrajectorySpline();
+            trajectories = TrajectorySpline.empty(0, 1);
             for iDrifter = 1:size(x, 2)
-                trajectories(iDrifter) = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=splineDegree);
+                trajectories(end+1, 1) = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=splineDegree);
             end
         end
 
@@ -226,10 +224,9 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             xSpline2 = ConstrainedSpline(t, x2 - perturbation, S=3, splineDOF=6);
             ySpline2 = ConstrainedSpline(t, y2 + perturbation, S=3, splineDOF=6);
 
-            trajectories = TrajectorySpline.empty(2, 0);
-            trajectories(2, 1) = TrajectorySpline();
-            trajectories(1) = TrajectorySpline.fromComponentSplines(t, xSpline1, ySpline1);
-            trajectories(2) = TrajectorySpline.fromComponentSplines(t, xSpline2, ySpline2);
+            trajectories = TrajectorySpline.empty(0, 1);
+            trajectories(end+1, 1) = TrajectorySpline.fromComponentSplines(t, xSpline1, ySpline1);
+            trajectories(end+1, 1) = TrajectorySpline.fromComponentSplines(t, xSpline2, ySpline2);
         end
 
         function psiKnotPoints = zeroPsiKnotPoints()
