@@ -74,13 +74,13 @@
             ]
         },
         {
-            "path": "Estimation/TensorSplineStreamfunction",
+            "path": "Estimation/GriddedStreamfunction",
             "languages": [
                 "matlab"
             ]
         },
         {
-            "path": "Estimation/TensorSplineStreamfunction/UnitTests",
+            "path": "Estimation/GriddedStreamfunction/UnitTests",
             "languages": [
                 "matlab"
             ]

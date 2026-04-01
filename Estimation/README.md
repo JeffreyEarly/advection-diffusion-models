@@ -6,5 +6,4 @@ This directory contains tools for estimating the flow field of the advection-dif
 The current estimation methodologies are:
 
 1. [Linear velocity field estimation](LinearVelocityField/)
-2. tensor-spline streamfunction estimation in the moving center-of-mass frame
-
+2. gridded streamfunction estimation in the moving center-of-mass frame
