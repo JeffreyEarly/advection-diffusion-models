@@ -25,11 +25,10 @@ for iDrifter = 1:nDrifters
     trajectories(end + 1, 1) = TrajectorySpline.fromComponentSplines(t, xSpline, ySpline); %#ok<AGROW>
 end
 
-fit = GriddedStreamfunction.fitFromTrajectorySplines(trajectories, ...
-    psiKnotPoints=fitOptions.psiKnotPoints, psiS=fitOptions.psiS, ...
-    fastKnotPoints=fitOptions.fastKnotPoints, fastS=fitOptions.fastS);
-xFit = reshape(fit.fitState.observedX, numel(t), nDrifters);
-yFit = reshape(fit.fitState.observedY, numel(t), nDrifters);
+fit = GriddedStreamfunction(trajectories, psiKnotPoints=fitOptions.psiKnotPoints, ...
+    psiS=fitOptions.psiS, fastKnotPoints=fitOptions.fastKnotPoints, fastS=fitOptions.fastS);
+xFit = reshape(fit.observedX, numel(t), nDrifters);
+yFit = reshape(fit.observedY, numel(t), nDrifters);
 diagnostics = griddedStreamfunctionEffectiveDiagnostics(fit, t, xFit, yFit);
 
 sigmaN = fit.sigma_n(t, diagnostics.mxFit, diagnostics.myFit);

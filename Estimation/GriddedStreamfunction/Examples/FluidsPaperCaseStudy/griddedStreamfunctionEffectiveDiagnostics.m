@@ -18,10 +18,10 @@ end
 nTimes = numel(t);
 nDrifters = size(x, 2);
 expectedSampleCount = nTimes * nDrifters;
-if numel(fit.fitState.observedXVelocity) ~= expectedSampleCount
+if numel(fit.observedXVelocity) ~= expectedSampleCount
     error("GriddedStreamfunction:ExampleSampleCountMismatch", ...
-        "Expected %d synchronous velocity samples in fitState, but found %d.", ...
-        expectedSampleCount, numel(fit.fitState.observedXVelocity));
+        "Expected %d synchronous velocity samples in the estimator, but found %d.", ...
+        expectedSampleCount, numel(fit.observedXVelocity));
 end
 
 mxObserved = mean(x, 2);
@@ -33,14 +33,14 @@ myFitGrid = repmat(myFit, 1, nDrifters);
 mxObservedGrid = repmat(mxObserved, 1, nDrifters);
 myObservedGrid = repmat(myObserved, 1, nDrifters);
 
-uObserved = reshape(fit.fitState.observedXVelocity, nTimes, nDrifters);
-vObserved = reshape(fit.fitState.observedYVelocity, nTimes, nDrifters);
-uMesoscaleRaw = reshape(fit.fitState.uMesoscaleObserved, nTimes, nDrifters);
-vMesoscaleRaw = reshape(fit.fitState.vMesoscaleObserved, nTimes, nDrifters);
-uBackgroundRawObserved = reshape(fit.fitState.uBackgroundObserved, nTimes, nDrifters);
-vBackgroundRawObserved = reshape(fit.fitState.vBackgroundObserved, nTimes, nDrifters);
-uSubmesoscale = reshape(fit.fitState.submesoscaleX, nTimes, nDrifters);
-vSubmesoscale = reshape(fit.fitState.submesoscaleY, nTimes, nDrifters);
+uObserved = reshape(fit.observedXVelocity, nTimes, nDrifters);
+vObserved = reshape(fit.observedYVelocity, nTimes, nDrifters);
+uMesoscaleRaw = reshape(fit.uMesoscaleObserved, nTimes, nDrifters);
+vMesoscaleRaw = reshape(fit.vMesoscaleObserved, nTimes, nDrifters);
+uBackgroundRawObserved = reshape(fit.uBackgroundObserved, nTimes, nDrifters);
+vBackgroundRawObserved = reshape(fit.vBackgroundObserved, nTimes, nDrifters);
+uSubmesoscale = reshape(fit.submesoscaleX, nTimes, nDrifters);
+vSubmesoscale = reshape(fit.submesoscaleY, nTimes, nDrifters);
 
 uBackgroundRaw = fit.uBackground(t);
 vBackgroundRaw = fit.vBackground(t);

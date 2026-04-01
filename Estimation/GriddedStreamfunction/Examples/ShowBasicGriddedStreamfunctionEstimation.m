@@ -24,13 +24,13 @@ for iDrifter = 1:size(x, 2)
     trajectories(end+1, 1) = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
 
-fit = GriddedStreamfunction.fitFromTrajectorySplines(trajectories);
+fit = GriddedStreamfunction(trajectories);
 tGrid = repmat(t, 1, size(x, 2));
 
 uBackgroundFit = fit.uBackground(t);
 vBackgroundFit = fit.vBackground(t);
-uFit = fit.u(tGrid, x, y);
-vFit = fit.v(tGrid, x, y);
+uFit = fit.uMesoscale(tGrid, x, y) + repmat(uBackgroundFit, 1, size(x, 2));
+vFit = fit.vMesoscale(tGrid, x, y) + repmat(vBackgroundFit, 1, size(x, 2));
 sigmaNFit = fit.sigma_n(tGrid, x, y);
 sigmaSFit = fit.sigma_s(tGrid, x, y);
 zetaFit = fit.zeta(tGrid, x, y);
