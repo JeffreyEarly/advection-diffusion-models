@@ -35,11 +35,12 @@ sigmaNFit = fit.sigma_n(tGrid, x, y);
 sigmaSFit = fit.sigma_s(tGrid, x, y);
 zetaFit = fit.zeta(tGrid, x, y);
 
-fprintf('Background velocity samples\n');
-fprintf('  t (h)      true u_bg      fit u_bg      true v_bg      fit v_bg\n');
+fprintf('Recovered background velocity samples\n');
+fprintf('  rev3 note: background is the COM residual after the mesoscale solve,\n');
+fprintf('             so constant-velocity truth need not match the fitted split.\n');
+fprintf('  t (h)       fit u_bg       fit v_bg\n');
 for iTime = 1:numel(t)
-    fprintf(' %6.2f   %12.6f  %12.6f  %12.6f  %12.6f\n', ...
-        t(iTime)/3600, velocityField.u0, uBackgroundFit(iTime), velocityField.v0, vBackgroundFit(iTime));
+    fprintf(' %6.2f   %12.6f  %12.6f\n', t(iTime)/3600, uBackgroundFit(iTime), vBackgroundFit(iTime));
 end
 
 fprintf('\nRecovered linear diagnostics on observed trajectories\n');

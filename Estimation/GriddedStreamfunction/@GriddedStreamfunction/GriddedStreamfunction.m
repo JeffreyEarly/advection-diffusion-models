@@ -1,13 +1,18 @@
 classdef GriddedStreamfunction < handle
-    % Fit a COM-frame streamfunction estimator and observation-event decomposition.
+    % Fit a rev3 COM-frame streamfunction estimator and trajectory decomposition.
     %
     % `GriddedStreamfunction` fits a mesoscale streamfunction
     % $$\psi(\tilde{x},\tilde{y},t)$$, a center-of-mass trajectory
     % $$m_x(t), m_y(t)$$, and a background velocity
     % $$u^{\mathrm{bg}}(t), v^{\mathrm{bg}}(t)$$ from asynchronous drifter
-    % trajectory splines. After the mesoscale fit, the remaining fixed-frame
-    % residual is split into background and submesoscale parts at every
-    % observation event.
+    % trajectory splines using the rev3 mesoscale-only formulation
+    % described in `asynchronous-com-fit-rev3.tex`.
+    %
+    % The estimator first fits the COM position in a fast temporal basis,
+    % then solves one least-squares problem for the mesoscale
+    % streamfunction coefficients. The background velocity is recovered
+    % afterward as the COM residual projected back onto the same fast
+    % basis.
     %
     % The fitted decomposition follows
     %
@@ -20,15 +25,31 @@ classdef GriddedStreamfunction < handle
     % with centered coordinates
     % $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t).$$
     %
+    % The fixed-frame trajectory decomposition is stored as per-drifter
+    % spline trajectories satisfying
+    %
+    % $$
+    % x_k = x_k^{\mathrm{bg}} + x_k^{\mathrm{meso}} + x_k^{\mathrm{sm}},
+    % \qquad
+    % y_k = y_k^{\mathrm{bg}} + y_k^{\mathrm{meso}} + y_k^{\mathrm{sm}},
+    % $$
+    %
+    % where the mesoscale trajectory carries the observed initial drifter
+    % position and the background and submesoscale trajectories are
+    % zero-anchored at the first drifter sample. In the centered frame,
+    % the mesoscale trajectory carries the initial centered position and
+    % the centered submesoscale trajectory is zero-anchored.
+    %
     % ```matlab
     % fit = GriddedStreamfunction(trajectories);
     % uMeso = fit.uMesoscale(tQuery, xQuery, yQuery);
-    % uBg = fit.uBackground(tQuery);
+    % xMeso = fit.mesoscaleTrajectories(1).x(tQuery);
     % ```
     %
     % - Topic: Fit the estimator
     % - Topic: Inspect fitted components
     % - Topic: Inspect decomposition samples
+    % - Topic: Inspect decomposition trajectories
     % - Topic: Evaluate fitted mesoscale
     % - Topic: Evaluate fitted diagnostics
     % - Declaration: classdef GriddedStreamfunction < handle
@@ -55,10 +76,52 @@ classdef GriddedStreamfunction < handle
         %
         % `backgroundVelocityTrajectory.x(t)` evaluates
         % $$u^{\mathrm{bg}}(t)$$ and `backgroundVelocityTrajectory.y(t)`
-        % evaluates $$v^{\mathrm{bg}}(t)$$.
+        % evaluates $$v^{\mathrm{bg}}(t)$$. These are the fast-basis
+        % projections of the recovered COM residual, not coefficients from
+        % a joint background solve.
         %
         % - Topic: Inspect fitted components
         backgroundVelocityTrajectory
+
+        % Fixed-frame background trajectory components for each drifter.
+        %
+        % Each entry is a `TrajectorySpline` whose x- and y-components are
+        % zero at the first sample time of that drifter.
+        %
+        % - Topic: Inspect decomposition trajectories
+        backgroundTrajectories
+
+        % Fixed-frame mesoscale trajectory components for each drifter.
+        %
+        % Each entry is a `TrajectorySpline` whose initial position equals
+        % the observed initial position of that drifter.
+        %
+        % - Topic: Inspect decomposition trajectories
+        mesoscaleTrajectories
+
+        % Fixed-frame submesoscale trajectory components for each drifter.
+        %
+        % Each entry is a `TrajectorySpline` whose x- and y-components are
+        % zero at the first sample time of that drifter.
+        %
+        % - Topic: Inspect decomposition trajectories
+        submesoscaleTrajectories
+
+        % COM-frame mesoscale trajectory components for each drifter.
+        %
+        % Each entry is a `TrajectorySpline` whose initial position equals
+        % the initial centered position of that drifter.
+        %
+        % - Topic: Inspect decomposition trajectories
+        centeredMesoscaleTrajectories
+
+        % COM-frame submesoscale trajectory components for each drifter.
+        %
+        % Each entry is a `TrajectorySpline` whose x- and y-components are
+        % zero at the first sample time of that drifter.
+        %
+        % - Topic: Inspect decomposition trajectories
+        centeredSubmesoscaleTrajectories
 
         % Fast temporal knot vector used for COM and background fits.
         %
@@ -151,31 +214,35 @@ classdef GriddedStreamfunction < handle
         % - Topic: Inspect decomposition samples
         centerVelocityY
 
-        % Pooled mesoscale x-velocity samples.
+        % Pooled fixed-frame mesoscale x-velocity samples.
         %
         % - Topic: Inspect decomposition samples
         uMesoscaleObserved
 
-        % Pooled mesoscale y-velocity samples.
+        % Pooled fixed-frame mesoscale y-velocity samples.
         %
         % - Topic: Inspect decomposition samples
         vMesoscaleObserved
 
-        % Pooled fixed-frame residual x-velocity samples.
-        %
-        % This is
-        % $$\rho^x = \dot{x} - u^{\mathrm{meso}}.$$
+        % Pooled COM-projected mesoscale x-velocity samples.
         %
         % - Topic: Inspect decomposition samples
-        rhoX
+        uMesoscaleComObserved
 
-        % Pooled fixed-frame residual y-velocity samples.
-        %
-        % This is
-        % $$\rho^y = \dot{y} - v^{\mathrm{meso}}.$$
+        % Pooled COM-projected mesoscale y-velocity samples.
         %
         % - Topic: Inspect decomposition samples
-        rhoY
+        vMesoscaleComObserved
+
+        % Pooled relative mesoscale x-velocity samples.
+        %
+        % - Topic: Inspect decomposition samples
+        uMesoscaleRelativeObserved
+
+        % Pooled relative mesoscale y-velocity samples.
+        %
+        % - Topic: Inspect decomposition samples
+        vMesoscaleRelativeObserved
 
         % Pooled fitted background x-velocity samples.
         %
@@ -190,19 +257,20 @@ classdef GriddedStreamfunction < handle
         % Pooled fitted submesoscale x-velocity samples.
         %
         % - Topic: Inspect decomposition samples
-        submesoscaleX
+        uSubmesoscaleObserved
 
         % Pooled fitted submesoscale y-velocity samples.
         %
         % - Topic: Inspect decomposition samples
-        submesoscaleY
+        vSubmesoscaleObserved
     end
 
     properties (SetAccess = private, Hidden)
-        % Developer-only diagnostics from the least-squares fit.
+        % Developer-only diagnostics from the rev3 mesoscale least-squares fit.
         %
-        % This struct stores the design matrices, reduced solves, and
-        % fitted coefficient vectors used internally by the estimator.
+        % This struct stores the projection blocks, mesoscale design
+        % matrices, and coefficient vectors used internally by the
+        % estimator.
         %
         % - Topic: Inspect decomposition samples
         % - Developer: true
@@ -219,9 +287,10 @@ classdef GriddedStreamfunction < handle
             % first derivatives of the same trajectory splines.
             %
             % The fast temporal basis is used for both the center-of-mass
-            % trajectory and the background velocity, while the tensor basis
-            % defined by `psiS` and `psiKnotPoints` is used only for the
-            % mesoscale streamfunction.
+            % trajectory and the recovered background velocity. The tensor
+            % basis defined by `psiS` and `psiKnotPoints` is used only for
+            % the mesoscale streamfunction in the centered frame, with
+            % only the additive streamfunction gauge removed.
             %
             % - Topic: Fit the estimator
             % - Declaration: self = GriddedStreamfunction(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...)
@@ -239,7 +308,7 @@ classdef GriddedStreamfunction < handle
                 options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
             end
 
-            self.fitTrajectorySplines(reshape(trajectories, [], 1), ...
+            fitTrajectorySplines(self, reshape(trajectories, [], 1), ...
                 options.psiKnotPoints, reshape(options.psiS, 1, []), ...
                 options.fastKnotPoints, options.fastS);
         end
@@ -406,8 +475,6 @@ classdef GriddedStreamfunction < handle
 
     methods (Static, Access = private)
         representativeTimes = representativeObservationTimes(tCell)
-        fastKnotPoints = validateFastKnotPoints(fastKnotPoints, fastS, allT)
-        psiKnotPoints = validatePsiKnotPoints(psiKnotPoints)
         psiKnotPoints = defaultPsiKnotPoints(qAll, rAll, tAll, psiS)
     end
 end

@@ -37,8 +37,8 @@ styleAxis(ax2, figureFont, figureAxisTickSize)
 
 ax3 = nexttile;
 hold(ax3, "on")
-u0Plot = plot(ax3, tDays, siteFit.effective.uBackground, "LineWidth", 2);
-v0Plot = plot(ax3, tDays, siteFit.effective.vBackground, "LineWidth", 2);
+u0Plot = plot(ax3, tDays, siteFit.uBackground, "LineWidth", 2);
+v0Plot = plot(ax3, tDays, siteFit.vBackground, "LineWidth", 2);
 ylabel(ax3, "u_0/v_0 (m/s)", "FontSize", figureAxisLabelSize, "FontName", figureFont)
 xlim(ax3, xLimits)
 ylim(ax3, [-0.25 0.25])
@@ -66,11 +66,11 @@ set(gcf, "PaperPositionMode", "auto")
 set(gcf, "Color", "w");
 
 axMeso = axes;
-plot(axMeso, siteFit.effective.xMesoscale/1000, siteFit.effective.yMesoscale/1000, "LineWidth", 1.5)
+plot(axMeso, siteFit.xMesoscale/1000, siteFit.yMesoscale/1000, "LineWidth", 1.5)
 axis(axMeso, "equal")
 xlabel(axMeso, "km", "FontSize", figureAxisLabelSize, "FontName", figureFont)
 ylabel(axMeso, "km", "FontSize", figureAxisLabelSize, "FontName", figureFont)
-text(axMeso, 0.05, 0.92, "meso (effective)", ...
+text(axMeso, 0.05, 0.92, "meso", ...
     "Units", "normalized", "FontSize", figureAxisLabelSize, "FontName", figureFont)
 styleAxis(axMeso, figureFont, figureAxisTickSize)
 
@@ -81,7 +81,7 @@ set(gcf, "Color", "w");
 tlDecomp = tiledlayout(2, 1, "TileSpacing", "compact", "Padding", "compact");
 
 axBackground = nexttile;
-plot(axBackground, siteFit.effective.xBackground/1000, siteFit.effective.yBackground/1000, "LineWidth", 1.5)
+plot(axBackground, siteFit.xBackground/1000, siteFit.yBackground/1000, "LineWidth", 1.5)
 axis(axBackground, "equal")
 axBackground.YAxisLocation = "right";
 axBackground.XTickLabel = [];
@@ -91,7 +91,7 @@ text(axBackground, 0.05, 0.88, "bg", ...
 styleAxis(axBackground, figureFont, figureAxisTickSize)
 
 axSubmeso = nexttile;
-plot(axSubmeso, siteFit.effective.xSubmesoscale/1000, siteFit.effective.ySubmesoscale/1000, "LineWidth", 1.5)
+plot(axSubmeso, siteFit.xSubmesoscale/1000, siteFit.ySubmesoscale/1000, "LineWidth", 1.5)
 axis(axSubmeso, "equal")
 axSubmeso.YAxisLocation = "right";
 xlabel(axSubmeso, "km", "FontSize", figureAxisLabelSize, "FontName", figureFont)
@@ -101,8 +101,8 @@ text(axSubmeso, 0.05, 0.88, "sm", ...
 styleAxis(axSubmeso, figureFont, figureAxisTickSize)
 
 [decompositionXLimits, decompositionYLimits] = sharedTrajectoryLimits( ...
-    {siteFit.effective.xBackground, siteFit.effective.xSubmesoscale}, ...
-    {siteFit.effective.yBackground, siteFit.effective.ySubmesoscale}, 1000);
+    {siteFit.xBackground, siteFit.xSubmesoscale}, ...
+    {siteFit.yBackground, siteFit.ySubmesoscale}, 1000);
 xlim(axBackground, decompositionXLimits)
 xlim(axSubmeso, decompositionXLimits)
 ylim(axBackground, decompositionYLimits)
@@ -115,11 +115,11 @@ set(gcf, "PaperPositionMode", "auto")
 set(gcf, "Color", "w");
 
 axCom = axes;
-plot(axCom, siteFit.effective.qMesoscale/1000, siteFit.effective.rMesoscale/1000, "LineWidth", 1.5)
+plot(axCom, siteFit.qMesoscale/1000, siteFit.rMesoscale/1000, "LineWidth", 1.5)
 axis(axCom, "equal")
 xlabel(axCom, "km", "FontSize", figureAxisLabelSize, "FontName", figureFont)
 ylabel(axCom, "km", "FontSize", figureAxisLabelSize, "FontName", figureFont)
-text(axCom, 0.05, 0.92, "meso (centre-of-mass, effective)", ...
+text(axCom, 0.05, 0.92, "meso (centre-of-mass)", ...
     "Units", "normalized", "FontSize", figureAxisLabelSize, "FontName", figureFont)
 styleAxis(axCom, figureFont, figureAxisTickSize)
 

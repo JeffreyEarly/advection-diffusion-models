@@ -1,6 +1,6 @@
 % Show a simple Site 1 fit using the current gridded-streamfunction estimator.
 scriptDir = fileparts(mfilename("fullpath"));
-dataPath = fullfile(scriptDir, "..", "..", "..", "ExampleData", "LatMix2011", "smoothedGriddedRho2Drifters.mat");
+dataPath = fullfile(scriptDir, "..", "..", "..", "ExampleData", "LatMix2011", "smoothedGriddedRho1Drifters.mat");
 if ~isfile(dataPath)
     error("GriddedStreamfunction:MissingExampleData", "Expected local example data at %s.", dataPath);
 end
@@ -30,8 +30,12 @@ uMesoscale = fit.uMesoscale(tGrid, x, y);
 vMesoscale = fit.vMesoscale(tGrid, x, y);
 qObserved = x - mxGrid;
 rObserved = y - myGrid;
-qMesoscale = qObserved(1, :) + cumtrapz(t, uMesoscale);
-rMesoscale = rObserved(1, :) + cumtrapz(t, vMesoscale);
+qMesoscale = zeros(size(x));
+rMesoscale = zeros(size(y));
+for iDrifter = 1:nDrifters
+    qMesoscale(:, iDrifter) = fit.centeredMesoscaleTrajectories(iDrifter).x(t);
+    rMesoscale(:, iDrifter) = fit.centeredMesoscaleTrajectories(iDrifter).y(t);
+end
 
 uBackground = fit.uBackground(t);
 vBackground = fit.vBackground(t);
@@ -39,8 +43,8 @@ uBackgroundGrid = repmat(uBackground, 1, nDrifters);
 vBackgroundGrid = repmat(vBackground, 1, nDrifters);
 uObserved = reshape(fit.observedXVelocity, numel(t), nDrifters);
 vObserved = reshape(fit.observedYVelocity, numel(t), nDrifters);
-uSubmesoscale = reshape(fit.submesoscaleX, numel(t), nDrifters);
-vSubmesoscale = reshape(fit.submesoscaleY, numel(t), nDrifters);
+uSubmesoscale = reshape(fit.uSubmesoscaleObserved, numel(t), nDrifters);
+vSubmesoscale = reshape(fit.vSubmesoscaleObserved, numel(t), nDrifters);
 sigmaN = fit.sigma_n(t, mx, my);
 sigmaS = fit.sigma_s(t, mx, my);
 sigma = hypot(sigmaN, sigmaS);
