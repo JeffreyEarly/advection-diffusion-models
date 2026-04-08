@@ -22,14 +22,14 @@ tDays = t/86400;
 f0 = 2 * 7.2921e-5 * sin(siteData.lat0*pi/180);
 mx = fit.centerOfMassTrajectory.x(t);
 my = fit.centerOfMassTrajectory.y(t);
-tGrid = repmat(t, 1, nDrifters);
-mxGrid = repmat(mx, 1, nDrifters);
-myGrid = repmat(my, 1, nDrifters);
-
-uMesoscale = fit.uMesoscale(tGrid, x, y);
-vMesoscale = fit.vMesoscale(tGrid, x, y);
-qObserved = x - mxGrid;
-rObserved = y - myGrid;
+uObserved = reshape(fit.observedXVelocity, numel(t), nDrifters);
+vObserved = reshape(fit.observedYVelocity, numel(t), nDrifters);
+uMesoscale = reshape(fit.uMesoscaleObserved, numel(t), nDrifters);
+vMesoscale = reshape(fit.vMesoscaleObserved, numel(t), nDrifters);
+uSubmesoscale = reshape(fit.uSubmesoscaleObserved, numel(t), nDrifters);
+vSubmesoscale = reshape(fit.vSubmesoscaleObserved, numel(t), nDrifters);
+qObserved = reshape(fit.centeredX, numel(t), nDrifters);
+rObserved = reshape(fit.centeredY, numel(t), nDrifters);
 qMesoscale = zeros(size(x));
 rMesoscale = zeros(size(y));
 for iDrifter = 1:nDrifters
@@ -41,17 +41,13 @@ uBackground = fit.uBackground(t);
 vBackground = fit.vBackground(t);
 uBackgroundGrid = repmat(uBackground, 1, nDrifters);
 vBackgroundGrid = repmat(vBackground, 1, nDrifters);
-uObserved = reshape(fit.observedXVelocity, numel(t), nDrifters);
-vObserved = reshape(fit.observedYVelocity, numel(t), nDrifters);
-uSubmesoscale = reshape(fit.uSubmesoscaleObserved, numel(t), nDrifters);
-vSubmesoscale = reshape(fit.vSubmesoscaleObserved, numel(t), nDrifters);
 sigmaN = fit.sigma_n(t, mx, my);
 sigmaS = fit.sigma_s(t, mx, my);
 sigma = hypot(sigmaN, sigmaS);
 zeta = fit.zeta(t, mx, my);
 
 % Use the first drifter as the default one-trajectory example.
-iTrajectory = 3;
+iTrajectory = 1;
 uReconstruction = uMesoscale + uBackgroundGrid + uSubmesoscale;
 vReconstruction = vMesoscale + vBackgroundGrid + vSubmesoscale;
 uDecompositionError = max(abs(uObserved(:, iTrajectory) - uReconstruction(:, iTrajectory)));
@@ -68,8 +64,8 @@ fprintf("  mean sigma/f0: %.4f\n", mean(sigma/f0));
 fprintf("  mean zeta/f0:  %.4f\n", mean(zeta/f0));
 fprintf("  mean u_bg:     %.4f m/s\n", mean(uBackground));
 fprintf("  mean v_bg:     %.4f m/s\n", mean(vBackground));
-fprintf("  drifter 1 max |u-u_{recon}|: %.3e m/s\n", uDecompositionError);
-fprintf("  drifter 1 max |v-v_{recon}|: %.3e m/s\n", vDecompositionError);
+fprintf("  drifter %d max |u-u_{recon}|: %.3e m/s\n", iTrajectory, uDecompositionError);
+fprintf("  drifter %d max |v-v_{recon}|: %.3e m/s\n", iTrajectory, vDecompositionError);
 
 figure(Color="w");
 tl = tiledlayout(3, 1, TileSpacing="compact", Padding="compact");
@@ -133,4 +129,4 @@ xlim(axV, [tDays(1), tDays(end)]);
 legend(axV, Location="best");
 box(axV, "on");
 
-title(tlDecomposition, "Site 1 drifter 1 raw velocity decomposition");
+title(tlDecomposition, sprintf("Site 1 drifter %d raw velocity decomposition", iTrajectory));

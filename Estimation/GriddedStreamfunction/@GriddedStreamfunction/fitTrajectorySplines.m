@@ -10,8 +10,8 @@ for iTrajectory = 1:nTrajectories
     ti = reshape(trajectories(iTrajectory).t, [], 1);
     xi = reshape(trajectories(iTrajectory).x(ti), [], 1);
     yi = reshape(trajectories(iTrajectory).y(ti), [], 1);
-    xDoti = reshape(trajectories(iTrajectory).x.valueAtPoints(ti, D=1), [], 1);
-    yDoti = reshape(trajectories(iTrajectory).y.valueAtPoints(ti, D=1), [], 1);
+    xDoti = reshape(trajectories(iTrajectory).u(ti), [], 1);
+    yDoti = reshape(trajectories(iTrajectory).v(ti), [], 1);
 
     tCell{iTrajectory} = ti;
     xCell{iTrajectory} = xi;
