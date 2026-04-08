@@ -3,8 +3,8 @@ classdef GriddedStreamfunction < handle
     %
     % `GriddedStreamfunction` fits a mesoscale streamfunction
     % $$\psi(\tilde{x},\tilde{y},t)$$, a center-of-mass trajectory
-    % $$m_x(t), m_y(t)$$, and a background velocity
-    % $$u^{\mathrm{bg}}(t), v^{\mathrm{bg}}(t)$$ from asynchronous drifter
+    % $$m_x(t), m_y(t)$$, and an anchored background trajectory
+    % $$x^{\mathrm{bg}}(t), y^{\mathrm{bg}}(t)$$ from asynchronous drifter
     % trajectory splines using the rev3 mesoscale-only formulation
     % described in `asynchronous-com-fit-rev3.tex`.
     %
@@ -12,7 +12,8 @@ classdef GriddedStreamfunction < handle
     % then solves one least-squares problem for the mesoscale
     % streamfunction coefficients. The background velocity is recovered
     % afterward as the COM residual projected back onto the same fast
-    % basis.
+    % basis, then integrated to obtain the common anchored background
+    % path.
     %
     % The fitted decomposition follows
     %
@@ -72,16 +73,18 @@ classdef GriddedStreamfunction < handle
         % - Topic: Inspect fitted components
         centerOfMassTrajectory
 
-        % Fitted background-velocity trajectory.
+        % Fitted common background trajectory.
         %
-        % `backgroundVelocityTrajectory.x(t)` evaluates
-        % $$u^{\mathrm{bg}}(t)$$ and `backgroundVelocityTrajectory.y(t)`
-        % evaluates $$v^{\mathrm{bg}}(t)$$. These are the fast-basis
-        % projections of the recovered COM residual, not coefficients from
-        % a joint background solve.
+        % `backgroundTrajectory.x(t)` evaluates $$x^{\mathrm{bg}}(t)$$
+        % and `backgroundTrajectory.y(t)` evaluates
+        % $$y^{\mathrm{bg}}(t)$$, with
+        % $$x^{\mathrm{bg}}(t_0)=0$$ and $$y^{\mathrm{bg}}(t_0)=0$$ at
+        % the global fit start time. The recovered background velocity is
+        % obtained from `backgroundTrajectory.u(t)` and
+        % `backgroundTrajectory.v(t)`.
         %
         % - Topic: Inspect fitted components
-        backgroundVelocityTrajectory
+        backgroundTrajectory
 
         % Fixed-frame background trajectory components for each drifter.
         %
@@ -287,10 +290,10 @@ classdef GriddedStreamfunction < handle
             % first derivatives of the same trajectory splines.
             %
             % The fast temporal basis is used for both the center-of-mass
-            % trajectory and the recovered background velocity. The tensor
-            % basis defined by `psiS` and `psiKnotPoints` is used only for
-            % the mesoscale streamfunction in the centered frame, with
-            % only the additive streamfunction gauge removed.
+            % trajectory and the recovered common background path. The
+            % tensor basis defined by `psiS` and `psiKnotPoints` is used
+            % only for the mesoscale streamfunction in the centered frame,
+            % with only the additive streamfunction gauge removed.
             %
             % - Topic: Fit the estimator
             % - Declaration: self = GriddedStreamfunction(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...)
@@ -325,7 +328,7 @@ classdef GriddedStreamfunction < handle
                 t {mustBeNumeric, mustBeReal}
             end
 
-            values = self.backgroundVelocityTrajectory.x(t);
+            values = self.backgroundTrajectory.u(t);
         end
 
         function values = vBackground(self, t)
@@ -340,7 +343,7 @@ classdef GriddedStreamfunction < handle
                 t {mustBeNumeric, mustBeReal}
             end
 
-            values = self.backgroundVelocityTrajectory.y(t);
+            values = self.backgroundTrajectory.v(t);
         end
 
         function psiValue = psiMesoscale(self, t, x, y)

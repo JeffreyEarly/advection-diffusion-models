@@ -179,7 +179,6 @@ backgroundXCoefficients = fastBasisMatrix \ uBackgroundObserved;
 backgroundYCoefficients = fastBasisMatrix \ vBackgroundObserved;
 backgroundXSpline = TensorSpline(S=fastS, knotPoints=fastKnotPoints, xi=backgroundXCoefficients);
 backgroundYSpline = TensorSpline(S=fastS, knotPoints=fastKnotPoints, xi=backgroundYCoefficients);
-backgroundVelocityTrajectory = TrajectorySpline.fromComponentSplines(fitSupportTimes, backgroundXSpline, backgroundYSpline);
 
 uCenteredSubmesoscaleObserved = relativeXObserved - uMesoscaleRelativeObserved;
 vCenteredSubmesoscaleObserved = relativeYObserved - vMesoscaleRelativeObserved;
@@ -188,6 +187,13 @@ vSubmesoscaleObserved = allYDot - vBackgroundObserved - vMesoscaleObserved;
 
 backgroundTrajectoryXSpline = cumsum(backgroundXSpline);
 backgroundTrajectoryYSpline = cumsum(backgroundYSpline);
+backgroundTrajectoryXSpline = TensorSpline(S=backgroundTrajectoryXSpline.S, ...
+    knotPoints=backgroundTrajectoryXSpline.knotPoints, xi=backgroundTrajectoryXSpline.xi, ...
+    xMean=-backgroundTrajectoryXSpline(fitSupportTimes(1)));
+backgroundTrajectoryYSpline = TensorSpline(S=backgroundTrajectoryYSpline.S, ...
+    knotPoints=backgroundTrajectoryYSpline.knotPoints, xi=backgroundTrajectoryYSpline.xi, ...
+    xMean=-backgroundTrajectoryYSpline(fitSupportTimes(1)));
+backgroundTrajectory = TrajectorySpline.fromComponentSplines(fitSupportTimes, backgroundTrajectoryXSpline, backgroundTrajectoryYSpline);
 backgroundTrajectories = TrajectorySpline.empty(0, 1);
 mesoscaleTrajectories = TrajectorySpline.empty(0, 1);
 submesoscaleTrajectories = TrajectorySpline.empty(0, 1);
@@ -201,12 +207,12 @@ for iTrajectory = 1:nTrajectories
     sampleIndices = sampleStartIndex:(sampleStartIndex + nSamples - 1);
     componentS = min(3, numel(ti) - 1);
 
-    backgroundXPathSpline = TensorSpline(S=backgroundTrajectoryXSpline.S, ...
-        knotPoints=backgroundTrajectoryXSpline.knotPoints, xi=backgroundTrajectoryXSpline.xi, ...
-        xMean=-backgroundTrajectoryXSpline(ti(1)));
-    backgroundYPathSpline = TensorSpline(S=backgroundTrajectoryYSpline.S, ...
-        knotPoints=backgroundTrajectoryYSpline.knotPoints, xi=backgroundTrajectoryYSpline.xi, ...
-        xMean=-backgroundTrajectoryYSpline(ti(1)));
+    backgroundXPathSpline = TensorSpline(S=backgroundTrajectory.x.S, ...
+        knotPoints=backgroundTrajectory.x.knotPoints, xi=backgroundTrajectory.x.xi, ...
+        xMean=-backgroundTrajectory.x(ti(1)));
+    backgroundYPathSpline = TensorSpline(S=backgroundTrajectory.y.S, ...
+        knotPoints=backgroundTrajectory.y.knotPoints, xi=backgroundTrajectory.y.xi, ...
+        xMean=-backgroundTrajectory.y(ti(1)));
     backgroundTrajectories(end + 1, 1) = TrajectorySpline.fromComponentSplines(ti, backgroundXPathSpline, backgroundYPathSpline); %#ok<AGROW>
 
     mesoscaleVelocityXSpline = InterpolatingSpline(ti, uMesoscaleObserved(sampleIndices), S=componentS);
@@ -258,7 +264,7 @@ end
 
 self.streamfunctionSpline = streamfunctionSpline;
 self.centerOfMassTrajectory = centerOfMassTrajectory;
-self.backgroundVelocityTrajectory = backgroundVelocityTrajectory;
+self.backgroundTrajectory = backgroundTrajectory;
 self.backgroundTrajectories = backgroundTrajectories;
 self.mesoscaleTrajectories = mesoscaleTrajectories;
 self.submesoscaleTrajectories = submesoscaleTrajectories;

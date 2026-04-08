@@ -10,7 +10,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyTrue(isa(fit, "handle"))
             testCase.verifyNotEmpty(fit.streamfunctionSpline)
             testCase.verifyNotEmpty(fit.centerOfMassTrajectory)
-            testCase.verifyNotEmpty(fit.backgroundVelocityTrajectory)
+            testCase.verifyNotEmpty(fit.backgroundTrajectory)
             testCase.verifyEqual(numel(fit.backgroundTrajectories), numel(trajectories))
             testCase.verifyEqual(numel(fit.mesoscaleTrajectories), numel(trajectories))
             testCase.verifyEqual(numel(fit.submesoscaleTrajectories), numel(trajectories))
@@ -127,6 +127,10 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
             testCase.verifyEqual(fit.uBackgroundObserved, fit.centerVelocityX - fit.uMesoscaleComObserved, "AbsTol", 1e-12)
             testCase.verifyEqual(fit.vBackgroundObserved, fit.centerVelocityY - fit.vMesoscaleComObserved, "AbsTol", 1e-12)
+            testCase.verifyEqual(fit.uBackground(fit.fitSupportTimes), fit.backgroundTrajectory.u(fit.fitSupportTimes), "AbsTol", 1e-12)
+            testCase.verifyEqual(fit.vBackground(fit.fitSupportTimes), fit.backgroundTrajectory.v(fit.fitSupportTimes), "AbsTol", 1e-12)
+            testCase.verifyEqual(fit.backgroundTrajectory.x(fit.fitSupportTimes(1)), 0, "AbsTol", 1e-12)
+            testCase.verifyEqual(fit.backgroundTrajectory.y(fit.fitSupportTimes(1)), 0, "AbsTol", 1e-12)
         end
 
         function velocityDecompositionReconstructsObservedSamples(testCase)
@@ -167,6 +171,8 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
                 centeredMesoscaleY = fit.centeredMesoscaleTrajectories(iTrajectory).y(ti);
                 centeredSubmesoscaleX = fit.centeredSubmesoscaleTrajectories(iTrajectory).x(ti);
                 centeredSubmesoscaleY = fit.centeredSubmesoscaleTrajectories(iTrajectory).y(ti);
+                backgroundShiftedX = fit.backgroundTrajectory.x(ti) - fit.backgroundTrajectory.x(ti(1));
+                backgroundShiftedY = fit.backgroundTrajectory.y(ti) - fit.backgroundTrajectory.y(ti(1));
 
                 testCase.verifyEqual(backgroundX(1), 0, "AbsTol", 1e-12)
                 testCase.verifyEqual(backgroundY(1), 0, "AbsTol", 1e-12)
@@ -178,6 +184,8 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
                 testCase.verifyEqual(mesoscaleY(1), fit.observedY(sampleIndices(1)), "AbsTol", 1e-12)
                 testCase.verifyEqual(centeredMesoscaleX(1), fit.centeredX(sampleIndices(1)), "AbsTol", 1e-12)
                 testCase.verifyEqual(centeredMesoscaleY(1), fit.centeredY(sampleIndices(1)), "AbsTol", 1e-12)
+                testCase.verifyEqual(backgroundX, backgroundShiftedX, "AbsTol", 1e-12)
+                testCase.verifyEqual(backgroundY, backgroundShiftedY, "AbsTol", 1e-12)
 
                 testCase.verifyEqual(backgroundX + mesoscaleX + submesoscaleX, fit.observedX(sampleIndices), "AbsTol", 1e-2)
                 testCase.verifyEqual(backgroundY + mesoscaleY + submesoscaleY, fit.observedY(sampleIndices), "AbsTol", 1e-2)
