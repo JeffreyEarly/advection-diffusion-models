@@ -5,7 +5,6 @@
 \usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{parskip}
-\usepackage{xcolor}
 
 \geometry{margin=0.5in}
 
@@ -20,14 +19,14 @@
 \section{Coupled asynchronous estimator with a spline-defined COM operator [Very good]}
 
 We now derive the asynchronous analogue of the coupled system in Oscroft et al.
-The center-of-mass (COM) trajectory is defined by a linear spline smoother, so the COM
+The center-of-mass (COM) trajectory is defined by a fast spline smoother, so the COM
 evolution equation is obtained by applying that same smoothing operator to the full
 fixed-frame dynamical model. Subtracting the COM equation from the full equation yields
 the particle evolution in the COM frame.
 
 The key point is that the mesoscale field remains present in \emph{both} equations.
-The only mean-free assumption is that the mesoscale contribution to the particle evolution
-in the COM frame has zero mean velocity.
+The only mean-free assumption is that the submesoscale residual has zero projection onto
+the COM spline space.
 
 \subsection{Asynchronous observations}
 
@@ -90,7 +89,7 @@ These representative times define the knot sequence for a fast temporal spline b
 \begin{equation}
 \{B_q(t)\}_{q=1}^{Q_b}.
 \end{equation}
-\textcolor{red}{I guess $Q_b$ is the number of basis splines?}
+Here $Q_b$ is the number of fast temporal basis functions.
 
 
 Define the fast-basis design matrix on the observation grid:
@@ -143,19 +142,24 @@ Define the smoothing operator
 S=\mathcal{B}(\mathcal{B}^{\top}\mathcal{B})^{-1}\mathcal{B}^{\top}.
 \label{eq:S_operator}
 \end{equation}
+Let the derivative design matrix be
+\begin{equation}
+\dot{\mathcal{B}}_{rq}=B_q'\!\left(t_{k(r),n(r)}\right).
+\end{equation}
 Then
 \begin{equation}
 \mathbf{m}_x=S\mathbf{x},
 \qquad
 \mathbf{m}_y=S\mathbf{y},
 \qquad
-\dot{\mathbf{m}}_x=S\dot{\mathbf{x}},
+\dot{\mathbf{m}}_x=\dot{\mathcal{B}}\hat{\mathbf{b}}^x,
 \qquad
-\dot{\mathbf{m}}_y=S\dot{\mathbf{y}}.
+\dot{\mathbf{m}}_y=\dot{\mathcal{B}}\hat{\mathbf{b}}^y.
 \label{eq:S_com_relation}
 \end{equation}
-
-\textcolor{red}{The velocity is actually computed from the derivative of the BSpline, not the smoothing matrix of the applied the derivative of the observations.}
+This is the quantity used in the current implementation: the COM velocity is obtained by
+differentiating the fitted fast spline, while the projector $S$ is used for the COM-space
+split of the mesoscale and residual velocities.
 
 \subsection{Mesoscale streamfunction}
 
@@ -252,10 +256,9 @@ S\mathbf{u}^{\mathrm{bg}}=\mathbf{u}^{\mathrm{bg}},
 S\mathbf{v}^{\mathrm{bg}}=\mathbf{v}^{\mathrm{bg}}.
 \label{eq:bg_invariant}
 \end{equation}
-\textcolor{red}{Is this true?}
-Yes, this follows because,
+This follows because
 \begin{equation}
-    S(\mathcal{B}\mathbf{c})
+S(\mathcal{B}\mathbf{c})
 =
 \mathcal{B}(\mathcal{B}^\top \mathcal{B})^{-1}\mathcal{B}^\top \mathcal{B}\mathbf{c}
 =
@@ -630,8 +633,10 @@ The recovered submesoscale residual is defined as the relative residual:
 -
 (I-S)\mathbf{H}_y\hat{\mathbf a}.
 \end{equation}
-
-\textcolor{red}{In practice the observations, e.g. $\mathbf{x}$, are stored in an interpolating spline with a time domain that will generally be smaller than $\hat{\mathbf{u}}^{\mathrm{bg}}$ and  $\hat{\mathbf{u}}^{\mathrm{meso}}$. The submeoscale signal should thus use the same basis splines as the observations themselves, computed by formulating an interpolating spline at the observation points.}
+In the current implementation, $\hat{\mathbf{u}}^{\mathrm{bg}}$ and
+$\hat{\mathbf{v}}^{\mathrm{bg}}$ are projected back into the fast spline basis before
+integration, while the per-drifter mesoscale and submesoscale trajectory components are
+rebuilt from interpolating splines on each drifter's native observation times.
 
 \subsection{Trajectory decomposition in the fixed and COM frames}
 
@@ -668,20 +673,26 @@ x^{\mathrm{bg}}(t_0)=0,
 \qquad
 y^{\mathrm{bg}}(t_0)=0.
 \end{equation}
-In practice, $\hat{\mathbf{u}}^{\mathrm{bg}}$ may be projected onto the fast
-spline basis $\mathcal{B}$ to obtain a smooth representation for integration.
+In implementation, this residual is projected onto the fast spline basis
+$\mathcal{B}$ and then integrated once to obtain a common smooth background path.
+The fixed-frame background contribution for drifter $k$ is the reanchored path
+\begin{equation}
+x_k^{\mathrm{bg}}(t)=x^{\mathrm{bg}}(t)-x^{\mathrm{bg}}(t_{k,0}),
+\qquad
+y_k^{\mathrm{bg}}(t)=y^{\mathrm{bg}}(t)-y^{\mathrm{bg}}(t_{k,0}).
+\end{equation}
 
 \paragraph{Mesoscale trajectory.}
 For each drifter $k$, the mesoscale trajectory contribution is defined by
 \begin{equation}
 x_k^{\mathrm{meso}}(t)
-:=
-\int_{t_{k,0}}^{t}
+\;:=\;
+x_k(t_{k,0})+\int_{t_{k,0}}^{t}
 \hat{u}_k^{\mathrm{meso}}(s)\,ds,
 \qquad
 y_k^{\mathrm{meso}}(t)
-:=
-\int_{t_{k,0}}^{t}
+\;:=\;
+y_k(t_{k,0})+\int_{t_{k,0}}^{t}
 \hat{v}_k^{\mathrm{meso}}(s)\,ds,
 \end{equation}
 where $t_{k,0}$ is the first observation time of drifter $k$, and
@@ -696,9 +707,9 @@ v^{\mathrm{meso}}(\tilde{x}_k(t),\tilde{y}_k(t),t).
 \end{equation}
 This definition ensures
 \begin{equation}
-x_k^{\mathrm{meso}}(t_{k,0})=0,
+x_k^{\mathrm{meso}}(t_{k,0})=x_k(t_{k,0}),
 \qquad
-y_k^{\mathrm{meso}}(t_{k,0})=0.
+y_k^{\mathrm{meso}}(t_{k,0})=y_k(t_{k,0}).
 \end{equation}
 
 \paragraph{Submesoscale trajectory.}
@@ -737,10 +748,8 @@ y_k^{\mathrm{sm}}(t_{k,0})=0.
 With these definitions, the observed trajectory of drifter $k$ satisfies
 \begin{align}
 x_k(t)
-&=
-x_k(t_{k,0})
-+
-\bigl[x^{\mathrm{bg}}(t)-x^{\mathrm{bg}}(t_{k,0})\bigr]
+&= 
+x_k^{\mathrm{bg}}(t)
 +
 x_k^{\mathrm{meso}}(t)
 +
@@ -748,9 +757,7 @@ x_k^{\mathrm{sm}}(t),
 \\
 y_k(t)
 &=
-y_k(t_{k,0})
-+
-\bigl[y^{\mathrm{bg}}(t)-y^{\mathrm{bg}}(t_{k,0})\bigr]
+y_k^{\mathrm{bg}}(t)
 +
 y_k^{\mathrm{meso}}(t)
 +
@@ -776,36 +783,49 @@ relative motion decomposes as
 +
 \hat{\mathbf{v}}^{\mathrm{sm}}.
 \end{equation}
-Defining trajectory components by integration from $t_{k,0}$,
+Define the centered mesoscale contribution for drifter $k$ by
 \begin{equation}
-\tilde{x}_k^{\alpha}(t)
+\tilde{x}_k^{\mathrm{meso}}(t)
 =
-\int_{t_{k,0}}^{t} \tilde{u}_k^{\alpha}(s)\,ds,
+\tilde{x}_k(t_{k,0})+\int_{t_{k,0}}^{t} \hat{\tilde{u}}_k^{\mathrm{meso}}(s)\,ds,
 \qquad
-\tilde{y}_k^{\alpha}(t)
+\tilde{y}_k^{\mathrm{meso}}(t)
 =
-\int_{t_{k,0}}^{t} \tilde{v}_k^{\alpha}(s)\,ds,
+\tilde{y}_k(t_{k,0})+\int_{t_{k,0}}^{t} \hat{\tilde{v}}_k^{\mathrm{meso}}(s)\,ds,
+\end{equation}
+where
+\begin{equation}
+\hat{\tilde{\mathbf{u}}}^{\mathrm{meso}}=(I-S)\mathbf{H}_x\hat{\mathbf a},
 \qquad
-\alpha \in \{\mathrm{meso},\mathrm{sm}\},
+\hat{\tilde{\mathbf{v}}}^{\mathrm{meso}}=(I-S)\mathbf{H}_y\hat{\mathbf a}.
+\end{equation}
+The centered submesoscale contribution is zero-anchored:
+\begin{equation}
+\tilde{x}_k^{\mathrm{sm}}(t)
+=
+\int_{t_{k,0}}^{t} \hat{\tilde{u}}_k^{\mathrm{sm}}(s)\,ds,
+\qquad
+\tilde{y}_k^{\mathrm{sm}}(t)
+=
+\int_{t_{k,0}}^{t} \hat{\tilde{v}}_k^{\mathrm{sm}}(s)\,ds,
 \end{equation}
 we obtain
 \begin{equation}
 \tilde{x}_k(t)
 =
-\tilde{x}_k(t_{k,0})
-+
 \tilde{x}_k^{\mathrm{meso}}(t)
 +
 \tilde{x}_k^{\mathrm{sm}}(t),
 \qquad
 \tilde{y}_k(t)
 =
-\tilde{y}_k(t_{k,0})
-+
 \tilde{y}_k^{\mathrm{meso}}(t)
 +
 \tilde{y}_k^{\mathrm{sm}}(t).
 \end{equation}
+In the current code, these integrals are implemented drifter-by-drifter with
+interpolating splines on the native sample times, using spline degree
+$\min(3,N_k-1)$ for each velocity component.
 
 \paragraph{Interpretation.}
 In the fixed frame, the trajectory decomposes into background,
@@ -816,7 +836,7 @@ are defined as residuals in complementary subspaces, ensuring that the
 mesoscale field captures as much variance as possible in both the COM
 and relative dynamics.
 
-\subsection{Zero gauge (copied from earlier documentation}
+\subsection{Zero gauge}
 
  The centered-frame streamfunction is represented as
  \[
@@ -830,32 +850,32 @@ and relative dynamics.
  \psi(q,r,t) \mapsto \psi(q,r,t) + a(t).
  \]
 
- The implementation removes this gauge directly in
- coefficient space. Let $c_k \in \mathbf{R}^{M_q M_r}$ be the
- spatial coefficient block for one time basis function and
+ The implementation removes this gauge by constructing the spatial
+ coefficient vector $\phi \in \mathbf{R}^{M_q M_r}$ that reproduces
+ the constant field on a dense support grid,
 \[
- P = \begin{bmatrix}
- I_{M_q M_r - 1} \\
- -\mathbf{1}^T
- \end{bmatrix},
+ A_{\mathrm{sp}} \phi = \mathbf{1},
+ \]
+ where $A_{\mathrm{sp}}$ is the spatial tensor-product basis evaluated
+ on the $(q,r)$ support grid used to identify the constant mode.
+ The retained spatial subspace is then
+\[
+ G_{\mathrm{sp}} = \operatorname{null}(\phi^\top),
+ \]
+ and the full reduced basis is
+\[
+ G = I_{M_t} \otimes G_{\mathrm{sp}},
  \qquad
- c_k = P \alpha_k.
+ c = G \alpha.
+ \]
+ The fitted coefficients come from the reduced least-squares problem
+\[
+\hat{\alpha} = \arg\min_{\alpha} \|\mathbf{X} G \alpha - \mathbf{d}\|_2^2,
+\qquad
+\hat{c} = G \hat{\alpha},
 \]
-
- Then every retained spatial coefficient block satisfies
- $\mathbf{1}^T c_k = 0$, which removes the spatially constant
- mode associated with $a(t)$. Stacking all time blocks gives
- \[
- c = Z \alpha, \qquad Z = I_{M_t} \otimes P,
- \]
- and the fitted coefficients come from the unconstrained
- reduced least-squares problem
- \[
- \hat{\alpha} = \arg\min_{\alpha} \|R Z \alpha - U\|_2^2,
- \qquad
- \hat{c} = Z \hat{\alpha},
- \]
- where $R$ is the spline derivative design matrix and $U$
- stacks the centered drifter velocities.
+ with $\mathbf{X}$ and $\mathbf{d}$ defined in
+\eqref{eq:joint_stacked_system}. This is exactly the gauge-reduced solve
+ used in the current MATLAB implementation.
 
 \end{document}

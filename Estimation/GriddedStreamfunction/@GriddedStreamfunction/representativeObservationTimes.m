@@ -11,10 +11,6 @@ while pooledIndex <= numel(pooledTimes)
         ti = tCell{iTrajectory};
         deployedCount = deployedCount + double(tNow >= ti(1) && tNow <= ti(end));
     end
-    if deployedCount < 1
-        error("GriddedStreamfunction:InvalidRepresentativeTimes", ...
-            "The representative-time stride rule produced a zero active-drifter count.");
-    end
     pooledIndex = pooledIndex + deployedCount;
 end
 end

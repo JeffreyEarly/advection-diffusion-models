@@ -170,9 +170,52 @@ classdef GriddedStreamfunction < handle
                 options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
             end
 
-            fitTrajectorySplines(self, reshape(trajectories, [], 1), ...
-                options.psiKnotPoints, reshape(options.psiS, 1, []), ...
-                options.fastKnotPoints, options.fastS);
+            trajectories = reshape(trajectories, [], 1);
+            psiS = reshape(options.psiS, 1, []);
+            psiKnotPoints = options.psiKnotPoints;
+            fastKnotPoints = options.fastKnotPoints;
+            fastS = options.fastS;
+
+            if ~isempty(fastKnotPoints)
+                if ~(isnumeric(fastKnotPoints) && isvector(fastKnotPoints) && ...
+                        isreal(fastKnotPoints) && all(isfinite(fastKnotPoints)))
+                    error("GriddedStreamfunction:InvalidFastKnotPoints", ...
+                        "fastKnotPoints must be a finite real vector.");
+                end
+
+                fastKnotPoints = reshape(fastKnotPoints, [], 1);
+                if any(diff(fastKnotPoints) < 0)
+                    error("GriddedStreamfunction:InvalidFastKnotPoints", ...
+                        "fastKnotPoints must be nondecreasing.");
+                end
+            end
+
+            if ~isempty(psiKnotPoints)
+                if ~iscell(psiKnotPoints) || numel(psiKnotPoints) ~= 3
+                    error("GriddedStreamfunction:InvalidPsiKnotPoints", ...
+                        "psiKnotPoints must be a cell array {qKnot, rKnot, tKnot}.");
+                end
+
+                psiKnotPoints = reshape(psiKnotPoints, 1, []);
+                for iDim = 1:3
+                    knotVector = psiKnotPoints{iDim};
+                    if ~(isnumeric(knotVector) && isvector(knotVector) && ...
+                            isreal(knotVector) && all(isfinite(knotVector)))
+                        error("GriddedStreamfunction:InvalidPsiKnotPoints", ...
+                            "Each psi knot vector must be a finite real vector.");
+                    end
+
+                    knotVector = reshape(knotVector, [], 1);
+                    if any(diff(knotVector) < 0)
+                        error("GriddedStreamfunction:InvalidPsiKnotPoints", ...
+                            "Each psi knot vector must be nondecreasing.");
+                    end
+
+                    psiKnotPoints{iDim} = knotVector;
+                end
+            end
+
+            fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS);
         end
 
         function values = uBackground(self, t)
