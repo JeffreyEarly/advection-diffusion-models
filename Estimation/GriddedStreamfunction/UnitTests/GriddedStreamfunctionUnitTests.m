@@ -9,17 +9,45 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyClass(fit, "GriddedStreamfunction")
             testCase.verifyTrue(isa(fit, "handle"))
             testCase.verifyNotEmpty(fit.streamfunctionSpline)
+            testCase.verifyNotEmpty(fit.observedTrajectories)
             testCase.verifyNotEmpty(fit.centerOfMassTrajectory)
             testCase.verifyNotEmpty(fit.backgroundTrajectory)
-            testCase.verifyEqual(numel(fit.backgroundTrajectories), numel(trajectories))
-            testCase.verifyEqual(numel(fit.mesoscaleTrajectories), numel(trajectories))
-            testCase.verifyEqual(numel(fit.submesoscaleTrajectories), numel(trajectories))
-            testCase.verifyEqual(numel(fit.centeredMesoscaleTrajectories), numel(trajectories))
-            testCase.verifyEqual(numel(fit.centeredSubmesoscaleTrajectories), numel(trajectories))
+            testCase.verifyTrue(isstruct(fit.decomposition))
+            testCase.verifyTrue(isfield(fit.decomposition, "fixedFrame"))
+            testCase.verifyTrue(isfield(fit.decomposition, "centeredFrame"))
+            testCase.verifyEqual(numel(fit.observedTrajectories), numel(trajectories))
+            testCase.verifyEqual(numel(fit.decomposition.fixedFrame.background), numel(trajectories))
+            testCase.verifyEqual(numel(fit.decomposition.fixedFrame.mesoscale), numel(trajectories))
+            testCase.verifyEqual(numel(fit.decomposition.fixedFrame.submesoscale), numel(trajectories))
+            testCase.verifyEqual(numel(fit.decomposition.centeredFrame.mesoscale), numel(trajectories))
+            testCase.verifyEqual(numel(fit.decomposition.centeredFrame.submesoscale), numel(trajectories))
             testCase.verifyEqual(fit.fastS, 3)
-            testCase.verifyEqual(numel(fit.observationTimes), numel(t) * size(x, 2))
             testCase.verifyLessThanOrEqual(max(abs(fit.centerOfMassTrajectory.x(t) - mean(x, 2))), 2e-1)
             testCase.verifyLessThanOrEqual(max(abs(fit.centerOfMassTrajectory.y(t) - mean(y, 2))), 2e-1)
+
+            for iTrajectory = 1:numel(trajectories)
+                testCase.verifyEqual(fit.observedTrajectories(iTrajectory).t, trajectories(iTrajectory).t)
+            end
+        end
+
+        function removedPropertiesAreNotStored(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+
+            fit = GriddedStreamfunction(trajectories);
+            removedProperties = [ ...
+                "sampleCounts", "observationTimes", "observedX", "observedY", ...
+                "observedXVelocity", "observedYVelocity", "centeredX", "centeredY", ...
+                "centerVelocityX", "centerVelocityY", "uMesoscaleObserved", ...
+                "vMesoscaleObserved", "uMesoscaleComObserved", "vMesoscaleComObserved", ...
+                "uMesoscaleRelativeObserved", "vMesoscaleRelativeObserved", ...
+                "uBackgroundObserved", "vBackgroundObserved", "uSubmesoscaleObserved", ...
+                "vSubmesoscaleObserved", "backgroundTrajectories", "mesoscaleTrajectories", ...
+                "submesoscaleTrajectories", "centeredMesoscaleTrajectories", ...
+                "centeredSubmesoscaleTrajectories", "fitDiagnostics"];
+
+            for iProperty = 1:numel(removedProperties)
+                testCase.verifyFalse(isprop(fit, removedProperties(iProperty)))
+            end
         end
 
         function constructorRejectsRawSampleInputs(testCase)
@@ -88,89 +116,27 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(max(zetaError), 2e-7)
         end
 
-        function mesoscaleSolveMatchesStoredDesignAndCoefficients(testCase)
-            [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            tData = linspace(t(1), t(end), 5).';
-            timeData = (tData(1:(end - 1)) + tData(2:end))/2;
-            fastS = 3;
-            fastKnotPoints = BSpline.knotPointsForDataPoints(timeData, S=fastS);
-            fastKnotPoints(1:(fastS + 1)) = tData(1);
-            fastKnotPoints((end - fastS):end) = tData(end);
-            q = x - mean(x, 2);
-            r = y - mean(y, 2);
-            psiKnotPoints = { ...
-                GriddedStreamfunctionUnitTests.paddedQuadraticDomain(q) ...
-                GriddedStreamfunctionUnitTests.paddedQuadraticDomain(r) ...
-                fastKnotPoints ...
-                };
-            fit = GriddedStreamfunction(trajectories, psiKnotPoints=psiKnotPoints, ...
-                psiS=[2 2 fastS], fastKnotPoints=fastKnotPoints, fastS=fastS);
-
-            residual = fit.fitDiagnostics.mesoscaleDesignMatrix * fit.fitDiagnostics.psiReducedCoefficients - ...
-                fit.fitDiagnostics.mesoscaleRightHandSide;
-
-            testCase.verifyLessThanOrEqual(norm(residual, inf), 5e-7)
-            testCase.verifyEqual(size(fit.fitDiagnostics.mesoscaleDesignMatrix, 2), numel(fit.fitDiagnostics.psiReducedCoefficients))
-        end
-
-        function comVelocityMatchesStoredDerivativeSolve(testCase)
-            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
-
-            testCase.verifyEqual(fit.centerVelocityX, fit.fitDiagnostics.fastDerivativeMatrix * fit.fitDiagnostics.centerXCoefficients, "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.centerVelocityY, fit.fitDiagnostics.fastDerivativeMatrix * fit.fitDiagnostics.centerYCoefficients, "AbsTol", 1e-12)
-        end
-
-        function backgroundObservedSamplesMatchComResidual(testCase)
-            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
-
-            testCase.verifyEqual(fit.uBackgroundObserved, fit.centerVelocityX - fit.uMesoscaleComObserved, "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.vBackgroundObserved, fit.centerVelocityY - fit.vMesoscaleComObserved, "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.uBackground(fit.fitSupportTimes), fit.backgroundTrajectory.u(fit.fitSupportTimes), "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.vBackground(fit.fitSupportTimes), fit.backgroundTrajectory.v(fit.fitSupportTimes), "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.backgroundTrajectory.x(fit.fitSupportTimes(1)), 0, "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.backgroundTrajectory.y(fit.fitSupportTimes(1)), 0, "AbsTol", 1e-12)
-        end
-
-        function velocityDecompositionReconstructsObservedSamples(testCase)
-            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
-
-            testCase.verifyEqual( ...
-                fit.uMesoscaleObserved + fit.uBackgroundObserved + fit.uSubmesoscaleObserved, ...
-                fit.observedXVelocity, "AbsTol", 1e-12)
-            testCase.verifyEqual( ...
-                fit.vMesoscaleObserved + fit.vBackgroundObserved + fit.vSubmesoscaleObserved, ...
-                fit.observedYVelocity, "AbsTol", 1e-12)
-            testCase.verifyEqual( ...
-                fit.uMesoscaleComObserved + fit.uMesoscaleRelativeObserved, ...
-                fit.uMesoscaleObserved, "AbsTol", 1e-12)
-            testCase.verifyEqual( ...
-                fit.vMesoscaleComObserved + fit.vMesoscaleRelativeObserved, ...
-                fit.vMesoscaleObserved, "AbsTol", 1e-12)
-        end
-
         function anchoredTrajectoryComponentsMatchConventionsAndReconstructPositions(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = GriddedStreamfunction(trajectories);
 
-            sampleStartIndex = 1;
             for iTrajectory = 1:numel(trajectories)
-                ti = trajectories(iTrajectory).t;
-                nSamples = numel(ti);
-                sampleIndices = sampleStartIndex:(sampleStartIndex + nSamples - 1);
+                trajectory = fit.observedTrajectories(iTrajectory);
+                ti = trajectory.t;
+                observedX = trajectory.x(ti);
+                observedY = trajectory.y(ti);
+                [~, centeredX, centeredY] = fit.centeredCoordinates(ti, observedX, observedY);
 
-                backgroundX = fit.backgroundTrajectories(iTrajectory).x(ti);
-                backgroundY = fit.backgroundTrajectories(iTrajectory).y(ti);
-                mesoscaleX = fit.mesoscaleTrajectories(iTrajectory).x(ti);
-                mesoscaleY = fit.mesoscaleTrajectories(iTrajectory).y(ti);
-                submesoscaleX = fit.submesoscaleTrajectories(iTrajectory).x(ti);
-                submesoscaleY = fit.submesoscaleTrajectories(iTrajectory).y(ti);
-                centeredMesoscaleX = fit.centeredMesoscaleTrajectories(iTrajectory).x(ti);
-                centeredMesoscaleY = fit.centeredMesoscaleTrajectories(iTrajectory).y(ti);
-                centeredSubmesoscaleX = fit.centeredSubmesoscaleTrajectories(iTrajectory).x(ti);
-                centeredSubmesoscaleY = fit.centeredSubmesoscaleTrajectories(iTrajectory).y(ti);
+                backgroundX = fit.decomposition.fixedFrame.background(iTrajectory).x(ti);
+                backgroundY = fit.decomposition.fixedFrame.background(iTrajectory).y(ti);
+                mesoscaleX = fit.decomposition.fixedFrame.mesoscale(iTrajectory).x(ti);
+                mesoscaleY = fit.decomposition.fixedFrame.mesoscale(iTrajectory).y(ti);
+                submesoscaleX = fit.decomposition.fixedFrame.submesoscale(iTrajectory).x(ti);
+                submesoscaleY = fit.decomposition.fixedFrame.submesoscale(iTrajectory).y(ti);
+                centeredMesoscaleX = fit.decomposition.centeredFrame.mesoscale(iTrajectory).x(ti);
+                centeredMesoscaleY = fit.decomposition.centeredFrame.mesoscale(iTrajectory).y(ti);
+                centeredSubmesoscaleX = fit.decomposition.centeredFrame.submesoscale(iTrajectory).x(ti);
+                centeredSubmesoscaleY = fit.decomposition.centeredFrame.submesoscale(iTrajectory).y(ti);
                 backgroundShiftedX = fit.backgroundTrajectory.x(ti) - fit.backgroundTrajectory.x(ti(1));
                 backgroundShiftedY = fit.backgroundTrajectory.y(ti) - fit.backgroundTrajectory.y(ti(1));
 
@@ -180,64 +146,52 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
                 testCase.verifyEqual(submesoscaleY(1), 0, "AbsTol", 1e-12)
                 testCase.verifyEqual(centeredSubmesoscaleX(1), 0, "AbsTol", 1e-12)
                 testCase.verifyEqual(centeredSubmesoscaleY(1), 0, "AbsTol", 1e-12)
-                testCase.verifyEqual(mesoscaleX(1), fit.observedX(sampleIndices(1)), "AbsTol", 1e-12)
-                testCase.verifyEqual(mesoscaleY(1), fit.observedY(sampleIndices(1)), "AbsTol", 1e-12)
-                testCase.verifyEqual(centeredMesoscaleX(1), fit.centeredX(sampleIndices(1)), "AbsTol", 1e-12)
-                testCase.verifyEqual(centeredMesoscaleY(1), fit.centeredY(sampleIndices(1)), "AbsTol", 1e-12)
+                testCase.verifyEqual(mesoscaleX(1), observedX(1), "AbsTol", 1e-12)
+                testCase.verifyEqual(mesoscaleY(1), observedY(1), "AbsTol", 1e-12)
+                testCase.verifyEqual(centeredMesoscaleX(1), centeredX(1), "AbsTol", 1e-12)
+                testCase.verifyEqual(centeredMesoscaleY(1), centeredY(1), "AbsTol", 1e-12)
                 testCase.verifyEqual(backgroundX, backgroundShiftedX, "AbsTol", 1e-12)
                 testCase.verifyEqual(backgroundY, backgroundShiftedY, "AbsTol", 1e-12)
 
-                testCase.verifyEqual(backgroundX + mesoscaleX + submesoscaleX, fit.observedX(sampleIndices), "AbsTol", 1e-2)
-                testCase.verifyEqual(backgroundY + mesoscaleY + submesoscaleY, fit.observedY(sampleIndices), "AbsTol", 1e-2)
-                testCase.verifyEqual(centeredMesoscaleX + centeredSubmesoscaleX, fit.centeredX(sampleIndices), "AbsTol", 1e-2)
-                testCase.verifyEqual(centeredMesoscaleY + centeredSubmesoscaleY, fit.centeredY(sampleIndices), "AbsTol", 1e-2)
-
-                sampleStartIndex = sampleStartIndex + nSamples;
+                testCase.verifyEqual(backgroundX + mesoscaleX + submesoscaleX, observedX, "AbsTol", 1e-2)
+                testCase.verifyEqual(backgroundY + mesoscaleY + submesoscaleY, observedY, "AbsTol", 1e-2)
+                testCase.verifyEqual(centeredMesoscaleX + centeredSubmesoscaleX, centeredX, "AbsTol", 1e-2)
+                testCase.verifyEqual(centeredMesoscaleY + centeredSubmesoscaleY, centeredY, "AbsTol", 1e-2)
             end
         end
 
-        function componentTrajectoryDerivativesMatchStoredVelocitySamples(testCase)
+        function componentTrajectoryDerivativesMatchVelocityDecomposition(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = GriddedStreamfunction(trajectories);
 
-            sampleStartIndex = 1;
             for iTrajectory = 1:numel(trajectories)
-                ti = trajectories(iTrajectory).t;
-                nSamples = numel(ti);
-                sampleIndices = sampleStartIndex:(sampleStartIndex + nSamples - 1);
+                trajectory = fit.observedTrajectories(iTrajectory);
+                ti = trajectory.t;
+                observedX = trajectory.x(ti);
+                observedY = trajectory.y(ti);
+                observedU = trajectory.u(ti);
+                observedV = trajectory.v(ti);
 
-                testCase.verifyEqual( ...
-                    fit.backgroundTrajectories(iTrajectory).u(ti), ...
-                    fit.uBackground(ti), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.backgroundTrajectories(iTrajectory).v(ti), ...
-                    fit.vBackground(ti), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.mesoscaleTrajectories(iTrajectory).u(ti), ...
-                    fit.uMesoscaleObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.mesoscaleTrajectories(iTrajectory).v(ti), ...
-                    fit.vMesoscaleObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.submesoscaleTrajectories(iTrajectory).u(ti), ...
-                    fit.uSubmesoscaleObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.submesoscaleTrajectories(iTrajectory).v(ti), ...
-                    fit.vSubmesoscaleObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.centeredMesoscaleTrajectories(iTrajectory).u(ti), ...
-                    fit.uMesoscaleRelativeObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.centeredMesoscaleTrajectories(iTrajectory).v(ti), ...
-                    fit.vMesoscaleRelativeObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.centeredSubmesoscaleTrajectories(iTrajectory).u(ti), ...
-                    fit.fitDiagnostics.uCenteredSubmesoscaleObserved(sampleIndices), "AbsTol", 1e-12)
-                testCase.verifyEqual( ...
-                    fit.centeredSubmesoscaleTrajectories(iTrajectory).v(ti), ...
-                    fit.fitDiagnostics.vCenteredSubmesoscaleObserved(sampleIndices), "AbsTol", 1e-12)
+                background = fit.decomposition.fixedFrame.background(iTrajectory);
+                mesoscale = fit.decomposition.fixedFrame.mesoscale(iTrajectory);
+                submesoscale = fit.decomposition.fixedFrame.submesoscale(iTrajectory);
+                centeredMesoscale = fit.decomposition.centeredFrame.mesoscale(iTrajectory);
+                centeredSubmesoscale = fit.decomposition.centeredFrame.submesoscale(iTrajectory);
 
-                sampleStartIndex = sampleStartIndex + nSamples;
+                testCase.verifyEqual(background.u(ti), fit.uBackground(ti), "AbsTol", 1e-12)
+                testCase.verifyEqual(background.v(ti), fit.vBackground(ti), "AbsTol", 1e-12)
+                testCase.verifyEqual(mesoscale.u(ti), fit.uMesoscale(ti, observedX, observedY), "AbsTol", 1e-12)
+                testCase.verifyEqual(mesoscale.v(ti), fit.vMesoscale(ti, observedX, observedY), "AbsTol", 1e-12)
+                testCase.verifyEqual(background.u(ti) + mesoscale.u(ti) + submesoscale.u(ti), observedU, "AbsTol", 1e-12)
+                testCase.verifyEqual(background.v(ti) + mesoscale.v(ti) + submesoscale.v(ti), observedV, "AbsTol", 1e-12)
+                testCase.verifyEqual( ...
+                    centeredMesoscale.u(ti) + centeredSubmesoscale.u(ti), ...
+                    observedU - fit.centerOfMassTrajectory.u(ti), ...
+                    "AbsTol", 1e-12)
+                testCase.verifyEqual( ...
+                    centeredMesoscale.v(ti) + centeredSubmesoscale.v(ti), ...
+                    observedV - fit.centerOfMassTrajectory.v(ti), ...
+                    "AbsTol", 1e-12)
             end
         end
 
@@ -245,18 +199,27 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             trajectories = GriddedStreamfunctionUnitTests.smoothedTrajectoryData();
             fit = GriddedStreamfunction(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
 
-            expectedObservedX = zeros(0, 1);
-            expectedObservedY = zeros(0, 1);
-            rawX = zeros(0, 1);
+            maxObservedRawDifference = 0;
             for iTrajectory = 1:numel(trajectories)
-                expectedObservedX = [expectedObservedX; trajectories(iTrajectory).x(trajectories(iTrajectory).t)]; %#ok<AGROW>
-                expectedObservedY = [expectedObservedY; trajectories(iTrajectory).y(trajectories(iTrajectory).t)]; %#ok<AGROW>
-                rawX = [rawX; trajectories(iTrajectory).x.dataValues]; %#ok<AGROW>
+                trajectory = fit.observedTrajectories(iTrajectory);
+                ti = trajectory.t;
+                observedX = trajectory.x(ti);
+                observedY = trajectory.y(ti);
+                rawX = trajectory.x.dataValues;
+
+                reconstructedX = fit.decomposition.fixedFrame.background(iTrajectory).x(ti) + ...
+                    fit.decomposition.fixedFrame.mesoscale(iTrajectory).x(ti) + ...
+                    fit.decomposition.fixedFrame.submesoscale(iTrajectory).x(ti);
+                reconstructedY = fit.decomposition.fixedFrame.background(iTrajectory).y(ti) + ...
+                    fit.decomposition.fixedFrame.mesoscale(iTrajectory).y(ti) + ...
+                    fit.decomposition.fixedFrame.submesoscale(iTrajectory).y(ti);
+
+                testCase.verifyEqual(reconstructedX, observedX, "AbsTol", 1e-2)
+                testCase.verifyEqual(reconstructedY, observedY, "AbsTol", 1e-2)
+                maxObservedRawDifference = max(maxObservedRawDifference, max(abs(observedX - rawX)));
             end
 
-            testCase.verifyEqual(fit.observedX, expectedObservedX, "AbsTol", 1e-12)
-            testCase.verifyEqual(fit.observedY, expectedObservedY, "AbsTol", 1e-12)
-            testCase.verifyGreaterThan(max(abs(expectedObservedX - rawX)), 1e-3)
+            testCase.verifyGreaterThan(maxObservedRawDifference, 1e-3)
         end
 
         function reducedBasisGaugeRemovesScalarSpatialMode(testCase)
@@ -265,7 +228,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
             basisSize = fit.streamfunctionSpline.basisSize;
             xiByTime = reshape(fit.streamfunctionSpline.xi, prod(basisSize(1:2)), basisSize(3));
-            gaugeModeMatrix = fit.fitDiagnostics.psiGaugeModeMatrix;
+            gaugeModeMatrix = GriddedStreamfunctionUnitTests.constantGaugeMode(fit.psiKnotPoints, fit.psiS, basisSize);
 
             testCase.verifyEqual(size(gaugeModeMatrix, 2), 1)
             testCase.verifyEqual(gaugeModeMatrix.' * xiByTime, zeros(1, basisSize(3)), "AbsTol", 1e-10)
@@ -276,16 +239,25 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             fit = GriddedStreamfunction(trajectories);
 
             tGrid = repmat(t, 1, size(x, 2));
+            mxGrid = repmat(fit.centerOfMassTrajectory.x(t), 1, size(x, 2));
+            myGrid = repmat(fit.centerOfMassTrajectory.y(t), 1, size(x, 2));
             scalarTime = t(4);
             scalarRow = repmat(scalarTime, 1, size(x, 2));
 
+            [tEval, q, r] = fit.centeredCoordinates(t, x, y);
+
+            testCase.verifyEqual(tEval, tGrid, "AbsTol", 1e-12)
+            testCase.verifyEqual(q, x - mxGrid, "AbsTol", 1e-12)
+            testCase.verifyEqual(r, y - myGrid, "AbsTol", 1e-12)
             testCase.verifyEqual(fit.uMesoscale(scalarTime, x(4, :), y(4, :)), fit.uMesoscale(scalarRow, x(4, :), y(4, :)), "AbsTol", 1e-12)
             testCase.verifyEqual(fit.psiMesoscale(t, x, y), fit.psiMesoscale(tGrid, x, y), "AbsTol", 1e-12)
             testCase.verifyEqual(fit.uMesoscale(t, x, y), fit.uMesoscale(tGrid, x, y), "AbsTol", 1e-12)
             testCase.verifyEqual(fit.vMesoscale(t, x, y), fit.vMesoscale(tGrid, x, y), "AbsTol", 1e-12)
 
-            testCase.verifyError(@() fit.uMesoscale(t, x(1:end-1, :), y), "GriddedStreamfunction:EvaluationSizeMismatch")
-            testCase.verifyError(@() fit.uMesoscale(t(1:end-1), x, y), "GriddedStreamfunction:EvaluationTimeSizeMismatch")
+            testCase.verifyError(@() fit.centeredCoordinates(t, x(1:(end - 1), :), y), "GriddedStreamfunction:EvaluationSizeMismatch")
+            testCase.verifyError(@() fit.centeredCoordinates(t(1:(end - 1)), x, y), "GriddedStreamfunction:EvaluationTimeSizeMismatch")
+            testCase.verifyError(@() fit.uMesoscale(t, x(1:(end - 1), :), y), "GriddedStreamfunction:EvaluationSizeMismatch")
+            testCase.verifyError(@() fit.uMesoscale(t(1:(end - 1)), x, y), "GriddedStreamfunction:EvaluationTimeSizeMismatch")
         end
     end
 
@@ -343,14 +315,6 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             end
         end
 
-        function knotPoints = paddedQuadraticDomain(values)
-            extent = max(abs(values), [], "all");
-            padding = max(50, 0.25 * max(extent, eps));
-            lowerBound = -(extent + padding);
-            upperBound = extent + padding;
-            knotPoints = [repmat(lowerBound, 3, 1); repmat(upperBound, 3, 1)];
-        end
-
         function trajectories = smoothedTrajectoryData()
             t = linspace(0, 1, 21).';
             x1 = 2 + 0.3 * t;
@@ -371,6 +335,25 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function psiKnotPoints = zeroPsiKnotPoints()
             psiKnotPoints = {[-1; -1; -1; 1; 1; 1], [-1; -1; -1; 1; 1; 1], [0; 1]};
+        end
+
+        function gaugeModeMatrix = constantGaugeMode(psiKnotPoints, psiS, basisSize)
+            numSpatialCoefficients = prod(basisSize(1:2));
+            if numSpatialCoefficients == 1
+                gaugeModeMatrix = 1;
+                return
+            end
+
+            qDomain = [psiKnotPoints{1}(1), psiKnotPoints{1}(end)];
+            rDomain = [psiKnotPoints{2}(1), psiKnotPoints{2}(end)];
+            spatialSupportCounts = max(2 * basisSize(1:2), basisSize(1:2) + 2);
+            qGaugePoints = linspace(qDomain(1), qDomain(2), spatialSupportCounts(1)).';
+            rGaugePoints = linspace(rDomain(1), rDomain(2), spatialSupportCounts(2)).';
+            [qGaugeGrid, rGaugeGrid] = ndgrid(qGaugePoints, rGaugePoints);
+            spatialPointMatrix = [qGaugeGrid(:), rGaugeGrid(:)];
+            spatialBasisMatrix = TensorSpline.matrixForPointMatrix(spatialPointMatrix, knotPoints=psiKnotPoints(1:2), S=psiS(1:2));
+            constantGaugeVector = spatialBasisMatrix \ ones(size(qGaugeGrid(:)));
+            gaugeModeMatrix = reshape(constantGaugeVector, [], 1);
         end
     end
 end

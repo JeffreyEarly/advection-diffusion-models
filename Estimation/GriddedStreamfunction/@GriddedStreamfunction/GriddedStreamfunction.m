@@ -44,12 +44,11 @@ classdef GriddedStreamfunction < handle
     % ```matlab
     % fit = GriddedStreamfunction(trajectories);
     % uMeso = fit.uMesoscale(tQuery, xQuery, yQuery);
-    % xMeso = fit.mesoscaleTrajectories(1).x(tQuery);
+    % xMeso = fit.decomposition.fixedFrame.mesoscale(1).x(tQuery);
     % ```
     %
     % - Topic: Fit the estimator
     % - Topic: Inspect fitted components
-    % - Topic: Inspect decomposition samples
     % - Topic: Inspect decomposition trajectories
     % - Topic: Evaluate fitted mesoscale
     % - Topic: Evaluate fitted diagnostics
@@ -64,6 +63,14 @@ classdef GriddedStreamfunction < handle
         %
         % - Topic: Inspect fitted components
         streamfunctionSpline
+
+        % Observed drifter trajectory splines used for the fit.
+        %
+        % `observedTrajectories` preserves the original
+        % `TrajectorySpline` inputs in drifter order.
+        %
+        % - Topic: Inspect fitted components
+        observedTrajectories
 
         % Fitted center-of-mass trajectory.
         %
@@ -86,45 +93,18 @@ classdef GriddedStreamfunction < handle
         % - Topic: Inspect fitted components
         backgroundTrajectory
 
-        % Fixed-frame background trajectory components for each drifter.
+        % Per-drifter decomposition trajectories in fixed and centered frames.
         %
-        % Each entry is a `TrajectorySpline` whose x- and y-components are
-        % zero at the first sample time of that drifter.
-        %
-        % - Topic: Inspect decomposition trajectories
-        backgroundTrajectories
-
-        % Fixed-frame mesoscale trajectory components for each drifter.
-        %
-        % Each entry is a `TrajectorySpline` whose initial position equals
-        % the observed initial position of that drifter.
+        % `decomposition.fixedFrame.background`,
+        % `decomposition.fixedFrame.mesoscale`, and
+        % `decomposition.fixedFrame.submesoscale` are `TrajectorySpline`
+        % column vectors aligned with `observedTrajectories`. In the
+        % centered frame, `decomposition.centeredFrame.mesoscale` and
+        % `decomposition.centeredFrame.submesoscale` store the corresponding
+        % COM-frame trajectories.
         %
         % - Topic: Inspect decomposition trajectories
-        mesoscaleTrajectories
-
-        % Fixed-frame submesoscale trajectory components for each drifter.
-        %
-        % Each entry is a `TrajectorySpline` whose x- and y-components are
-        % zero at the first sample time of that drifter.
-        %
-        % - Topic: Inspect decomposition trajectories
-        submesoscaleTrajectories
-
-        % COM-frame mesoscale trajectory components for each drifter.
-        %
-        % Each entry is a `TrajectorySpline` whose initial position equals
-        % the initial centered position of that drifter.
-        %
-        % - Topic: Inspect decomposition trajectories
-        centeredMesoscaleTrajectories
-
-        % COM-frame submesoscale trajectory components for each drifter.
-        %
-        % Each entry is a `TrajectorySpline` whose x- and y-components are
-        % zero at the first sample time of that drifter.
-        %
-        % - Topic: Inspect decomposition trajectories
-        centeredSubmesoscaleTrajectories
+        decomposition struct = struct()
 
         % Fast temporal knot vector used for COM and background fits.
         %
@@ -157,127 +137,6 @@ classdef GriddedStreamfunction < handle
         %
         % - Topic: Inspect fitted components
         fitSupportTimes
-
-        % Number of observations contributed by each drifter.
-        %
-        % - Topic: Inspect decomposition samples
-        sampleCounts
-
-        % Pooled observation times for every drifter event.
-        %
-        % These times align elementwise with `observedX`, `observedY`,
-        % `observedXVelocity`, and `observedYVelocity`.
-        %
-        % - Topic: Inspect decomposition samples
-        observationTimes
-
-        % Pooled observed x-positions.
-        %
-        % - Topic: Inspect decomposition samples
-        observedX
-
-        % Pooled observed y-positions.
-        %
-        % - Topic: Inspect decomposition samples
-        observedY
-
-        % Pooled observed x-velocities.
-        %
-        % These are the first derivatives of the supplied trajectory
-        % splines evaluated at `observationTimes`.
-        %
-        % - Topic: Inspect decomposition samples
-        observedXVelocity
-
-        % Pooled observed y-velocities.
-        %
-        % These are the first derivatives of the supplied trajectory
-        % splines evaluated at `observationTimes`.
-        %
-        % - Topic: Inspect decomposition samples
-        observedYVelocity
-
-        % Pooled COM-frame x-coordinates.
-        %
-        % - Topic: Inspect decomposition samples
-        centeredX
-
-        % Pooled COM-frame y-coordinates.
-        %
-        % - Topic: Inspect decomposition samples
-        centeredY
-
-        % Pooled COM x-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        centerVelocityX
-
-        % Pooled COM y-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        centerVelocityY
-
-        % Pooled fixed-frame mesoscale x-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        uMesoscaleObserved
-
-        % Pooled fixed-frame mesoscale y-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        vMesoscaleObserved
-
-        % Pooled COM-projected mesoscale x-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        uMesoscaleComObserved
-
-        % Pooled COM-projected mesoscale y-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        vMesoscaleComObserved
-
-        % Pooled relative mesoscale x-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        uMesoscaleRelativeObserved
-
-        % Pooled relative mesoscale y-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        vMesoscaleRelativeObserved
-
-        % Pooled fitted background x-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        uBackgroundObserved
-
-        % Pooled fitted background y-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        vBackgroundObserved
-
-        % Pooled fitted submesoscale x-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        uSubmesoscaleObserved
-
-        % Pooled fitted submesoscale y-velocity samples.
-        %
-        % - Topic: Inspect decomposition samples
-        vSubmesoscaleObserved
-    end
-
-    properties (SetAccess = private, Hidden)
-        % Developer-only diagnostics from the rev3 mesoscale least-squares fit.
-        %
-        % This struct stores the projection blocks, mesoscale design
-        % matrices, and coefficient vectors used internally by the
-        % estimator.
-        %
-        % - Topic: Inspect decomposition samples
-        % - Developer: true
-        fitDiagnostics struct = struct()
     end
 
     methods
@@ -473,7 +332,6 @@ classdef GriddedStreamfunction < handle
 
     methods (Access = private)
         fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS)
-        [tEval, q, r] = centeredCoordinates(self, t, x, y)
     end
 
     methods (Static, Access = private)

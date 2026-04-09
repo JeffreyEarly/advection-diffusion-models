@@ -31,23 +31,8 @@ uBackground = fit.uBackground(t);
 vBackground = fit.vBackground(t);
 backgroundX = fit.backgroundTrajectory.x(t);
 backgroundY = fit.backgroundTrajectory.y(t);
-
-qObserved = reshape(fit.centeredX, numel(t), nDrifters);
-rObserved = reshape(fit.centeredY, numel(t), nDrifters);
-xMesoscale = zeros(numel(t), nDrifters);
-yMesoscale = zeros(numel(t), nDrifters);
-xSubmesoscale = zeros(numel(t), nDrifters);
-ySubmesoscale = zeros(numel(t), nDrifters);
-qMesoscale = zeros(numel(t), nDrifters);
-rMesoscale = zeros(numel(t), nDrifters);
-for iDrifter = 1:nDrifters
-    xMesoscale(:, iDrifter) = fit.mesoscaleTrajectories(iDrifter).x(t);
-    yMesoscale(:, iDrifter) = fit.mesoscaleTrajectories(iDrifter).y(t);
-    xSubmesoscale(:, iDrifter) = fit.submesoscaleTrajectories(iDrifter).x(t);
-    ySubmesoscale(:, iDrifter) = fit.submesoscaleTrajectories(iDrifter).y(t);
-    qMesoscale(:, iDrifter) = fit.centeredMesoscaleTrajectories(iDrifter).x(t);
-    rMesoscale(:, iDrifter) = fit.centeredMesoscaleTrajectories(iDrifter).y(t);
-end
+xSubmesoscaleCell = cell(nDrifters, 1);
+ySubmesoscaleCell = cell(nDrifters, 1);
 
 figure(Color="w");
 tl = tiledlayout(3, 1, TileSpacing="compact", Padding="compact");
@@ -82,7 +67,14 @@ title(tl, "Site 1 parameter time series");
 
 figure(Color="w");
 axMeso = axes;
-plot(axMeso, xMesoscale/1000, yMesoscale/1000, LineWidth=1.2);
+hold(axMeso, "on");
+for iDrifter = 1:nDrifters
+    trajectory = fit.observedTrajectories(iDrifter);
+    ti = trajectory.t;
+    xMesoscale = fit.decomposition.fixedFrame.mesoscale(iDrifter).x(ti);
+    yMesoscale = fit.decomposition.fixedFrame.mesoscale(iDrifter).y(ti);
+    plot(axMeso, xMesoscale/1000, yMesoscale/1000, LineWidth=1.2);
+end
 axis(axMeso, "equal");
 xlabel(axMeso, "x (km)");
 ylabel(axMeso, "y (km)");
@@ -100,7 +92,16 @@ title(axBackground, "Common background path");
 box(axBackground, "on");
 
 axSubmeso = nexttile;
-plot(axSubmeso, xSubmesoscale/1000, ySubmesoscale/1000, LineWidth=1.2);
+hold(axSubmeso, "on");
+for iDrifter = 1:nDrifters
+    trajectory = fit.observedTrajectories(iDrifter);
+    ti = trajectory.t;
+    xSubmesoscale = fit.decomposition.fixedFrame.submesoscale(iDrifter).x(ti);
+    ySubmesoscale = fit.decomposition.fixedFrame.submesoscale(iDrifter).y(ti);
+    xSubmesoscaleCell{iDrifter} = xSubmesoscale;
+    ySubmesoscaleCell{iDrifter} = ySubmesoscale;
+    plot(axSubmeso, xSubmesoscale/1000, ySubmesoscale/1000, LineWidth=1.2);
+end
 axis(axSubmeso, "equal");
 xlabel(axSubmeso, "x (km)");
 ylabel(axSubmeso, "y (km)");
@@ -108,7 +109,7 @@ title(axSubmeso, "Fixed-frame submesoscale trajectories");
 box(axSubmeso, "on");
 
 [decompositionXLimits, decompositionYLimits] = sharedTrajectoryLimits( ...
-    {backgroundX, xSubmesoscale}, {backgroundY, ySubmesoscale}, 1000);
+    [{backgroundX}; xSubmesoscaleCell], [{backgroundY}; ySubmesoscaleCell], 1000);
 xlim(axBackground, decompositionXLimits)
 xlim(axSubmeso, decompositionXLimits)
 ylim(axBackground, decompositionYLimits)
@@ -118,9 +119,24 @@ title(tlDecomp, "Site 1 fixed-frame decomposition");
 
 figure(Color="w");
 axCom = axes;
-plot(axCom, qObserved/1000, rObserved/1000, Color=0.8*[1 1 1]);
 hold(axCom, "on");
-plot(axCom, qMesoscale/1000, rMesoscale/1000, LineWidth=1.2);
+for iDrifter = 1:nDrifters
+    trajectory = fit.observedTrajectories(iDrifter);
+    ti = trajectory.t;
+    xi = trajectory.x(ti);
+    yi = trajectory.y(ti);
+    [~, qObserved, rObserved] = fit.centeredCoordinates(ti, xi, yi);
+    qMesoscale = fit.decomposition.centeredFrame.mesoscale(iDrifter).x(ti);
+    rMesoscale = fit.decomposition.centeredFrame.mesoscale(iDrifter).y(ti);
+
+    if iDrifter == 1
+        plot(axCom, qObserved/1000, rObserved/1000, Color=0.8*[1 1 1], DisplayName="Observed");
+        plot(axCom, qMesoscale/1000, rMesoscale/1000, LineWidth=1.2, DisplayName="Mesoscale fit");
+    else
+        plot(axCom, qObserved/1000, rObserved/1000, Color=0.8*[1 1 1]);
+        plot(axCom, qMesoscale/1000, rMesoscale/1000, LineWidth=1.2);
+    end
+end
 axis(axCom, "equal");
 xlabel(axCom, "q (km)");
 ylabel(axCom, "r (km)");
