@@ -964,8 +964,187 @@ and relative dynamics.
 \qquad
 \hat{c} = G \hat{\alpha},
 \]
- with $\mathbf{X}$ and $\mathbf{d}$ defined in
+with $\mathbf{X}$ and $\mathbf{d}$ defined in
 \eqref{eq:joint_stacked_system}. This is exactly the gauge-reduced solve
  used in the current MATLAB implementation.
+
+\subsection{Bootstrap uncertainty assessment}
+
+To assess sensitivity to which drifters were observed, we form a
+whole-drifter bootstrap ensemble. Let the original asynchronous drifter
+set contain $K$ trajectory splines. Bootstrap replicate $b$ is formed by
+drawing
+\begin{equation}
+i_1^{(b)}, \dots, i_K^{(b)} \in \{1,\dots,K\}
+\end{equation}
+with replacement, and refitting the full estimator to the resampled
+trajectory list
+\begin{equation}
+\left\{\mathcal{T}_{i_1^{(b)}}, \dots, \mathcal{T}_{i_K^{(b)}}\right\}.
+\end{equation}
+This produces replicate-specific fitted objects
+\begin{equation}
+\hat{\psi}^{(b)}, \qquad \hat{m}_x^{(b)}(t), \qquad \hat{m}_y^{(b)}(t),
+\qquad \hat{u}_{\mathrm{bg}}^{(b)}(t), \qquad \hat{v}_{\mathrm{bg}}^{(b)}(t),
+\end{equation}
+as well as the corresponding fixed-frame and COM-frame trajectory
+decompositions.
+
+The bootstrap summaries are evaluated on a common query grid
+\begin{equation}
+t_1^{\mathrm{q}} < \cdots < t_{N_q}^{\mathrm{q}}
+\end{equation}
+chosen inside the overlap interval shared by the original drifters. For
+each replicate, we evaluate the COM path
+\begin{equation}
+\hat{x}_c^{(b)}(t_i^{\mathrm{q}})=\hat{m}_x^{(b)}(t_i^{\mathrm{q}}),
+\qquad
+\hat{y}_c^{(b)}(t_i^{\mathrm{q}})=\hat{m}_y^{(b)}(t_i^{\mathrm{q}}),
+\end{equation}
+and then define the COM-local mesoscale diagnostics
+\begin{align}
+\hat{u}_c^{(b)}(t_i^{\mathrm{q}})
+&=
+\hat{u}^{\mathrm{meso},(b)}\!\left(
+t_i^{\mathrm{q}},
+\hat{x}_c^{(b)}(t_i^{\mathrm{q}}),
+\hat{y}_c^{(b)}(t_i^{\mathrm{q}})
+\right),
+\\
+\hat{v}_c^{(b)}(t_i^{\mathrm{q}})
+&=
+\hat{v}^{\mathrm{meso},(b)}\!\left(
+t_i^{\mathrm{q}},
+\hat{x}_c^{(b)}(t_i^{\mathrm{q}}),
+\hat{y}_c^{(b)}(t_i^{\mathrm{q}})
+\right),
+\\
+\hat{\sigma}_n^{(b)}(t_i^{\mathrm{q}})
+&=
+\hat{\sigma}_n^{(b)}\!\left(
+t_i^{\mathrm{q}},
+\hat{x}_c^{(b)}(t_i^{\mathrm{q}}),
+\hat{y}_c^{(b)}(t_i^{\mathrm{q}})
+\right),
+\\
+\hat{\sigma}_s^{(b)}(t_i^{\mathrm{q}})
+&=
+\hat{\sigma}_s^{(b)}\!\left(
+t_i^{\mathrm{q}},
+\hat{x}_c^{(b)}(t_i^{\mathrm{q}}),
+\hat{y}_c^{(b)}(t_i^{\mathrm{q}})
+\right),
+\\
+\hat{\zeta}^{(b)}(t_i^{\mathrm{q}})
+&=
+\hat{\zeta}^{(b)}\!\left(
+t_i^{\mathrm{q}},
+\hat{x}_c^{(b)}(t_i^{\mathrm{q}}),
+\hat{y}_c^{(b)}(t_i^{\mathrm{q}})
+\right).
+\end{align}
+These are exactly the quantities stored by the bootstrap implementation.
+
+We also store one scalar submesoscale diffusivity diagnostic per
+replicate. Let
+\begin{equation}
+\hat{x}_{k,\mathrm{sm}}^{(b)}(t), \qquad \hat{y}_{k,\mathrm{sm}}^{(b)}(t)
+\end{equation}
+denote the fixed-frame submesoscale trajectory contribution for drifter
+$k$ in replicate $b$, with native time interval
+$[t_{k,0}^{(b)}, t_{k,f}^{(b)}]$. The diagnostic is
+\begin{equation}
+\hat{\kappa}^{(b)}
+=
+\frac{1}{K}
+\sum_{k=1}^{K}
+\frac{
+\left(\hat{x}_{k,\mathrm{sm}}^{(b)}(t_{k,f}^{(b)})\right)^2
++
+\left(\hat{y}_{k,\mathrm{sm}}^{(b)}(t_{k,f}^{(b)})\right)^2
+}{
+4\left(t_{k,f}^{(b)}-t_{k,0}^{(b)}\right)
+}.
+\end{equation}
+This is used only as a scalar diagnostic summary; it is not included in
+the bootstrap ranking score.
+
+To rank the replicate fits, we form an empirical consensus score from the
+bootstrap cloud itself. Choose a score subset
+\begin{equation}
+\mathcal{I}_{\mathrm{score}} \subset \{1,\dots,N_q\},
+\end{equation}
+typically by striding the query times. At each scored time, construct a
+2-D KDE for the cloud
+\begin{equation}
+\left\{
+\left(\hat{u}_c^{(b)}(t_i^{\mathrm{q}}), \hat{v}_c^{(b)}(t_i^{\mathrm{q}})\right)
+\right\}_{b=1}^{B},
+\end{equation}
+another 2-D KDE for
+\begin{equation}
+\left\{
+\left(\hat{\sigma}_n^{(b)}(t_i^{\mathrm{q}}), \hat{\sigma}_s^{(b)}(t_i^{\mathrm{q}})\right)
+\right\}_{b=1}^{B},
+\end{equation}
+and a 1-D KDE for
+\begin{equation}
+\left\{
+\hat{\zeta}^{(b)}(t_i^{\mathrm{q}})
+\right\}_{b=1}^{B}.
+\end{equation}
+Denoting these empirical densities by
+$\hat{p}_{uv,i}$, $\hat{p}_{\sigma,i}$, and $\hat{p}_{\zeta,i}$, the
+component scores for replicate $b$ are
+\begin{align}
+\ell_{uv}^{(b)}
+&=
+\sum_{i \in \mathcal{I}_{\mathrm{score}}}
+\log_{10}
+\hat{p}_{uv,i}
+\!\left(
+\hat{u}_c^{(b)}(t_i^{\mathrm{q}}),
+\hat{v}_c^{(b)}(t_i^{\mathrm{q}})
+\right),
+\\
+\ell_{\sigma}^{(b)}
+&=
+\sum_{i \in \mathcal{I}_{\mathrm{score}}}
+\log_{10}
+\hat{p}_{\sigma,i}
+\!\left(
+\hat{\sigma}_n^{(b)}(t_i^{\mathrm{q}}),
+\hat{\sigma}_s^{(b)}(t_i^{\mathrm{q}})
+\right),
+\\
+\ell_{\zeta}^{(b)}
+&=
+\sum_{i \in \mathcal{I}_{\mathrm{score}}}
+\log_{10}
+\hat{p}_{\zeta,i}
+\!\left(
+\hat{\zeta}^{(b)}(t_i^{\mathrm{q}})
+\right).
+\end{align}
+The joint consensus score is then
+\begin{equation}
+\ell_{\mathrm{joint}}^{(b)}
+=
+\ell_{uv}^{(b)}
++
+\ell_{\sigma}^{(b)}
++
+\ell_{\zeta}^{(b)}.
+\end{equation}
+If the fit enforces \texttt{zeroVorticity}, the $\ell_{\zeta}^{(b)}$
+block is omitted. If the fit enforces \texttt{zeroStrain}, the
+$\ell_{\sigma}^{(b)}$ block is omitted.
+
+When the user supplies explicit fast or mesoscale knot vectors, every
+bootstrap replicate reuses them exactly. Otherwise each replicate is
+allowed to choose its own default fast and mesoscale knot sequences from
+the resampled data. In both cases, the resolved knot vectors used by each
+replicate are stored so that any selected bootstrap fit can be
+reconstructed exactly later.
 
 \end{document}

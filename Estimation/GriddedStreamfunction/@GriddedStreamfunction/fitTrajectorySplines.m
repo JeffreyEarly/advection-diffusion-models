@@ -24,7 +24,9 @@ fitSupportTimes = unique(allT, "sorted");
 
 if isempty(fastKnotPoints)
     representativeTimes = GriddedStreamfunction.representativeObservationTimes(tCell);
-    fastSupportTimes = unique(representativeTimes, "sorted");
+    % Anchor the automatic fast basis to the full observation interval so
+    % asynchronous deployment gaps do not clip the spline domain.
+    fastSupportTimes = unique([fitSupportTimes(1); representativeTimes; fitSupportTimes(end)], "sorted");
     if numel(fastSupportTimes) < fastS + 1
         error("GriddedStreamfunction:InsufficientFastSupportTimes", ...
             "The representative times must contain at least fastS + 1 unique samples.");
