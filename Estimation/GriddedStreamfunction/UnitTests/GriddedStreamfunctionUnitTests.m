@@ -22,6 +22,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(numel(fit.decomposition.centeredFrame.mesoscale), numel(trajectories))
             testCase.verifyEqual(numel(fit.decomposition.centeredFrame.submesoscale), numel(trajectories))
             testCase.verifyEqual(fit.fastS, 3)
+            testCase.verifyEqual(fit.mesoscaleConstraint, "none")
             testCase.verifyLessThanOrEqual(max(abs(fit.centerOfMassTrajectory.x(t) - mean(x, 2))), 2e-1)
             testCase.verifyLessThanOrEqual(max(abs(fit.centerOfMassTrajectory.y(t) - mean(y, 2))), 2e-1)
 
@@ -64,6 +65,98 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             end
 
             testCase.verifyError(@() GriddedStreamfunction(cellInput), "MATLAB:validators:mustBeA")
+        end
+
+        function constructorStoresMesoscaleConstraint(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+
+            fit = GriddedStreamfunction(trajectories, mesoscaleConstraint="zeroVorticity");
+
+            testCase.verifyEqual(fit.mesoscaleConstraint, "zeroVorticity")
+        end
+
+        function constructorRejectsInvalidMesoscaleConstraint(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+
+            testCase.verifyError(@() GriddedStreamfunction(trajectories, mesoscaleConstraint="badConstraint"), "MATLAB:validators:mustBeMember")
+        end
+
+        function explicitNoneConstraintMatchesDefaultFit(testCase)
+            [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+
+            fitDefault = GriddedStreamfunction(trajectories);
+            fitNone = GriddedStreamfunction(trajectories, mesoscaleConstraint="none");
+            tGrid = repmat(t, 1, size(x, 2));
+
+            testCase.verifyEqual(fitNone.mesoscaleConstraint, "none")
+            testCase.verifyEqual(fitNone.streamfunctionSpline.xi, fitDefault.streamfunctionSpline.xi, "AbsTol", 1e-12)
+            testCase.verifyEqual(fitNone.backgroundTrajectory.x(t), fitDefault.backgroundTrajectory.x(t), "AbsTol", 1e-12)
+            testCase.verifyEqual(fitNone.backgroundTrajectory.y(t), fitDefault.backgroundTrajectory.y(t), "AbsTol", 1e-12)
+            testCase.verifyEqual(fitNone.uMesoscale(tGrid, x, y), fitDefault.uMesoscale(tGrid, x, y), "AbsTol", 1e-12)
+            testCase.verifyEqual(fitNone.vMesoscale(tGrid, x, y), fitDefault.vMesoscale(tGrid, x, y), "AbsTol", 1e-12)
+        end
+
+        function visualPrincipalStrainAnglePreservesPrincipalValues(testCase)
+            thetaExpected = [-30; -5; 20; 35];
+            sigmaN = cosd(2 * thetaExpected);
+            sigmaS = sind(2 * thetaExpected);
+
+            thetaActual = GriddedStreamfunction.visualPrincipalStrainAngle(sigmaN, sigmaS);
+
+            testCase.verifyEqual(thetaActual, thetaExpected, "AbsTol", 1e-12)
+        end
+
+        function visualPrincipalStrainAngleAvoidsBoundaryJump(testCase)
+            thetaExpected = [35; 40; 45; 50; 55];
+            sigmaN = cosd(2 * thetaExpected);
+            sigmaS = sind(2 * thetaExpected);
+
+            thetaActual = GriddedStreamfunction.visualPrincipalStrainAngle(sigmaN, sigmaS);
+
+            testCase.verifyEqual(thetaActual, thetaExpected, "AbsTol", 1e-12)
+        end
+
+        function visualPrincipalStrainAngleReentersPrincipalRange(testCase)
+            thetaExpected = [35; 50; 70; 40; 20];
+            sigmaN = cosd(2 * thetaExpected);
+            sigmaS = sind(2 * thetaExpected);
+
+            thetaActual = GriddedStreamfunction.visualPrincipalStrainAngle(sigmaN, sigmaS);
+
+            testCase.verifyEqual(thetaActual, thetaExpected, "AbsTol", 1e-12)
+        end
+
+        function visualPrincipalStrainAngleProcessesMatrixColumnsIndependently(testCase)
+            thetaExpected = [40 -40; 50 -50; 60 -60; 30 -30];
+            sigmaN = cosd(2 * thetaExpected);
+            sigmaS = sind(2 * thetaExpected);
+
+            thetaActual = GriddedStreamfunction.visualPrincipalStrainAngle(sigmaN, sigmaS);
+
+            testCase.verifyEqual(thetaActual, thetaExpected, "AbsTol", 1e-12)
+        end
+
+        function visualPrincipalStrainAngleRestartsAfterNaNGap(testCase)
+            thetaExpected = [35; 50; NaN; -40; -35];
+            sigmaN = cosd(2 * thetaExpected);
+            sigmaS = sind(2 * thetaExpected);
+            sigmaN(3) = NaN;
+            sigmaS(3) = NaN;
+
+            thetaActual = GriddedStreamfunction.visualPrincipalStrainAngle(sigmaN, sigmaS);
+
+            testCase.verifyEqual(thetaActual([1 2 4 5]), thetaExpected([1 2 4 5]), "AbsTol", 1e-12)
+            testCase.verifyTrue(isnan(thetaActual(3)))
+        end
+
+        function visualPrincipalStrainAngleSupportsRadians(testCase)
+            thetaExpected = [0.6; 0.9; 1.1];
+            sigmaN = cos(2 * thetaExpected);
+            sigmaS = sin(2 * thetaExpected);
+
+            thetaActual = GriddedStreamfunction.visualPrincipalStrainAngle(sigmaN, sigmaS, units="radians");
+
+            testCase.verifyEqual(thetaActual, thetaExpected, "AbsTol", 1e-12)
         end
 
         function synchronousLinearFieldRecovery(testCase)
@@ -114,6 +207,33 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(max(sigmaNError), 2e-7)
             testCase.verifyLessThanOrEqual(max(sigmaSError), 2e-7)
             testCase.verifyLessThanOrEqual(max(zetaError), 2e-7)
+        end
+
+        function zeroVorticityConstraintZerosOffSampleVorticity(testCase)
+            [~, trajectories, tQuery, xQuery, yQuery] = GriddedStreamfunctionUnitTests.offSampleLinearFieldData(4.0e-6, pi/9, 0);
+
+            fit = GriddedStreamfunction(trajectories, mesoscaleConstraint="zeroVorticity");
+            zetaValues = fit.zeta(tQuery, xQuery, yQuery);
+
+            testCase.verifyEqual(fit.mesoscaleConstraint, "zeroVorticity")
+            testCase.verifyTrue(all(isfinite(zetaValues), "all"))
+            testCase.verifyLessThanOrEqual(max(abs(zetaValues), [], "all"), 1e-10)
+            GriddedStreamfunctionUnitTests.verifyFiniteReconstruction(testCase, fit)
+        end
+
+        function zeroStrainConstraintZerosOffSampleStrain(testCase)
+            [~, trajectories, tQuery, xQuery, yQuery] = GriddedStreamfunctionUnitTests.offSampleLinearFieldData(0, pi/9, -1.5e-6);
+
+            fit = GriddedStreamfunction(trajectories, mesoscaleConstraint="zeroStrain");
+            sigmaNValues = fit.sigma_n(tQuery, xQuery, yQuery);
+            sigmaSValues = fit.sigma_s(tQuery, xQuery, yQuery);
+
+            testCase.verifyEqual(fit.mesoscaleConstraint, "zeroStrain")
+            testCase.verifyTrue(all(isfinite(sigmaNValues), "all"))
+            testCase.verifyTrue(all(isfinite(sigmaSValues), "all"))
+            testCase.verifyLessThanOrEqual(max(abs(sigmaNValues), [], "all"), 1e-10)
+            testCase.verifyLessThanOrEqual(max(abs(sigmaSValues), [], "all"), 1e-10)
+            GriddedStreamfunctionUnitTests.verifyFiniteReconstruction(testCase, fit)
         end
 
         function anchoredTrajectoryComponentsMatchConventionsAndReconstructPositions(testCase)
@@ -304,6 +424,25 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             end
         end
 
+        function [model, trajectories, tQuery, xQuery, yQuery] = offSampleLinearFieldData(sigma, theta, zeta)
+            u0 = 0.08;
+            v0 = -0.05;
+
+            model = LinearVelocityField(sigma=sigma, theta=theta, zeta=zeta, u0=u0, v0=v0);
+            integrator = AdvectionDiffusionIntegrator(model, 0);
+            [x0, y0] = ndgrid([-600 0 600] + 1200, [-400 0 400] - 800);
+            [tFine, xFine, yFine] = integrator.particleTrajectories(x0(:), y0(:), 12*3600, 300);
+
+            coarseIndices = 1:3:numel(tFine);
+            queryIndices = setdiff(1:numel(tFine), coarseIndices);
+            trajectories = GriddedStreamfunctionUnitTests.trajectorySplinesFromMatrices( ...
+                tFine(coarseIndices), xFine(coarseIndices, :), yFine(coarseIndices, :));
+
+            tQuery = repmat(tFine(queryIndices), 1, size(xFine, 2));
+            xQuery = xFine(queryIndices, :);
+            yQuery = yFine(queryIndices, :);
+        end
+
         function trajectories = trajectorySplinesFromMatrices(t, x, y, splineDegree)
             if nargin < 4
                 splineDegree = 3;
@@ -354,6 +493,33 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             spatialBasisMatrix = TensorSpline.matrixForPointMatrix(spatialPointMatrix, knotPoints=psiKnotPoints(1:2), S=psiS(1:2));
             constantGaugeVector = spatialBasisMatrix \ ones(size(qGaugeGrid(:)));
             gaugeModeMatrix = reshape(constantGaugeVector, [], 1);
+        end
+
+        function verifyFiniteReconstruction(testCase, fit)
+            testCase.verifyTrue(all(isfinite(fit.backgroundTrajectory.x(fit.fitSupportTimes))))
+            testCase.verifyTrue(all(isfinite(fit.backgroundTrajectory.y(fit.fitSupportTimes))))
+
+            for iTrajectory = 1:numel(fit.observedTrajectories)
+                trajectory = fit.observedTrajectories(iTrajectory);
+                ti = trajectory.t;
+                observedX = trajectory.x(ti);
+                observedY = trajectory.y(ti);
+
+                background = fit.decomposition.fixedFrame.background(iTrajectory);
+                mesoscale = fit.decomposition.fixedFrame.mesoscale(iTrajectory);
+                submesoscale = fit.decomposition.fixedFrame.submesoscale(iTrajectory);
+
+                reconstructedX = background.x(ti) + mesoscale.x(ti) + submesoscale.x(ti);
+                reconstructedY = background.y(ti) + mesoscale.y(ti) + submesoscale.y(ti);
+                componentValues = [ ...
+                    background.x(ti); background.y(ti); ...
+                    mesoscale.x(ti); mesoscale.y(ti); ...
+                    submesoscale.x(ti); submesoscale.y(ti)];
+
+                testCase.verifyTrue(all(isfinite(componentValues)))
+                testCase.verifyEqual(reconstructedX, observedX, "AbsTol", 1e-2)
+                testCase.verifyEqual(reconstructedY, observedY, "AbsTol", 1e-2)
+            end
         end
     end
 end

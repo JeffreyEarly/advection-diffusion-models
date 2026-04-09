@@ -591,6 +591,96 @@ Therefore the least-squares estimator is
 \label{eq:final_estimator}
 \end{equation}
 
+\subsection{Optional hard mesoscale constraints}
+
+In the MATLAB implementation, the additive spatial gauge is first removed by
+writing the full coefficient vector as
+\begin{equation}
+\mathbf c = G \boldsymbol{\alpha},
+\end{equation}
+where $G$ spans the gauge-free coefficient subspace. The unconstrained fit then
+becomes the reduced least-squares problem
+\begin{equation}
+\hat{\boldsymbol{\alpha}}
+=
+\arg\min_{\boldsymbol{\alpha}}
+\|
+\mathbf d - \mathbf X G \boldsymbol{\alpha}
+\|_2^2.
+\end{equation}
+
+The new optional constraint modes replace this with the equality-constrained
+problem
+\begin{equation}
+\hat{\boldsymbol{\alpha}}
+=
+\arg\min_{\boldsymbol{\alpha}}
+\|
+\mathbf d - \mathbf X G \boldsymbol{\alpha}
+\|_2^2
+\qquad
+\text{subject to}
+\qquad
+C\boldsymbol{\alpha}=0.
+\label{eq:constrained_estimator}
+\end{equation}
+The constraint acts only on the mesoscale streamfunction coefficients; the
+background and submesoscale components are still recovered afterward from the
+COM and relative residuals.
+
+For the \texttt{zeroVorticity} option, we enforce
+\begin{equation}
+\zeta = \psi_{qq} + \psi_{rr} = 0.
+\end{equation}
+For the \texttt{zeroStrain} option, we enforce
+\begin{equation}
+\psi_{qr} = 0,
+\qquad
+\psi_{qq} - \psi_{rr} = 0,
+\end{equation}
+which is equivalent to forcing both
+\begin{equation}
+\sigma_n = -2\psi_{qr} = 0,
+\qquad
+\sigma_s = \psi_{qq} - \psi_{rr} = 0.
+\end{equation}
+
+The implementation assembles these constraints by collocation over the
+spline-support cells, not by adding a penalty term. For each nonzero knot span
+in $q$, $r$, and $t$, it places $S_q+1$, $S_r+1$, and $S_t+1$ interior points,
+forms the tensor-product support grid, and evaluates the derivative basis
+matrices
+\begin{equation}
+A_{qq}, \qquad A_{rr}, \qquad A_{qr}
+\end{equation}
+on that grid. The reduced-space constraint matrix is then
+\begin{equation}
+C_{\zeta} = (A_{qq} + A_{rr})G
+\end{equation}
+for \texttt{zeroVorticity}, and
+\begin{equation}
+C_{\sigma}
+=
+\begin{bmatrix}
+A_{qr}\\
+A_{qq} - A_{rr}
+\end{bmatrix}
+G
+\end{equation}
+for \texttt{zeroStrain}. Redundant constraint rows are removed before solving
+the equality-constrained normal equations.
+
+Because each constrained diagnostic is piecewise polynomial on every
+spline-support cell, vanishing on this collocation set forces the diagnostic to
+vanish everywhere in the spline domain. In this sense the imposed constraint is
+exact for the fitted spline model, not merely pointwise at the observations.
+
+\paragraph{Interpretation.}
+The \texttt{zeroVorticity} option forces the mesoscale streamfunction to be
+harmonic. The \texttt{zeroStrain} option is much more restrictive: it removes
+both strain components and leaves only the rigid-rotation-type spatial
+mesoscale family.
+
 \subsection{Recovered fields}
 
 The fitted mesoscale velocity is

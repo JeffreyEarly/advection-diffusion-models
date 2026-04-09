@@ -1,19 +1,22 @@
 classdef GriddedStreamfunction < handle
-    % Fit a rev3 COM-frame streamfunction estimator and trajectory decomposition.
+    % Fit a COM-frame streamfunction estimator and trajectory decomposition.
     %
     % `GriddedStreamfunction` fits a mesoscale streamfunction
     % $$\psi(\tilde{x},\tilde{y},t)$$, a center-of-mass trajectory
     % $$m_x(t), m_y(t)$$, and an anchored background trajectory
     % $$x^{\mathrm{bg}}(t), y^{\mathrm{bg}}(t)$$ from asynchronous drifter
     % trajectory splines using the rev3 mesoscale-only formulation
-    % described in `asynchronous-com-fit-rev3.tex`.
+    % described in `asynchronous-com-fit-rev3.tex`, with optional hard
+    % mesoscale constraints described in `asynchronous-com-fit-rev4.tex`.
     %
     % The estimator first fits the COM position in a fast temporal basis,
     % then solves one least-squares problem for the mesoscale
     % streamfunction coefficients. The background velocity is recovered
     % afterward as the COM residual projected back onto the same fast
     % basis, then integrated to obtain the common anchored background
-    % path.
+    % path. When requested, the mesoscale fit imposes a hard
+    % `zeroVorticity` or `zeroStrain` constraint on the gauge-reduced
+    % streamfunction coefficients.
     %
     % The fitted decomposition follows
     %
@@ -52,6 +55,7 @@ classdef GriddedStreamfunction < handle
     % - Topic: Inspect decomposition trajectories
     % - Topic: Evaluate fitted mesoscale
     % - Topic: Evaluate fitted diagnostics
+    % - Topic: Visualize strain angle
     % - Declaration: classdef GriddedStreamfunction < handle
 
     properties (SetAccess = private)
@@ -126,6 +130,14 @@ classdef GriddedStreamfunction < handle
         % - Topic: Inspect fitted components
         psiS
 
+        % Hard constraint applied to the fitted mesoscale streamfunction.
+        %
+        % `mesoscaleConstraint` is `"none"`, `"zeroVorticity"`, or
+        % `"zeroStrain"`.
+        %
+        % - Topic: Inspect fitted components
+        mesoscaleConstraint string = "none"
+
         % Representative pooled times from the stride-rule fast basis.
         %
         % This is empty when `fastKnotPoints` are supplied directly.
@@ -152,15 +164,18 @@ classdef GriddedStreamfunction < handle
             % trajectory and the recovered common background path. The
             % tensor basis defined by `psiS` and `psiKnotPoints` is used
             % only for the mesoscale streamfunction in the centered frame,
-            % with only the additive streamfunction gauge removed.
+            % with only the additive streamfunction gauge removed. Set
+            % `mesoscaleConstraint` to impose a hard zero-vorticity or
+            % zero-strain mesoscale fit.
             %
             % - Topic: Fit the estimator
-            % - Declaration: self = GriddedStreamfunction(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...)
+            % - Declaration: self = GriddedStreamfunction(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
             % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
             % - Parameter psiKnotPoints: optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
             % - Parameter psiS: optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
             % - Parameter fastKnotPoints: optional fast temporal knot vector for COM and background
             % - Parameter fastS: optional fast temporal spline degree, default `3`
+            % - Parameter mesoscaleConstraint: optional hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
             % - Returns self: fitted `GriddedStreamfunction` estimator
             arguments (Input)
                 trajectories {mustBeA(trajectories, "TrajectorySpline"), mustBeVector, mustBeNonempty}
@@ -168,6 +183,7 @@ classdef GriddedStreamfunction < handle
                 options.psiS (1,3) double {mustBeInteger, mustBeNonnegative} = [2 2 0]
                 options.fastKnotPoints = []
                 options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
+                options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
             end
 
             trajectories = reshape(trajectories, [], 1);
@@ -175,6 +191,7 @@ classdef GriddedStreamfunction < handle
             psiKnotPoints = options.psiKnotPoints;
             fastKnotPoints = options.fastKnotPoints;
             fastS = options.fastS;
+            mesoscaleConstraint = string(options.mesoscaleConstraint);
 
             if ~isempty(fastKnotPoints)
                 if ~(isnumeric(fastKnotPoints) && isvector(fastKnotPoints) && ...
@@ -215,7 +232,7 @@ classdef GriddedStreamfunction < handle
                 end
             end
 
-            fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS);
+            fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint);
         end
 
         function values = uBackground(self, t)
@@ -374,11 +391,16 @@ classdef GriddedStreamfunction < handle
     end
 
     methods (Access = private)
-        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS)
+        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint)
+    end
+
+    methods (Static)
+        theta = visualPrincipalStrainAngle(sigma_n, sigma_s, options)
     end
 
     methods (Static, Access = private)
         representativeTimes = representativeObservationTimes(tCell)
         psiKnotPoints = defaultPsiKnotPoints(qAll, rAll, tAll, psiS)
+        Aeq = mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint)
     end
 end

@@ -1,4 +1,4 @@
-function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS)
+function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint)
 nTrajectories = numel(trajectories);
 tCell = cell(nTrajectories, 1);
 xCell = cell(nTrajectories, 1);
@@ -121,8 +121,15 @@ Mcom = [McomX; McomY];
 Mrel = [Hx - McomX; Hy - McomY];
 dcom = [mxDotAll; myDotAll];
 drel = [allXDot - mxDotAll; allYDot - myDotAll];
+Aeq = GriddedStreamfunction.mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint);
+X = [Mcom; Mrel];
+d = [dcom; drel];
 % d = [Mcom; Mrel] * alpha.
-alpha = [Mcom; Mrel] \ [dcom; drel];
+if isempty(Aeq)
+    alpha = X \ d;
+else
+    alpha = ConstrainedSpline.constrainedWeightedSolution(X.' * X, X.' * d, Aeq, zeros(size(Aeq, 1), 1), [], []);
+end
 streamfunctionCoefficients = G * alpha;
 
 streamfunctionSpline = TensorSpline(S=psiS, knotPoints=psiKnotPoints, ...
@@ -205,6 +212,7 @@ self.fastKnotPoints = fastKnotPoints;
 self.fastS = fastS;
 self.psiKnotPoints = psiKnotPoints;
 self.psiS = psiS;
+self.mesoscaleConstraint = mesoscaleConstraint;
 self.representativeTimes = representativeTimes;
 self.fitSupportTimes = fitSupportTimes;
 end
