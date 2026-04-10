@@ -1,6 +1,6 @@
 {
     "name": "AdvectionDiffusionModels",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "id": "8925cc26-879f-495c-b6a7-7f0d66ac906a",
     "formerNames": [],
     "displayName": "Advection-Diffusion Models",
@@ -21,54 +21,6 @@
         },
         {
             "path": "Estimation/LinearVelocityField",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/DensityEstimation",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/Examples",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/Examples/FluidsPaperCaseStudy",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/SecondMomentMethod",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Ellipses",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Examples",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/SecondMomentMethod/UnitTests",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/UnitTests",
             "languages": [
                 "matlab"
             ]
@@ -132,6 +84,54 @@
             "languages": [
                 "matlab"
             ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/DensityEstimation",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/Examples/FluidsPaperCaseStudy",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Ellipses",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/SecondMomentMethod/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/LinearVelocityField/UnitTests",
+            "languages": [
+                "matlab"
+            ]
         }
     ],
     "dependencies": [
@@ -142,7 +142,7 @@
         },
         {
             "name": "Distributions",
-            "compatibleVersions": "^1.0",
+            "compatibleVersions": "^2.0",
             "id": "c543ab89-e5a2-4697-830f-12cf8ed03694"
         }
     ],

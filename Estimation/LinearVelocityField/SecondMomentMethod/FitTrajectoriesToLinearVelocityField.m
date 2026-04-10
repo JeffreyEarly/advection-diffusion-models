@@ -9,8 +9,8 @@ for iDrifter = 1:nDrifters
     xd = x(:,iDrifter);
     yd = y(:,iDrifter);
 
-    spline_mean_x = ConstrainedSpline(t, xd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(1));
-    spline_mean_y = ConstrainedSpline(t, yd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(1));
+    spline_mean_x = ConstrainedSpline(t, xd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(sigma=1));
+    spline_mean_y = ConstrainedSpline(t, yd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(sigma=1));
     
     xf(:,iDrifter) = spline_mean_x(t);
     yf(:,iDrifter) = spline_mean_y(t);
