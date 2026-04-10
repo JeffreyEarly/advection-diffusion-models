@@ -502,7 +502,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
             for iDrifter = 1:nDrifters
                 indices = baseIndices + transpose(jitter) + drifterOffset(iDrifter);
-                trajectories(end + 1, 1) = TrajectorySpline(tFine(indices), xFine(indices, iDrifter), yFine(indices, iDrifter), S=3); %#ok<AGROW>
+                trajectories(end + 1, 1) = TrajectorySpline.fromData(tFine(indices), xFine(indices, iDrifter), yFine(indices, iDrifter), S=3); %#ok<AGROW>
             end
         end
 
@@ -532,7 +532,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
             trajectories = TrajectorySpline.empty(0, 1);
             for iDrifter = 1:size(x, 2)
-                trajectories(end + 1, 1) = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=splineDegree); %#ok<AGROW>
+                trajectories(end + 1, 1) = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=splineDegree); %#ok<AGROW>
             end
         end
 
@@ -544,14 +544,14 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             y2 = -0.5 + 0.2 * t;
             perturbation = 0.05 * sin(2*pi*t);
 
-            xSpline1 = ConstrainedSpline(t, x1 + perturbation, S=3, splineDOF=6);
-            ySpline1 = ConstrainedSpline(t, y1 - perturbation, S=3, splineDOF=6);
-            xSpline2 = ConstrainedSpline(t, x2 - perturbation, S=3, splineDOF=6);
-            ySpline2 = ConstrainedSpline(t, y2 + perturbation, S=3, splineDOF=6);
+            xSpline1 = ConstrainedSpline.fromData(t, x1 + perturbation, S=3, splineDOF=6);
+            ySpline1 = ConstrainedSpline.fromData(t, y1 - perturbation, S=3, splineDOF=6);
+            xSpline2 = ConstrainedSpline.fromData(t, x2 - perturbation, S=3, splineDOF=6);
+            ySpline2 = ConstrainedSpline.fromData(t, y2 + perturbation, S=3, splineDOF=6);
 
             trajectories = TrajectorySpline.empty(0, 1);
-            trajectories(end + 1, 1) = TrajectorySpline.fromComponentSplines(t, xSpline1, ySpline1);
-            trajectories(end + 1, 1) = TrajectorySpline.fromComponentSplines(t, xSpline2, ySpline2);
+            trajectories(end + 1, 1) = TrajectorySpline(t=t, x=xSpline1, y=ySpline1);
+            trajectories(end + 1, 1) = TrajectorySpline(t=t, x=xSpline2, y=ySpline2);
         end
 
         function [fitTrajectories, evaluationTrajectories] = trimmedTrajectoryData()
@@ -562,7 +562,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             evaluationTrajectories = TrajectorySpline.empty(0, 1);
             for iTrajectory = 1:size(x, 2)
                 indices = startIndices(iTrajectory):2:endIndices(iTrajectory);
-                evaluationTrajectories(end + 1, 1) = TrajectorySpline( ...
+                evaluationTrajectories(end + 1, 1) = TrajectorySpline.fromData( ...
                     t(indices), x(indices, iTrajectory), y(indices, iTrajectory), S=3); %#ok<AGROW>
             end
         end

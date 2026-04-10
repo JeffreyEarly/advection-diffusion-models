@@ -14,7 +14,7 @@ f0 = 2 * 7.2921e-5 * sin(siteData.lat0*pi/180);
 
 trajectories = TrajectorySpline.empty(0, 1);
 for iDrifter = 1:nDrifters
-    trajectories(end + 1, 1) = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=3);
+    trajectories(end + 1, 1) = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
 
 fit = GriddedStreamfunction(trajectories, psiS=[2 2 4], mesoscaleConstraint="zeroVorticity");

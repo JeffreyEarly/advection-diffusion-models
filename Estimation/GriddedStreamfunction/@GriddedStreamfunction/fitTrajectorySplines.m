@@ -53,9 +53,9 @@ end
 
 bX = B \ allX;
 bY = B \ allY;
-centerXSpline = TensorSpline(S=fastS, knotPoints=fastKnotPoints, xi=bX);
-centerYSpline = TensorSpline(S=fastS, knotPoints=fastKnotPoints, xi=bY);
-centerOfMassTrajectory = TrajectorySpline.fromComponentSplines(fitSupportTimes, centerXSpline, centerYSpline);
+centerXSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bX, S=fastS);
+centerYSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bY, S=fastS);
+centerOfMassTrajectory = TrajectorySpline(t=fitSupportTimes, x=centerXSpline, y=centerYSpline);
 
 mxAll = B * bX;
 myAll = B * bY;
@@ -134,8 +134,7 @@ else
 end
 streamfunctionCoefficients = G * alpha;
 
-streamfunctionSpline = TensorSpline(S=psiS, knotPoints=psiKnotPoints, ...
-    xi=streamfunctionCoefficients);
+streamfunctionSpline = TensorSpline.fromKnotPoints(psiKnotPoints, streamfunctionCoefficients, S=psiS);
 
 self.streamfunctionSpline = streamfunctionSpline;
 self.observedTrajectories = trajectories;

@@ -257,7 +257,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             for iDrifter = 1:nDrifters
                 indices = startIndices(iDrifter):3:endIndices(iDrifter);
                 allTimes{iDrifter} = tFine(indices);
-                trajectories(end + 1, 1) = TrajectorySpline(tFine(indices), xFine(indices, iDrifter), yFine(indices, iDrifter), S=3); %#ok<AGROW>
+                trajectories(end + 1, 1) = TrajectorySpline.fromData(tFine(indices), xFine(indices, iDrifter), yFine(indices, iDrifter), S=3); %#ok<AGROW>
             end
 
             overlapBounds = [max(cellfun(@(ti) ti(1), allTimes)), min(cellfun(@(ti) ti(end), allTimes))];
@@ -297,7 +297,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
 
             trajectories = TrajectorySpline.empty(0, 1);
             for iDrifter = 1:size(x, 2)
-                trajectories(end + 1, 1) = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=splineDegree); %#ok<AGROW>
+                trajectories(end + 1, 1) = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=splineDegree); %#ok<AGROW>
             end
         end
 

@@ -14,23 +14,19 @@ nTrajectories = numel(sampleData.tCell);
 
 backgroundXCoefficients = sampleData.B \ sampleData.uBackgroundObserved;
 backgroundYCoefficients = sampleData.B \ sampleData.vBackgroundObserved;
-backgroundXSpline = TensorSpline(S=self.fastS, knotPoints=self.fastKnotPoints, xi=backgroundXCoefficients);
-backgroundYSpline = TensorSpline(S=self.fastS, knotPoints=self.fastKnotPoints, xi=backgroundYCoefficients);
+backgroundXSpline = TensorSpline.fromKnotPoints(self.fastKnotPoints, backgroundXCoefficients, S=self.fastS);
+backgroundYSpline = TensorSpline.fromKnotPoints(self.fastKnotPoints, backgroundYCoefficients, S=self.fastS);
 
 backgroundTrajectoryXSpline = cumsum(backgroundXSpline);
 backgroundTrajectoryYSpline = cumsum(backgroundYSpline);
-backgroundTrajectoryXSpline = TensorSpline( ...
-    S=backgroundTrajectoryXSpline.S, ...
-    knotPoints=backgroundTrajectoryXSpline.knotPoints, ...
-    xi=backgroundTrajectoryXSpline.xi, ...
-    xMean=-backgroundTrajectoryXSpline(sampleData.sampleSupportTimes(1)));
-backgroundTrajectoryYSpline = TensorSpline( ...
-    S=backgroundTrajectoryYSpline.S, ...
-    knotPoints=backgroundTrajectoryYSpline.knotPoints, ...
-    xi=backgroundTrajectoryYSpline.xi, ...
-    xMean=-backgroundTrajectoryYSpline(sampleData.sampleSupportTimes(1)));
-backgroundTrajectory = TrajectorySpline.fromComponentSplines( ...
-    sampleData.sampleSupportTimes, backgroundTrajectoryXSpline, backgroundTrajectoryYSpline);
+backgroundTrajectoryXSpline = TensorSpline.fromKnotPoints( ...
+    backgroundTrajectoryXSpline.knotPoints, backgroundTrajectoryXSpline.xi, ...
+    S=backgroundTrajectoryXSpline.S, xMean=-backgroundTrajectoryXSpline(sampleData.sampleSupportTimes(1)));
+backgroundTrajectoryYSpline = TensorSpline.fromKnotPoints( ...
+    backgroundTrajectoryYSpline.knotPoints, backgroundTrajectoryYSpline.xi, ...
+    S=backgroundTrajectoryYSpline.S, xMean=-backgroundTrajectoryYSpline(sampleData.sampleSupportTimes(1)));
+backgroundTrajectory = TrajectorySpline( ...
+    t=sampleData.sampleSupportTimes, x=backgroundTrajectoryXSpline, y=backgroundTrajectoryYSpline);
 
 backgroundTrajectories = trajectories;
 mesoscaleTrajectories = trajectories;
@@ -73,19 +69,19 @@ decomposition = struct( ...
 end
 
 function trajectory = sampledVelocityTrajectory(t, uSamples, vSamples, componentS, xMean, yMean)
-xVelocitySpline = InterpolatingSpline(t, uSamples, S=componentS);
-yVelocitySpline = InterpolatingSpline(t, vSamples, S=componentS);
+xVelocitySpline = InterpolatingSpline.fromGriddedValues(t, uSamples, S=componentS);
+yVelocitySpline = InterpolatingSpline.fromGriddedValues(t, vSamples, S=componentS);
 xIntegralSpline = cumsum(xVelocitySpline);
 yIntegralSpline = cumsum(yVelocitySpline);
-xPathSpline = TensorSpline(S=xIntegralSpline.S, knotPoints=xIntegralSpline.knotPoints, xi=xIntegralSpline.xi, xMean=xMean);
-yPathSpline = TensorSpline(S=yIntegralSpline.S, knotPoints=yIntegralSpline.knotPoints, xi=yIntegralSpline.xi, xMean=yMean);
-trajectory = TrajectorySpline.fromComponentSplines(t, xPathSpline, yPathSpline);
+xPathSpline = TensorSpline.fromKnotPoints(xIntegralSpline.knotPoints, xIntegralSpline.xi, S=xIntegralSpline.S, xMean=xMean);
+yPathSpline = TensorSpline.fromKnotPoints(yIntegralSpline.knotPoints, yIntegralSpline.xi, S=yIntegralSpline.S, xMean=yMean);
+trajectory = TrajectorySpline(t=t, x=xPathSpline, y=yPathSpline);
 end
 
 function trajectory = reanchoredBackgroundTrajectory(backgroundTrajectory, ti)
-xSpline = TensorSpline(S=backgroundTrajectory.x.S, knotPoints=backgroundTrajectory.x.knotPoints, ...
-    xi=backgroundTrajectory.x.xi, xMean=-backgroundTrajectory.x(ti(1)));
-ySpline = TensorSpline(S=backgroundTrajectory.y.S, knotPoints=backgroundTrajectory.y.knotPoints, ...
-    xi=backgroundTrajectory.y.xi, xMean=-backgroundTrajectory.y(ti(1)));
-trajectory = TrajectorySpline.fromComponentSplines(ti, xSpline, ySpline);
+xSpline = TensorSpline.fromKnotPoints(backgroundTrajectory.x.knotPoints, backgroundTrajectory.x.xi, ...
+    S=backgroundTrajectory.x.S, xMean=-backgroundTrajectory.x(ti(1)));
+ySpline = TensorSpline.fromKnotPoints(backgroundTrajectory.y.knotPoints, backgroundTrajectory.y.xi, ...
+    S=backgroundTrajectory.y.S, xMean=-backgroundTrajectory.y(ti(1)));
+trajectory = TrajectorySpline(t=ti, x=xSpline, y=ySpline);
 end

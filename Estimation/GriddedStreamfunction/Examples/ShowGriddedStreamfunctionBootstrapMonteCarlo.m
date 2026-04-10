@@ -67,7 +67,7 @@ for iModel = 1:nModels
         [t, x, y] = integrator.particleTrajectories(x0, y0, T, dt);
         trajectoryCell = cell(size(x, 2), 1);
         for iDrifter = 1:size(x, 2)
-            trajectoryCell{iDrifter} = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=3);
+            trajectoryCell{iDrifter} = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
         end
         trajectories = vertcat(trajectoryCell{:});
 

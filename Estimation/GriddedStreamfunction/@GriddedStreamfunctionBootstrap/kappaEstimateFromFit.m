@@ -25,7 +25,7 @@ kappaEstimate = mean(kappaByTrajectory);
 end
 
 function displacement = terminalDisplacement(t, velocitySamples, componentS)
-velocitySpline = InterpolatingSpline(t, velocitySamples, S=componentS);
+velocitySpline = InterpolatingSpline.fromGriddedValues(t, velocitySamples, S=componentS);
 integralSpline = cumsum(velocitySpline);
 displacement = integralSpline(t(end));
 end

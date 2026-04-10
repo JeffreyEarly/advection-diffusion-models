@@ -14,7 +14,7 @@ f0 = 2 * 7.2921e-5 * sin(siteData.lat0*pi/180);
 
 trajectoryCell = cell(nDrifters, 1);
 for iDrifter = 1:nDrifters
-    trajectoryCell{iDrifter} = TrajectorySpline(t, x(:, iDrifter), y(:, iDrifter), S=3);
+    trajectoryCell{iDrifter} = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
 trajectories = vertcat(trajectoryCell{:});
 
