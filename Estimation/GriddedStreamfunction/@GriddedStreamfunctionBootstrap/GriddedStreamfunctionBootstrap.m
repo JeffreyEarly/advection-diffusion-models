@@ -189,6 +189,9 @@ classdef GriddedStreamfunctionBootstrap < handle
                 "fastS", options.fastS, ...
                 "mesoscaleConstraint", string(options.mesoscaleConstraint));
             fitArguments = namedargs2cell(fitOptions);
+            fitOptionsWithoutDecomposition = fitOptions;
+            fitOptionsWithoutDecomposition.buildDecomposition = false;
+            fitArgumentsWithoutDecomposition = namedargs2cell(fitOptionsWithoutDecomposition);
 
             [queryTimes, scoreTimes, scoreIndices] = GriddedStreamfunctionBootstrap.resolveBootstrapTimes( ...
                 trajectories, options.queryTimes, options.scoreTimes, options.scoreStride);
@@ -219,7 +222,7 @@ classdef GriddedStreamfunctionBootstrap < handle
             for iBootstrap = 1:self.nBootstraps
                 sampledIndices = randi(nTrajectories, 1, nTrajectories);
                 sampledTrajectories = reshape(trajectories(sampledIndices), [], 1);
-                fit = GriddedStreamfunction(sampledTrajectories, fitArguments{:});
+                fit = GriddedStreamfunction(sampledTrajectories, fitArgumentsWithoutDecomposition{:});
                 [summary, scalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit(fit, queryTimes);
 
                 self.bootstrapIndices(iBootstrap, :) = sampledIndices;

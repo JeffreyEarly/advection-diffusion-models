@@ -48,11 +48,13 @@ classdef GriddedStreamfunction < handle
     % fit = GriddedStreamfunction(trajectories);
     % uMeso = fit.uMesoscale(tQuery, xQuery, yQuery);
     % xMeso = fit.decomposition.fixedFrame.mesoscale(1).x(tQuery);
+    % decomposition = fit.decomposeTrajectories(otherTrajectories);
     % ```
     %
     % - Topic: Fit the estimator
     % - Topic: Inspect fitted components
     % - Topic: Inspect decomposition trajectories
+    % - Topic: Apply fitted decomposition
     % - Topic: Evaluate fitted mesoscale
     % - Topic: Evaluate fitted diagnostics
     % - Topic: Visualize strain angle
@@ -184,6 +186,7 @@ classdef GriddedStreamfunction < handle
                 options.fastKnotPoints = []
                 options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
                 options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
+                options.buildDecomposition (1,1) logical = true
             end
 
             trajectories = reshape(trajectories, [], 1);
@@ -232,7 +235,15 @@ classdef GriddedStreamfunction < handle
                 end
             end
 
-            fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint);
+            fitTrajectorySplines( ...
+                self, ...
+                trajectories, ...
+                psiKnotPoints, ...
+                psiS, ...
+                fastKnotPoints, ...
+                fastS, ...
+                mesoscaleConstraint, ...
+                options.buildDecomposition);
         end
 
         function values = uBackground(self, t)
@@ -391,7 +402,12 @@ classdef GriddedStreamfunction < handle
     end
 
     methods (Access = private)
-        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint)
+        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition)
+        [backgroundTrajectory, decomposition] = decomposeTrajectorySet(self, trajectories)
+    end
+
+    methods (Access = {?GriddedStreamfunction, ?GriddedStreamfunctionBootstrap})
+        sampleData = decompositionSampleData(self, trajectories)
     end
 
     methods (Static)

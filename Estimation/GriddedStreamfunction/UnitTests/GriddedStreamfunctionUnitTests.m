@@ -315,6 +315,88 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             end
         end
 
+        function decomposeTrajectoriesReproducesStoredDecomposition(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction(trajectories);
+            decomposition = fit.decomposeTrajectories(fit.observedTrajectories);
+
+            for iTrajectory = 1:numel(trajectories)
+                ti = fit.observedTrajectories(iTrajectory).t;
+
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, decomposition.fixedFrame.background(iTrajectory), ...
+                    fit.decomposition.fixedFrame.background(iTrajectory), ti)
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, decomposition.fixedFrame.mesoscale(iTrajectory), ...
+                    fit.decomposition.fixedFrame.mesoscale(iTrajectory), ti)
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, decomposition.fixedFrame.submesoscale(iTrajectory), ...
+                    fit.decomposition.fixedFrame.submesoscale(iTrajectory), ti)
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, decomposition.centeredFrame.mesoscale(iTrajectory), ...
+                    fit.decomposition.centeredFrame.mesoscale(iTrajectory), ti)
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, decomposition.centeredFrame.submesoscale(iTrajectory), ...
+                    fit.decomposition.centeredFrame.submesoscale(iTrajectory), ti)
+            end
+        end
+
+        function decomposeTrajectoriesSupportsTrimmedAsynchronousInputs(testCase)
+            [fitTrajectories, evaluationTrajectories] = GriddedStreamfunctionUnitTests.trimmedTrajectoryData();
+            fit = GriddedStreamfunction(fitTrajectories);
+            decomposition = fit.decomposeTrajectories(evaluationTrajectories);
+
+            testCase.verifyEqual(numel(decomposition.fixedFrame.background), numel(evaluationTrajectories))
+            testCase.verifyEqual(numel(decomposition.fixedFrame.mesoscale), numel(evaluationTrajectories))
+            testCase.verifyEqual(numel(decomposition.fixedFrame.submesoscale), numel(evaluationTrajectories))
+            testCase.verifyEqual(numel(decomposition.centeredFrame.mesoscale), numel(evaluationTrajectories))
+            testCase.verifyEqual(numel(decomposition.centeredFrame.submesoscale), numel(evaluationTrajectories))
+
+            for iTrajectory = 1:numel(evaluationTrajectories)
+                trajectory = evaluationTrajectories(iTrajectory);
+                ti = trajectory.t;
+                observedU = trajectory.u(ti);
+                observedV = trajectory.v(ti);
+
+                background = decomposition.fixedFrame.background(iTrajectory);
+                mesoscale = decomposition.fixedFrame.mesoscale(iTrajectory);
+                submesoscale = decomposition.fixedFrame.submesoscale(iTrajectory);
+                centeredMesoscale = decomposition.centeredFrame.mesoscale(iTrajectory);
+                centeredSubmesoscale = decomposition.centeredFrame.submesoscale(iTrajectory);
+
+                testCase.verifyTrue(all(isfinite(background.x(ti))))
+                testCase.verifyTrue(all(isfinite(background.y(ti))))
+                testCase.verifyTrue(all(isfinite(mesoscale.x(ti))))
+                testCase.verifyTrue(all(isfinite(mesoscale.y(ti))))
+                testCase.verifyTrue(all(isfinite(submesoscale.x(ti))))
+                testCase.verifyTrue(all(isfinite(submesoscale.y(ti))))
+                testCase.verifyEqual(background.u(ti) + mesoscale.u(ti) + submesoscale.u(ti), observedU, "AbsTol", 1e-12)
+                testCase.verifyEqual(background.v(ti) + mesoscale.v(ti) + submesoscale.v(ti), observedV, "AbsTol", 1e-12)
+                testCase.verifyEqual( ...
+                    centeredMesoscale.u(ti) + centeredSubmesoscale.u(ti), ...
+                    observedU - fit.centerOfMassTrajectory.u(ti), ...
+                    "AbsTol", 1e-12)
+                testCase.verifyEqual( ...
+                    centeredMesoscale.v(ti) + centeredSubmesoscale.v(ti), ...
+                    observedV - fit.centerOfMassTrajectory.v(ti), ...
+                    "AbsTol", 1e-12)
+            end
+        end
+
+        function decomposeTrajectoriesRejectsTrajectoriesOutsideFitDomains(testCase)
+            [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction(trajectories);
+
+            timeOutsideTrajectories = GriddedStreamfunctionUnitTests.trajectorySplinesFromMatrices(t + 2 * 900, x, y);
+            qRange = fit.psiKnotPoints{1}(end) - fit.psiKnotPoints{1}(1);
+            psiOutsideTrajectories = GriddedStreamfunctionUnitTests.trajectorySplinesFromMatrices(t, x + 2 * qRange, y);
+
+            testCase.verifyError(@() fit.decomposeTrajectories(timeOutsideTrajectories), ...
+                "GriddedStreamfunction:ObservationOutsideFastDomain")
+            testCase.verifyError(@() fit.decomposeTrajectories(psiOutsideTrajectories), ...
+                "GriddedStreamfunction:ObservationOutsidePsiDomain")
+        end
+
         function constructorReadsTrajectoryEvaluationsInsteadOfDataValues(testCase)
             trajectories = GriddedStreamfunctionUnitTests.smoothedTrajectoryData();
             fit = GriddedStreamfunction(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
@@ -472,6 +554,19 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             trajectories(end + 1, 1) = TrajectorySpline.fromComponentSplines(t, xSpline2, ySpline2);
         end
 
+        function [fitTrajectories, evaluationTrajectories] = trimmedTrajectoryData()
+            [~, t, x, y, fitTrajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            startIndices = [1; 3; 2; 5; 4; 2; 6; 3; 1];
+            endIndices = [numel(t) - 2; numel(t); numel(t) - 3; numel(t) - 1; numel(t); numel(t) - 4; numel(t) - 1; numel(t) - 2; numel(t)];
+
+            evaluationTrajectories = TrajectorySpline.empty(0, 1);
+            for iTrajectory = 1:size(x, 2)
+                indices = startIndices(iTrajectory):2:endIndices(iTrajectory);
+                evaluationTrajectories(end + 1, 1) = TrajectorySpline( ...
+                    t(indices), x(indices, iTrajectory), y(indices, iTrajectory), S=3); %#ok<AGROW>
+            end
+        end
+
         function psiKnotPoints = zeroPsiKnotPoints()
             psiKnotPoints = {[-1; -1; -1; 1; 1; 1], [-1; -1; -1; 1; 1; 1], [0; 1]};
         end
@@ -520,6 +615,13 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
                 testCase.verifyEqual(reconstructedX, observedX, "AbsTol", 1e-2)
                 testCase.verifyEqual(reconstructedY, observedY, "AbsTol", 1e-2)
             end
+        end
+
+        function verifyTrajectorySplineEqualAtSamples(testCase, actual, expected, ti)
+            testCase.verifyEqual(actual.x(ti), expected.x(ti), "AbsTol", 1e-12)
+            testCase.verifyEqual(actual.y(ti), expected.y(ti), "AbsTol", 1e-12)
+            testCase.verifyEqual(actual.u(ti), expected.u(ti), "AbsTol", 1e-12)
+            testCase.verifyEqual(actual.v(ti), expected.v(ti), "AbsTol", 1e-12)
         end
     end
 end

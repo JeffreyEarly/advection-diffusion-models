@@ -80,6 +80,30 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(scalarSummary.kappaEstimate, bootstrap.scalarSummary.kappaEstimate(iBest), "AbsTol", 1e-12)
         end
 
+        function storedOutputsMatchFullyReconstructedFitsForAllReplicates(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+
+            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=11);
+
+            for iBootstrap = 1:bootstrap.nBootstraps
+                fit = bootstrap.fitForBootstrap(iBootstrap);
+                [summary, scalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
+
+                testCase.verifyEqual(fit.fastKnotPoints, bootstrap.bootstrapMetadata.fastKnotPoints{iBootstrap}, "AbsTol", 1e-12)
+                for iDim = 1:3
+                    testCase.verifyEqual(fit.psiKnotPoints{iDim}, ...
+                        bootstrap.bootstrapMetadata.psiKnotPoints{iBootstrap}{iDim}, "AbsTol", 1e-12)
+                end
+
+                testCase.verifyEqual(summary.uCenter, bootstrap.summary.uCenter(:, iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(summary.vCenter, bootstrap.summary.vCenter(:, iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(summary.sigma_n, bootstrap.summary.sigma_n(:, iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(summary.sigma_s, bootstrap.summary.sigma_s(:, iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(summary.zeta, bootstrap.summary.zeta(:, iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(scalarSummary.kappaEstimate, bootstrap.scalarSummary.kappaEstimate(iBootstrap), "AbsTol", 1e-12)
+            end
+        end
+
         function explicitKnotsAreStoredAndReusedDuringReconstruction(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
             referenceFit = GriddedStreamfunction(trajectories);

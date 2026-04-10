@@ -1,0 +1,43 @@
+function decomposition = decomposeTrajectories(self, trajectories)
+% Apply the fitted decomposition to a supplied drifter ensemble.
+%
+% Use this method when a fitted `GriddedStreamfunction` should be applied
+% to a different collection of `TrajectorySpline` drifters without
+% refitting the mesoscale streamfunction or the center-of-mass trajectory.
+%
+% The returned decomposition keeps the fitted
+% $$m_x(t), m_y(t), u^{\mathrm{meso}}, v^{\mathrm{meso}}$$ fixed and
+% recomputes the common background and submesoscale residuals on the
+% supplied trajectories. For the supplied drifters, the method enforces
+% the same fixed-frame and centered-frame relations used by the fitted
+% object,
+%
+% $$
+% \dot{x} = u^{\mathrm{meso}} + u^{\mathrm{bg}} + u^{\mathrm{sm}},
+% \qquad
+% \dot{y} = v^{\mathrm{meso}} + v^{\mathrm{bg}} + v^{\mathrm{sm}},
+% $$
+%
+% together with the centered-frame decomposition
+%
+% $$
+% \dot{\tilde{x}} = u^{\mathrm{meso}}_{\mathrm{rel}} + u^{\mathrm{sm}}_{\mathrm{rel}},
+% \qquad
+% \dot{\tilde{y}} = v^{\mathrm{meso}}_{\mathrm{rel}} + v^{\mathrm{sm}}_{\mathrm{rel}}.
+% $$
+%
+% - Topic: Apply fitted decomposition
+% - Declaration: decomposition = decomposeTrajectories(self,trajectories)
+% - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters evaluated against the current fit
+% - Returns decomposition: struct of fixed-frame and centered-frame `TrajectorySpline` vectors aligned with `trajectories`
+arguments (Input)
+    self (1,1) GriddedStreamfunction
+    trajectories {mustBeA(trajectories, "TrajectorySpline"), mustBeVector, mustBeNonempty}
+end
+arguments (Output)
+    decomposition struct
+end
+
+trajectories = reshape(trajectories, [], 1);
+[~, decomposition] = decomposeTrajectorySet(self, trajectories);
+end

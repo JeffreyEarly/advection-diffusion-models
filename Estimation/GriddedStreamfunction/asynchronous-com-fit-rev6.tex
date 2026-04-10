@@ -926,6 +926,18 @@ are defined as residuals in complementary subspaces, ensuring that the
 mesoscale field captures as much variance as possible in both the COM
 and relative dynamics.
 
+In the current MATLAB implementation, this decomposition can also be
+reapplied to any supplied collection of \texttt{TrajectorySpline}
+drifters without refitting the estimator. Provided the supplied
+trajectories are evaluated inside the fitted fast and mesoscale support,
+the fitted COM trajectory $m_x(t),m_y(t)$ and mesoscale field
+$u^{\mathrm{meso}},v^{\mathrm{meso}}$ are held fixed, and the background
+and submesoscale residuals are recomputed on that supplied ensemble
+using the same COM-space projection and anchoring conventions described
+above. This produces the same fixed-frame and centered-frame trajectory
+components as in the fitted object, but evaluated for the supplied
+drifter set rather than only for the original fit ensemble.
+
 \subsection{Zero gauge}
 
  The centered-frame streamfunction is represented as

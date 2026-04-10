@@ -1,4 +1,4 @@
-function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint)
+function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition)
 nTrajectories = numel(trajectories);
 tCell = cell(nTrajectories, 1);
 xCell = cell(nTrajectories, 1);
@@ -136,80 +136,10 @@ streamfunctionCoefficients = G * alpha;
 
 streamfunctionSpline = TensorSpline(S=psiS, knotPoints=psiKnotPoints, ...
     xi=streamfunctionCoefficients);
-uMesoscaleObserved = full(Hx * alpha);
-vMesoscaleObserved = full(Hy * alpha);
-uMesoscaleComObserved = projectFast(uMesoscaleObserved);
-vMesoscaleComObserved = projectFast(vMesoscaleObserved);
-uMesoscaleRelativeObserved = uMesoscaleObserved - uMesoscaleComObserved;
-vMesoscaleRelativeObserved = vMesoscaleObserved - vMesoscaleComObserved;
-
-uBackgroundObserved = mxDotAll - uMesoscaleComObserved;
-vBackgroundObserved = myDotAll - vMesoscaleComObserved;
-backgroundXCoefficients = B \ uBackgroundObserved;
-backgroundYCoefficients = B \ vBackgroundObserved;
-backgroundXSpline = TensorSpline(S=fastS, knotPoints=fastKnotPoints, xi=backgroundXCoefficients);
-backgroundYSpline = TensorSpline(S=fastS, knotPoints=fastKnotPoints, xi=backgroundYCoefficients);
-
-uCenteredSubmesoscaleObserved = drel(1:numel(allT)) - uMesoscaleRelativeObserved;
-vCenteredSubmesoscaleObserved = drel((numel(allT) + 1):end) - vMesoscaleRelativeObserved;
-uSubmesoscaleObserved = allXDot - uBackgroundObserved - uMesoscaleObserved;
-vSubmesoscaleObserved = allYDot - vBackgroundObserved - vMesoscaleObserved;
-
-backgroundTrajectoryXSpline = cumsum(backgroundXSpline);
-backgroundTrajectoryYSpline = cumsum(backgroundYSpline);
-backgroundTrajectoryXSpline = TensorSpline(S=backgroundTrajectoryXSpline.S, ...
-    knotPoints=backgroundTrajectoryXSpline.knotPoints, xi=backgroundTrajectoryXSpline.xi, ...
-    xMean=-backgroundTrajectoryXSpline(fitSupportTimes(1)));
-backgroundTrajectoryYSpline = TensorSpline(S=backgroundTrajectoryYSpline.S, ...
-    knotPoints=backgroundTrajectoryYSpline.knotPoints, xi=backgroundTrajectoryYSpline.xi, ...
-    xMean=-backgroundTrajectoryYSpline(fitSupportTimes(1)));
-backgroundTrajectory = TrajectorySpline.fromComponentSplines( ...
-    fitSupportTimes, backgroundTrajectoryXSpline, backgroundTrajectoryYSpline);
-
-backgroundTrajectories = trajectories;
-mesoscaleTrajectories = trajectories;
-submesoscaleTrajectories = trajectories;
-centeredMesoscaleTrajectories = trajectories;
-centeredSubmesoscaleTrajectories = trajectories;
-
-sampleStartIndex = 1;
-for iTrajectory = 1:nTrajectories
-    ti = tCell{iTrajectory};
-    nSamples = numel(ti);
-    sampleIndices = sampleStartIndex:(sampleStartIndex + nSamples - 1);
-    componentS = min(3, nSamples - 1);
-    x0 = allX(sampleIndices(1));
-    y0 = allY(sampleIndices(1));
-    q0 = qAll(sampleIndices(1));
-    r0 = rAll(sampleIndices(1));
-
-    backgroundTrajectories(iTrajectory) = reanchoredBackgroundTrajectory(backgroundTrajectory, ti);
-    mesoscaleTrajectories(iTrajectory) = sampledVelocityTrajectory( ...
-        ti, uMesoscaleObserved(sampleIndices), vMesoscaleObserved(sampleIndices), componentS, x0, y0);
-    submesoscaleTrajectories(iTrajectory) = sampledVelocityTrajectory( ...
-        ti, uSubmesoscaleObserved(sampleIndices), vSubmesoscaleObserved(sampleIndices), componentS, 0, 0);
-    centeredMesoscaleTrajectories(iTrajectory) = sampledVelocityTrajectory( ...
-        ti, uMesoscaleRelativeObserved(sampleIndices), vMesoscaleRelativeObserved(sampleIndices), componentS, q0, r0);
-    centeredSubmesoscaleTrajectories(iTrajectory) = sampledVelocityTrajectory( ...
-        ti, uCenteredSubmesoscaleObserved(sampleIndices), vCenteredSubmesoscaleObserved(sampleIndices), componentS, 0, 0);
-
-    sampleStartIndex = sampleStartIndex + nSamples;
-end
-
-selfDecomposition = struct( ...
-    "fixedFrame", struct( ...
-        "background", backgroundTrajectories, ...
-        "mesoscale", mesoscaleTrajectories, ...
-        "submesoscale", submesoscaleTrajectories), ...
-    "centeredFrame", struct( ...
-        "mesoscale", centeredMesoscaleTrajectories, ...
-        "submesoscale", centeredSubmesoscaleTrajectories));
 
 self.streamfunctionSpline = streamfunctionSpline;
 self.observedTrajectories = trajectories;
 self.centerOfMassTrajectory = centerOfMassTrajectory;
-self.backgroundTrajectory = backgroundTrajectory;
-self.decomposition = selfDecomposition;
 self.fastKnotPoints = fastKnotPoints;
 self.fastS = fastS;
 self.psiKnotPoints = psiKnotPoints;
@@ -217,24 +147,10 @@ self.psiS = psiS;
 self.mesoscaleConstraint = mesoscaleConstraint;
 self.representativeTimes = representativeTimes;
 self.fitSupportTimes = fitSupportTimes;
+if buildDecomposition
+    [self.backgroundTrajectory, self.decomposition] = decomposeTrajectorySet(self, trajectories);
+else
+    self.backgroundTrajectory = [];
+    self.decomposition = struct();
 end
-
-function trajectory = sampledVelocityTrajectory(t, uSamples, vSamples, componentS, xMean, yMean)
-xVelocitySpline = InterpolatingSpline(t, uSamples, S=componentS);
-yVelocitySpline = InterpolatingSpline(t, vSamples, S=componentS);
-xIntegralSpline = cumsum(xVelocitySpline);
-yIntegralSpline = cumsum(yVelocitySpline);
-xPathSpline = TensorSpline(S=xIntegralSpline.S, knotPoints=xIntegralSpline.knotPoints, ...
-    xi=xIntegralSpline.xi, xMean=xMean);
-yPathSpline = TensorSpline(S=yIntegralSpline.S, knotPoints=yIntegralSpline.knotPoints, ...
-    xi=yIntegralSpline.xi, xMean=yMean);
-trajectory = TrajectorySpline.fromComponentSplines(t, xPathSpline, yPathSpline);
-end
-
-function trajectory = reanchoredBackgroundTrajectory(backgroundTrajectory, ti)
-xSpline = TensorSpline(S=backgroundTrajectory.x.S, knotPoints=backgroundTrajectory.x.knotPoints, ...
-    xi=backgroundTrajectory.x.xi, xMean=-backgroundTrajectory.x(ti(1)));
-ySpline = TensorSpline(S=backgroundTrajectory.y.S, knotPoints=backgroundTrajectory.y.knotPoints, ...
-    xi=backgroundTrajectory.y.xi, xMean=-backgroundTrajectory.y(ti(1)));
-trajectory = TrajectorySpline.fromComponentSplines(ti, xSpline, ySpline);
 end
