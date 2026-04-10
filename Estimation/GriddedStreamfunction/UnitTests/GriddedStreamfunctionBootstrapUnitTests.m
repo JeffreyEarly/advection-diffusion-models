@@ -221,6 +221,15 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyGreaterThan(mean(bootstrapHigh.scalarSummary.kappaEstimate), ...
                 mean(bootstrapLow.scalarSummary.kappaEstimate))
         end
+
+        function scalarDiffusivityDiagnosticMatchesLegacySplineIntegration(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+
+            legacyKappa = GriddedStreamfunctionBootstrapUnitTests.legacyKappaFromFit(bootstrap.fullFit);
+
+            testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, legacyKappa, "AbsTol", 1e-12)
+        end
     end
 
     methods (Static, Access = private)
@@ -323,6 +332,61 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 ti = trajectory.t;
                 duration = ti(end) - ti(1);
                 kappaValues(iTrajectory) = (trajectory.x(ti(end)).^2 + trajectory.y(ti(end)).^2) / (4 * duration);
+            end
+
+            kappaEstimate = mean(kappaValues);
+        end
+
+        function kappaEstimate = legacyKappaFromFit(fit)
+            trajectories = reshape(fit.observedTrajectories, [], 1);
+            nTrajectories = numel(trajectories);
+            tCell = cell(nTrajectories, 1);
+            xCell = cell(nTrajectories, 1);
+            yCell = cell(nTrajectories, 1);
+            xDotCell = cell(nTrajectories, 1);
+            yDotCell = cell(nTrajectories, 1);
+
+            for iTrajectory = 1:nTrajectories
+                ti = reshape(trajectories(iTrajectory).t, [], 1);
+                tCell{iTrajectory} = ti;
+                xCell{iTrajectory} = reshape(trajectories(iTrajectory).x(ti), [], 1);
+                yCell{iTrajectory} = reshape(trajectories(iTrajectory).y(ti), [], 1);
+                xDotCell{iTrajectory} = reshape(trajectories(iTrajectory).u(ti), [], 1);
+                yDotCell{iTrajectory} = reshape(trajectories(iTrajectory).v(ti), [], 1);
+            end
+
+            allT = vertcat(tCell{:});
+            allX = vertcat(xCell{:});
+            allY = vertcat(yCell{:});
+            allXDot = vertcat(xDotCell{:});
+            allYDot = vertcat(yDotCell{:});
+            mxDotAll = reshape(fit.centerOfMassTrajectory.u(allT), [], 1);
+            myDotAll = reshape(fit.centerOfMassTrajectory.v(allT), [], 1);
+            uMesoscaleObserved = reshape(fit.uMesoscale(allT, allX, allY), [], 1);
+            vMesoscaleObserved = reshape(fit.vMesoscale(allT, allX, allY), [], 1);
+            B = reshape(BSpline.matrixForDataPoints(allT, knotPoints=fit.fastKnotPoints, S=fit.fastS), numel(allT), []);
+            uMesoscaleComObserved = B * (B \ uMesoscaleObserved);
+            vMesoscaleComObserved = B * (B \ vMesoscaleObserved);
+            uBackgroundObserved = mxDotAll - uMesoscaleComObserved;
+            vBackgroundObserved = myDotAll - vMesoscaleComObserved;
+            uSubmesoscaleObserved = allXDot - uBackgroundObserved - uMesoscaleObserved;
+            vSubmesoscaleObserved = allYDot - vBackgroundObserved - vMesoscaleObserved;
+
+            kappaValues = zeros(nTrajectories, 1);
+            sampleStartIndex = 1;
+
+            for iTrajectory = 1:nTrajectories
+                ti = tCell{iTrajectory};
+                duration = ti(end) - ti(1);
+                nSamples = numel(ti);
+                sampleIndices = sampleStartIndex:(sampleStartIndex + nSamples - 1);
+                componentS = min(3, nSamples - 1);
+                uSpline = InterpolatingSpline.fromGriddedValues(ti, uSubmesoscaleObserved(sampleIndices), S=componentS);
+                vSpline = InterpolatingSpline.fromGriddedValues(ti, vSubmesoscaleObserved(sampleIndices), S=componentS);
+                xEnd = cumsum(uSpline);
+                yEnd = cumsum(vSpline);
+                kappaValues(iTrajectory) = (xEnd(ti(end)).^2 + yEnd(ti(end)).^2) / (4 * duration);
+                sampleStartIndex = sampleStartIndex + nSamples;
             end
 
             kappaEstimate = mean(kappaValues);

@@ -137,7 +137,7 @@
     "dependencies": [
         {
             "name": "SplineCore",
-            "compatibleVersions": "^2.1",
+            "compatibleVersions": "^2.2",
             "id": "f723c088-397a-43e5-a0ad-e19422cc3c2a"
         },
         {
