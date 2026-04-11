@@ -436,6 +436,49 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(gaugeModeMatrix.' * xiByTime, zeros(1, basisSize(3)), "AbsTol", 1e-10)
         end
 
+        function fastBasisProjectionMatchesLegacyProjector(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction(trajectories);
+
+            nTrajectories = numel(trajectories);
+            tCell = cell(nTrajectories, 1);
+            xCell = cell(nTrajectories, 1);
+            yCell = cell(nTrajectories, 1);
+            for iTrajectory = 1:nTrajectories
+                ti = reshape(trajectories(iTrajectory).t, [], 1);
+                tCell{iTrajectory} = ti;
+                xCell{iTrajectory} = reshape(trajectories(iTrajectory).x(ti), [], 1);
+                yCell{iTrajectory} = reshape(trajectories(iTrajectory).y(ti), [], 1);
+            end
+
+            allT = vertcat(tCell{:});
+            allX = vertcat(xCell{:});
+            allY = vertcat(yCell{:});
+            B = reshape(BSpline.matrixForDataPoints(allT, knotPoints=fit.fastKnotPoints, S=fit.fastS), numel(allT), []);
+            dBTensor = BSpline.matrixForDataPoints(allT, knotPoints=fit.fastKnotPoints, S=fit.fastS, D=1);
+            dB = reshape(dBTensor(:, :, 2), numel(allT), []);
+            centerCoefficients = B \ [allX, allY];
+            mxAll = B * centerCoefficients(:, 1);
+            myAll = B * centerCoefficients(:, 2);
+            mxDotAll = dB * centerCoefficients(:, 1);
+            myDotAll = dB * centerCoefficients(:, 2);
+
+            testCase.verifyEqual(reshape(fit.centerOfMassTrajectory.x(allT), [], 1), mxAll, "AbsTol", 1e-12)
+            testCase.verifyEqual(reshape(fit.centerOfMassTrajectory.y(allT), [], 1), myAll, "AbsTol", 1e-12)
+            testCase.verifyEqual(reshape(fit.centerOfMassTrajectory.u(allT), [], 1), mxDotAll, "AbsTol", 1e-12)
+            testCase.verifyEqual(reshape(fit.centerOfMassTrajectory.v(allT), [], 1), myDotAll, "AbsTol", 1e-12)
+
+            sampleData = fit.decompositionSampleData(trajectories);
+            mesoscaleObserved = [ ...
+                reshape(fit.uMesoscale(allT, allX, allY), [], 1), ...
+                reshape(fit.vMesoscale(allT, allX, allY), [], 1)];
+            mesoscaleComObserved = B * (B \ mesoscaleObserved);
+
+            testCase.verifyEqual(full(sampleData.B), full(B), "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.uMesoscaleComObserved, mesoscaleComObserved(:, 1), "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.vMesoscaleComObserved, mesoscaleComObserved(:, 2), "AbsTol", 1e-12)
+        end
+
         function evaluationInputShapes(testCase)
             [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = GriddedStreamfunction(trajectories);

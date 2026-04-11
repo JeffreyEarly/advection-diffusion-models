@@ -42,26 +42,19 @@ else
     end
 end
 
-B = reshape(BSpline.matrixForDataPoints(allT, knotPoints=fastKnotPoints, S=fastS), ...
-    numel(allT), []);
-if fastS > 0
-    dBTensor = BSpline.matrixForDataPoints(allT, knotPoints=fastKnotPoints, S=fastS, D=1);
-    dB = reshape(dBTensor(:, :, 2), numel(allT), []);
-else
-    dB = zeros(size(B));
-end
-
-bX = B \ allX;
-bY = B \ allY;
+fastState = GriddedStreamfunction.fastBasisState(allT, fastKnotPoints, fastS, true);
+centerCoefficients = fastState.solver \ [allX, allY];
+bX = centerCoefficients(:, 1);
+bY = centerCoefficients(:, 2);
 centerXSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bX, S=fastS);
 centerYSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bY, S=fastS);
 centerOfMassTrajectory = TrajectorySpline(t=fitSupportTimes, x=centerXSpline, y=centerYSpline);
 
-mxAll = B * bX;
-myAll = B * bY;
+mxAll = fastState.B * bX;
+myAll = fastState.B * bY;
 % \dot{m} comes from differentiating the fitted fast COM spline.
-mxDotAll = dB * bX;
-myDotAll = dB * bY;
+mxDotAll = fastState.dB * bX;
+myDotAll = fastState.dB * bY;
 qAll = allX - mxAll;
 rAll = allY - myAll;
 
@@ -116,9 +109,9 @@ G = kron(speye(psiBasisSize(3)), Gspatial);
 
 Hx = Hx * G;
 Hy = Hy * G;
-projectFast = @(A) B * (B \ A); % S(A) = B * (B \ A)
-McomX = sparse(projectFast(Hx));
-McomY = sparse(projectFast(Hy));
+% Reuse the fast-basis factorization in the same least-squares projector B * (B \ A).
+McomX = sparse(fastState.B * (fastState.solver \ Hx));
+McomY = sparse(fastState.B * (fastState.solver \ Hy));
 Mcom = [McomX; McomY];
 Mrel = [Hx - McomX; Hy - McomY];
 dcom = [mxDotAll; myDotAll];

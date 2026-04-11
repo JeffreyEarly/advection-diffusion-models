@@ -406,7 +406,7 @@ classdef GriddedStreamfunction < handle
         [backgroundTrajectory, decomposition] = decomposeTrajectorySet(self, trajectories)
     end
 
-    methods (Access = {?GriddedStreamfunction, ?GriddedStreamfunctionBootstrap})
+    methods (Access = {?GriddedStreamfunction, ?GriddedStreamfunctionBootstrap, ?GriddedStreamfunctionUnitTests})
         sampleData = decompositionSampleData(self, trajectories)
     end
 
@@ -418,5 +418,6 @@ classdef GriddedStreamfunction < handle
         representativeTimes = representativeObservationTimes(tCell)
         psiKnotPoints = defaultPsiKnotPoints(qAll, rAll, tAll, psiS)
         Aeq = mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint)
+        fastState = fastBasisState(allT, fastKnotPoints, fastS, shouldComputeDerivative)
     end
 end
