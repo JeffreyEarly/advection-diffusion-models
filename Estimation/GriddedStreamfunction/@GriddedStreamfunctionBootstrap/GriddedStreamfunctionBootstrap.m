@@ -201,6 +201,8 @@ classdef GriddedStreamfunctionBootstrap < handle
 
             self.observedTrajectories = trajectories;
             self.observedTrajectorySampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+            observedTerminalWeights = GriddedStreamfunctionBootstrap.terminalDisplacementWeightsForSampleTimes( ...
+                self.observedTrajectorySampleData.tCell);
             self.nBootstraps = options.nBootstraps;
             self.randomSeed = options.randomSeed;
             self.queryTimes = queryTimes;
@@ -210,7 +212,7 @@ classdef GriddedStreamfunctionBootstrap < handle
             fitArguments = namedargs2cell(fitOptions);
             self.fullFit = GriddedStreamfunction(trajectories, fitArguments{:});
             [self.fullSummary, self.fullScalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit( ...
-                self.fullFit, queryTimes);
+                self.fullFit, queryTimes, observedTerminalWeights);
 
             nQuery = numel(queryTimes);
             nTrajectories = numel(trajectories);
@@ -233,7 +235,8 @@ classdef GriddedStreamfunctionBootstrap < handle
                 fitOptionsWithoutDecomposition.sampleData = sampledData;
                 fitArgumentsWithoutDecomposition = namedargs2cell(fitOptionsWithoutDecomposition);
                 fit = GriddedStreamfunction(sampledTrajectories, fitArgumentsWithoutDecomposition{:});
-                [summary, scalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit(fit, queryTimes);
+                [summary, scalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit( ...
+                    fit, queryTimes, observedTerminalWeights(sampledIndices));
 
                 self.bootstrapIndices(iBootstrap, :) = sampledIndices;
                 self.summary.uCenter(:, iBootstrap) = summary.uCenter;
@@ -360,8 +363,9 @@ classdef GriddedStreamfunctionBootstrap < handle
 
     methods (Static, Access = private)
         [queryTimes, scoreTimes, scoreIndices] = resolveBootstrapTimes(trajectories, queryTimesOption, scoreTimesOption, scoreStride)
-        [summary, scalarSummary] = extractSummaryFromFit(fit, queryTimes)
-        kappaEstimate = kappaEstimateFromFit(fit)
+        [summary, scalarSummary] = extractSummaryFromFit(fit, queryTimes, terminalWeightsByTrajectory)
+        kappaEstimate = kappaEstimateFromFit(fit, terminalWeightsByTrajectory)
+        terminalWeightsByTrajectory = terminalDisplacementWeightsForSampleTimes(tCell)
         scores = computeConsensusScores(summary, scoreIndices, mesoscaleConstraint)
     end
 end
