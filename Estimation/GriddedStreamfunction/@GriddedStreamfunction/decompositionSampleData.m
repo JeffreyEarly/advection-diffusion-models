@@ -8,14 +8,17 @@ arguments (Output)
 end
 
 trajectories = reshape(trajectories, [], 1);
-[tCell, xCell, yCell, xDotCell, yDotCell] = trajectorySampleData(trajectories);
+if shouldReuseObservedTrajectorySamples(self, trajectories)
+    sampleData = self.observedTrajectorySampleData;
+else
+    sampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+end
 
-allT = vertcat(tCell{:});
-allX = vertcat(xCell{:});
-allY = vertcat(yCell{:});
-allXDot = vertcat(xDotCell{:});
-allYDot = vertcat(yDotCell{:});
-sampleSupportTimes = unique(allT, "sorted");
+allT = sampleData.allT;
+allX = sampleData.allX;
+allY = sampleData.allY;
+allXDot = sampleData.allXDot;
+allYDot = sampleData.allYDot;
 
 validateFastTimeDomain(self, allT);
 
@@ -44,54 +47,39 @@ vCenteredSubmesoscaleObserved = vCenteredObserved - vMesoscaleRelativeObserved;
 uSubmesoscaleObserved = allXDot - uBackgroundObserved - uMesoscaleObserved;
 vSubmesoscaleObserved = allYDot - vBackgroundObserved - vMesoscaleObserved;
 
-sampleData = struct( ...
-    "tCell", {tCell}, ...
-    "xCell", {xCell}, ...
-    "yCell", {yCell}, ...
-    "xDotCell", {xDotCell}, ...
-    "yDotCell", {yDotCell}, ...
-    "allT", allT, ...
-    "allX", allX, ...
-    "allY", allY, ...
-    "allXDot", allXDot, ...
-    "allYDot", allYDot, ...
-    "sampleSupportTimes", sampleSupportTimes, ...
-    "mxDotAll", mxDotAll, ...
-    "myDotAll", myDotAll, ...
-    "qAll", qAll, ...
-    "rAll", rAll, ...
-    "B", fastState.B, ...
-    "uMesoscaleObserved", uMesoscaleObserved, ...
-    "vMesoscaleObserved", vMesoscaleObserved, ...
-    "uMesoscaleComObserved", uMesoscaleComObserved, ...
-    "vMesoscaleComObserved", vMesoscaleComObserved, ...
-    "uMesoscaleRelativeObserved", uMesoscaleRelativeObserved, ...
-    "vMesoscaleRelativeObserved", vMesoscaleRelativeObserved, ...
-    "uBackgroundObserved", uBackgroundObserved, ...
-    "vBackgroundObserved", vBackgroundObserved, ...
-    "uCenteredObserved", uCenteredObserved, ...
-    "vCenteredObserved", vCenteredObserved, ...
-    "uCenteredSubmesoscaleObserved", uCenteredSubmesoscaleObserved, ...
-    "vCenteredSubmesoscaleObserved", vCenteredSubmesoscaleObserved, ...
-    "uSubmesoscaleObserved", uSubmesoscaleObserved, ...
-    "vSubmesoscaleObserved", vSubmesoscaleObserved);
+sampleData.mxDotAll = mxDotAll;
+sampleData.myDotAll = myDotAll;
+sampleData.qAll = qAll;
+sampleData.rAll = rAll;
+sampleData.B = fastState.B;
+sampleData.uMesoscaleObserved = uMesoscaleObserved;
+sampleData.vMesoscaleObserved = vMesoscaleObserved;
+sampleData.uMesoscaleComObserved = uMesoscaleComObserved;
+sampleData.vMesoscaleComObserved = vMesoscaleComObserved;
+sampleData.uMesoscaleRelativeObserved = uMesoscaleRelativeObserved;
+sampleData.vMesoscaleRelativeObserved = vMesoscaleRelativeObserved;
+sampleData.uBackgroundObserved = uBackgroundObserved;
+sampleData.vBackgroundObserved = vBackgroundObserved;
+sampleData.uCenteredObserved = uCenteredObserved;
+sampleData.vCenteredObserved = vCenteredObserved;
+sampleData.uCenteredSubmesoscaleObserved = uCenteredSubmesoscaleObserved;
+sampleData.vCenteredSubmesoscaleObserved = vCenteredSubmesoscaleObserved;
+sampleData.uSubmesoscaleObserved = uSubmesoscaleObserved;
+sampleData.vSubmesoscaleObserved = vSubmesoscaleObserved;
 end
 
-function [tCell, xCell, yCell, xDotCell, yDotCell] = trajectorySampleData(trajectories)
-nTrajectories = numel(trajectories);
-tCell = cell(nTrajectories, 1);
-xCell = cell(nTrajectories, 1);
-yCell = cell(nTrajectories, 1);
-xDotCell = cell(nTrajectories, 1);
-yDotCell = cell(nTrajectories, 1);
+function tf = shouldReuseObservedTrajectorySamples(self, trajectories)
+if isempty(self.observedTrajectorySampleData) || numel(trajectories) ~= numel(self.observedTrajectories)
+    tf = false;
+    return
+end
 
-for iTrajectory = 1:nTrajectories
-    ti = reshape(trajectories(iTrajectory).t, [], 1);
-    tCell{iTrajectory} = ti;
-    xCell{iTrajectory} = reshape(trajectories(iTrajectory).x(ti), [], 1);
-    yCell{iTrajectory} = reshape(trajectories(iTrajectory).y(ti), [], 1);
-    xDotCell{iTrajectory} = reshape(trajectories(iTrajectory).u(ti), [], 1);
-    yDotCell{iTrajectory} = reshape(trajectories(iTrajectory).v(ti), [], 1);
+tf = true;
+for iTrajectory = 1:numel(trajectories)
+    if trajectories(iTrajectory) ~= self.observedTrajectories(iTrajectory)
+        tf = false;
+        return
+    end
 end
 end
 

@@ -153,6 +153,10 @@ classdef GriddedStreamfunction < handle
         fitSupportTimes
     end
 
+    properties (Access = private)
+        observedTrajectorySampleData struct = struct([])
+    end
+
     methods
         function self = GriddedStreamfunction(trajectories, options)
             % Fit the estimator from drifter trajectory splines.
@@ -419,5 +423,6 @@ classdef GriddedStreamfunction < handle
         psiKnotPoints = defaultPsiKnotPoints(qAll, rAll, tAll, psiS)
         Aeq = mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint)
         fastState = fastBasisState(allT, fastKnotPoints, fastS, shouldComputeDerivative)
+        sampleData = sampleTrajectoryData(trajectories)
     end
 end

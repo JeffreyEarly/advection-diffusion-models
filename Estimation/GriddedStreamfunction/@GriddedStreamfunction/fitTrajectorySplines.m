@@ -1,26 +1,12 @@
 function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition)
-nTrajectories = numel(trajectories);
-tCell = cell(nTrajectories, 1);
-xCell = cell(nTrajectories, 1);
-yCell = cell(nTrajectories, 1);
-xDotCell = cell(nTrajectories, 1);
-yDotCell = cell(nTrajectories, 1);
-
-for iTrajectory = 1:nTrajectories
-    ti = reshape(trajectories(iTrajectory).t, [], 1);
-    tCell{iTrajectory} = ti;
-    xCell{iTrajectory} = reshape(trajectories(iTrajectory).x(ti), [], 1);
-    yCell{iTrajectory} = reshape(trajectories(iTrajectory).y(ti), [], 1);
-    xDotCell{iTrajectory} = reshape(trajectories(iTrajectory).u(ti), [], 1);
-    yDotCell{iTrajectory} = reshape(trajectories(iTrajectory).v(ti), [], 1);
-end
-
-allT = vertcat(tCell{:});
-allX = vertcat(xCell{:});
-allY = vertcat(yCell{:});
-allXDot = vertcat(xDotCell{:});
-allYDot = vertcat(yDotCell{:});
-fitSupportTimes = unique(allT, "sorted");
+sampledData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+tCell = sampledData.tCell;
+allT = sampledData.allT;
+allX = sampledData.allX;
+allY = sampledData.allY;
+allXDot = sampledData.allXDot;
+allYDot = sampledData.allYDot;
+fitSupportTimes = sampledData.sampleSupportTimes;
 
 if isempty(fastKnotPoints)
     representativeTimes = GriddedStreamfunction.representativeObservationTimes(tCell);
@@ -131,6 +117,7 @@ streamfunctionSpline = TensorSpline.fromKnotPoints(psiKnotPoints, streamfunction
 
 self.streamfunctionSpline = streamfunctionSpline;
 self.observedTrajectories = trajectories;
+self.observedTrajectorySampleData = sampledData;
 self.centerOfMassTrajectory = centerOfMassTrajectory;
 self.fastKnotPoints = fastKnotPoints;
 self.fastS = fastS;

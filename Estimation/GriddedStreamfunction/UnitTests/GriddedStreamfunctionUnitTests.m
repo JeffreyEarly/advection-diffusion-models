@@ -424,6 +424,71 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyGreaterThan(maxObservedRawDifference, 1e-3)
         end
 
+        function decompositionSampleDataMatchesObservedTrajectorySamples(testCase)
+            trajectories = GriddedStreamfunctionUnitTests.smoothedTrajectoryData();
+            fit = GriddedStreamfunction(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
+            sampleData = fit.decompositionSampleData(fit.observedTrajectories);
+            expectedSamples = GriddedStreamfunctionUnitTests.directTrajectorySamples(fit.observedTrajectories);
+
+            for iTrajectory = 1:numel(expectedSamples.tCell)
+                testCase.verifyEqual(sampleData.tCell{iTrajectory}, expectedSamples.tCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.xCell{iTrajectory}, expectedSamples.xCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.yCell{iTrajectory}, expectedSamples.yCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.xDotCell{iTrajectory}, expectedSamples.xDotCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.yDotCell{iTrajectory}, expectedSamples.yDotCell{iTrajectory}, "AbsTol", 1e-12)
+            end
+
+            allT = expectedSamples.allT;
+            allX = expectedSamples.allX;
+            allY = expectedSamples.allY;
+            allXDot = expectedSamples.allXDot;
+            allYDot = expectedSamples.allYDot;
+            B = reshape(BSpline.matrixForDataPoints(allT, knotPoints=fit.fastKnotPoints, S=fit.fastS), numel(allT), []);
+            mxDotAll = reshape(fit.centerOfMassTrajectory.u(allT), [], 1);
+            myDotAll = reshape(fit.centerOfMassTrajectory.v(allT), [], 1);
+            mesoscaleObserved = [ ...
+                reshape(fit.uMesoscale(allT, allX, allY), [], 1), ...
+                reshape(fit.vMesoscale(allT, allX, allY), [], 1)];
+            mesoscaleComObserved = B * (B \ mesoscaleObserved);
+            uBackgroundObserved = mxDotAll - mesoscaleComObserved(:, 1);
+            vBackgroundObserved = myDotAll - mesoscaleComObserved(:, 2);
+
+            testCase.verifyEqual(sampleData.allT, allT, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allX, allX, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allY, allY, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allXDot, allXDot, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allYDot, allYDot, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.sampleSupportTimes, expectedSamples.sampleSupportTimes, "AbsTol", 1e-12)
+            testCase.verifyEqual(full(sampleData.B), full(B), "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.uMesoscaleComObserved, mesoscaleComObserved(:, 1), "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.vMesoscaleComObserved, mesoscaleComObserved(:, 2), "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.uSubmesoscaleObserved, allXDot - uBackgroundObserved - mesoscaleObserved(:, 1), "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.vSubmesoscaleObserved, allYDot - vBackgroundObserved - mesoscaleObserved(:, 2), "AbsTol", 1e-12)
+        end
+
+        function decompositionSampleDataUsesPassedTrajectoryOrdering(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction(trajectories);
+            reorderedTrajectories = flipud(fit.observedTrajectories);
+            sampleData = fit.decompositionSampleData(reorderedTrajectories);
+            expectedSamples = GriddedStreamfunctionUnitTests.directTrajectorySamples(reorderedTrajectories);
+
+            for iTrajectory = 1:numel(expectedSamples.tCell)
+                testCase.verifyEqual(sampleData.tCell{iTrajectory}, expectedSamples.tCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.xCell{iTrajectory}, expectedSamples.xCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.yCell{iTrajectory}, expectedSamples.yCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.xDotCell{iTrajectory}, expectedSamples.xDotCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.yDotCell{iTrajectory}, expectedSamples.yDotCell{iTrajectory}, "AbsTol", 1e-12)
+            end
+
+            testCase.verifyEqual(sampleData.allT, expectedSamples.allT, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allX, expectedSamples.allX, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allY, expectedSamples.allY, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allXDot, expectedSamples.allXDot, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allYDot, expectedSamples.allYDot, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.sampleSupportTimes, expectedSamples.sampleSupportTimes, "AbsTol", 1e-12)
+        end
+
         function reducedBasisGaugeRemovesScalarSpatialMode(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = GriddedStreamfunction(trajectories);
@@ -595,6 +660,37 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             trajectories = TrajectorySpline.empty(0, 1);
             trajectories(end + 1, 1) = TrajectorySpline(t=t, x=xSpline1, y=ySpline1);
             trajectories(end + 1, 1) = TrajectorySpline(t=t, x=xSpline2, y=ySpline2);
+        end
+
+        function sampleData = directTrajectorySamples(trajectories)
+            nTrajectories = numel(trajectories);
+            tCell = cell(nTrajectories, 1);
+            xCell = cell(nTrajectories, 1);
+            yCell = cell(nTrajectories, 1);
+            xDotCell = cell(nTrajectories, 1);
+            yDotCell = cell(nTrajectories, 1);
+
+            for iTrajectory = 1:nTrajectories
+                ti = reshape(trajectories(iTrajectory).t, [], 1);
+                tCell{iTrajectory} = ti;
+                xCell{iTrajectory} = reshape(trajectories(iTrajectory).x(ti), [], 1);
+                yCell{iTrajectory} = reshape(trajectories(iTrajectory).y(ti), [], 1);
+                xDotCell{iTrajectory} = reshape(trajectories(iTrajectory).u(ti), [], 1);
+                yDotCell{iTrajectory} = reshape(trajectories(iTrajectory).v(ti), [], 1);
+            end
+
+            sampleData = struct( ...
+                "tCell", {tCell}, ...
+                "xCell", {xCell}, ...
+                "yCell", {yCell}, ...
+                "xDotCell", {xDotCell}, ...
+                "yDotCell", {yDotCell}, ...
+                "allT", vertcat(tCell{:}), ...
+                "allX", vertcat(xCell{:}), ...
+                "allY", vertcat(yCell{:}), ...
+                "allXDot", vertcat(xDotCell{:}), ...
+                "allYDot", vertcat(yDotCell{:}), ...
+                "sampleSupportTimes", unique(vertcat(tCell{:}), "sorted"));
         end
 
         function [fitTrajectories, evaluationTrajectories] = trimmedTrajectoryData()
