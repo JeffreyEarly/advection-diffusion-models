@@ -1,5 +1,5 @@
 scriptDir = fileparts(mfilename('fullpath'));
-sourceDataDir = fullfile(scriptDir,'SourceData');
+sourceDataDir = fullfile(scriptDir, '..', '..', '..', 'ExampleData', 'LatMix2011');
 bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
 
 % Load our giant list of possible paths.
@@ -201,7 +201,7 @@ EnergyCrossTerms = (measuredTotalVariance - modelTotalVariance)./measuredTotalVa
 figure
 plot(t/86400,EnergyCrossTerms) %, hold on, plot(t/86400,actualTotalVariance);
 
-return
+%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

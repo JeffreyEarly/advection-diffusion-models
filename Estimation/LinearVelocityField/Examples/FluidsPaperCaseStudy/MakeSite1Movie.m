@@ -19,7 +19,7 @@ videoWriter.FrameRate = 24;
 videoWriter.Quality = 100;
 open(videoWriter);
 
-load(fullfile(scriptDir, "SourceData", sprintf("smoothedGriddedRho%dDrifters.mat", SiteNumber)));
+load(fullfile(scriptDir, "..", "..", "..", "ExampleData", "LatMix2011", sprintf("smoothedGriddedRho%dDrifters.mat", SiteNumber)));
 x = x(:, 1:end-1);
 y = y(:, 1:end-1);
 

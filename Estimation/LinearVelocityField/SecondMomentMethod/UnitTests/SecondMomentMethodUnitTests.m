@@ -37,6 +37,18 @@ classdef SecondMomentMethodUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(parameters.sigma*sin(2*parameters.theta), model.sigma_s, "AbsTol", 5e-12);
             testCase.verifyEqual(parameters.zeta, 0, "AbsTol", 1e-12);
         end
+
+        function fitTrajectoriesToLinearVelocityFieldAcceptsModernSplineFactories(testCase)
+            sigma = 4e-6;
+            theta = pi/9;
+
+            model = LinearVelocityField(sigma=sigma, theta=theta, zeta=0);
+            integrator = AdvectionDiffusionIntegrator(model,0);
+            [x0, y0] = SecondMomentMethodUnitTests.legacyInitialPositions();
+            [t, x, y] = integrator.particleTrajectories(x0,y0,3*86400,1800);
+
+            testCase.verifyWarningFree(@() FitTrajectoriesToLinearVelocityField(x, y, t, 'strain-diffusive', 6, 3))
+        end
     end
 
     methods (Static, Access = private)

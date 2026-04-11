@@ -112,13 +112,13 @@ for iModel = 1:nModels
         
         
         % Kernel density estimate of the distribution.
-        % https://www.mathworks.com/matlabcentral/fileexchange/17204-kernel-density-estimation
         data = cat(2,sigma_nEst,sigma_sEst);
-        [bandwidth,density,X,Y]=kde2d(data);
+        densityModel = KernelDensityEstimate.fromData(data);
+        [density, gridVectors] = densityModel.densityOnGrid();
         
         figure('Name', plainFigureName, 'NumberTitle', 'off', 'Position', [50 50 900 400])
         subplot(2,4,[1 2 5 6])
-        contourf(X,Y,density);
+        contourf(gridVectors{1}, gridVectors{2}, density.');
         hold on
         for i=2:2:10
             rectangle('Position',[-i -i 2*i 2*i]*1e-6, 'Curvature', [1 1]);

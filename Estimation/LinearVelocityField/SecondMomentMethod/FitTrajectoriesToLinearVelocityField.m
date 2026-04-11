@@ -9,8 +9,8 @@ for iDrifter = 1:nDrifters
     xd = x(:,iDrifter);
     yd = y(:,iDrifter);
 
-    spline_mean_x = ConstrainedSpline(t, xd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(1));
-    spline_mean_y = ConstrainedSpline(t, yd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(1));
+    spline_mean_x = ConstrainedSpline.fromData(t, xd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(sigma=1));
+    spline_mean_y = ConstrainedSpline.fromData(t, yd, S=S, knotPoints=knotPoints, distribution=NormalDistribution(sigma=1));
     
     xf(:,iDrifter) = spline_mean_x(t);
     yf(:,iDrifter) = spline_mean_y(t);
@@ -24,8 +24,8 @@ r = y - y_com;
 % Compute velocities
 dqdt = (q(2:end,:)-q(1:end-1,:))./diff(t);
 drdt = (r(2:end,:)-r(1:end-1,:))./diff(t);
-q = q(1:end-1) + diff(q)/2;
-r = r(1:end-1) + diff(r)/2;
+q = q(1:end-1,:) + diff(q)/2;
+r = r(1:end-1,:) + diff(r)/2;
 
 t = t(1:end-1);
 knotPoints = BSpline.knotPointsForDataPoints(t, S=S, splineDOF=dof);
@@ -47,8 +47,8 @@ for iDrifter=1:nDrifters
     zerosB(indices,:) = zeros(size(q(:,iDrifter))).*B;
     xB(indices,:) = q(:,iDrifter).*B;
     yB(indices,:) = r(:,iDrifter).*B;
-    u(indices) = dqdt;
-    v(indices) = drdt;
+    u(indices) = dqdt(:,iDrifter);
+    v(indices) = drdt(:,iDrifter);
 end
 
 if strcmp(model,'strain-diffusive')

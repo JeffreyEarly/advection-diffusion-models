@@ -1,5 +1,5 @@
 scriptDir = fileparts(mfilename('fullpath'));
-sourceDataDir = fullfile(scriptDir,'SourceData');
+sourceDataDir = fullfile(scriptDir, '..', '..', '..', 'ExampleData', 'LatMix2011');
 bootstrapDataDir = fullfile(scriptDir,'BootstrapData');
 
 SiteNumber=1;
@@ -130,10 +130,11 @@ return
 m = b;
 % m = cm_model_strain;
 iTime = 5*48;
-[bandwidth,density,X,Y]=kde2d(cat(2,m.sigma_n(iTime,:).',m.sigma_s(iTime,:).'));
+densityModel = KernelDensityEstimate.fromData([m.sigma_n(iTime, :).', m.sigma_s(iTime, :).']);
+[density, gridVectors] = densityModel.densityOnGrid();
 pctTarget = flip(0.1:0.1:0.8);
     
-    dLevels = DensityLevelForCDF(X,Y,density, pctTarget);
+    dLevels = DensityLevelForCDF(gridVectors, density, pctTarget);
     
     pctLabels = cell(length(pctTarget),1);
     for i=1:length(pctTarget)
@@ -141,7 +142,7 @@ pctTarget = flip(0.1:0.1:0.8);
     end
     
 figure
-M = contourf(X,Y,density,dLevels);
+M = contourf(gridVectors{1}, gridVectors{2}, density.', dLevels);
 hold on, scatter(m.sigma_n(iTime,:),m.sigma_s(iTime,:),2^2,.5*[1 1 1])
 hold on
 for i=2:2:10

@@ -20,7 +20,7 @@ Both estimation methods estimate linear velocity field parameters such as  strai
 The package is organized into four buckets:
 
 1. core direct-estimator APIs in the `LinearVelocityField` root
-2. shared density-estimation helpers in [DensityEstimation](DensityEstimation)
+2. shared density-estimation tools in [../DensityEstimation](../DensityEstimation)
 3. curated runnable scripts in [Examples](Examples), including the premier worked example in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy)
 4. second-moment estimation tools in [SecondMomentMethod](SecondMomentMethod)
 
@@ -56,7 +56,7 @@ The structure `parameterEstimates` now contains values for `sigma_n` and `sigma_
 Recommended approach for least squares fits
 ------------
 
-To reproduce the results from the Latmix drifter fits, use the scripts in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy). These scripts expect local source-data `.mat` files under `Examples/FluidsPaperCaseStudy/SourceData/`, write bootstrap outputs into `BootstrapData/`, and write movie outputs into `Movies/`.
+To reproduce the results from the Latmix drifter fits, use the scripts in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy). These scripts expect local source-data `.mat` files under `../ExampleData/LatMix2011/`, write bootstrap outputs into `BootstrapData/`, and write movie outputs into `Movies/`.
 
 1. Run `GenerateBootstrapFits.m`, which will read the `smoothedGriddedRho1Drifters.mat` file and then perform estimation of all the models, with 1000 different drifter permutations, with time variation from 1 to 6 degrees-of-freedom. The data will be stored in 6 different `.mat` files in the BootstrapData folder. Note that the velocity is computed from the positions with a second-order finite difference matrix, i.e., line 80 in `EstimateLinearVelocityFieldParametersBSpline.m` calls `D = FiniteDifferenceMatrix(1,t,1,1,2);`.
 
@@ -106,7 +106,7 @@ Given a struct of bootstrap estimates, this will construct PDFs from the estimat
 Density estimation support
 ------------
 
-The helper functions [DensityEstimation/kde.m](DensityEstimation/kde.m), [DensityEstimation/kde2d.m](DensityEstimation/kde2d.m), and [DensityEstimation/DensityLevelForCDF.m](DensityEstimation/DensityLevelForCDF.m) provide the shared density-estimation and contour-level support used by bootstrap likelihood scoring and example visualizations.
+The shared density-estimation subsystem lives in [../DensityEstimation](../DensityEstimation). The public class [../DensityEstimation/@KernelDensityEstimate/KernelDensityEstimate.m](../DensityEstimation/@KernelDensityEstimate/KernelDensityEstimate.m) fits one-dimensional and two-dimensional Gaussian KDE models with Botev bandwidth selection, and [../DensityEstimation/DensityLevelForCDF.m](../DensityEstimation/DensityLevelForCDF.m) converts gridded densities into contour levels with prescribed enclosed mass for plotting.
 
 Second moment fits
 ------------

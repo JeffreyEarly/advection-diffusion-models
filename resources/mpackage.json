@@ -1,6 +1,6 @@
 {
     "name": "AdvectionDiffusionModels",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "id": "8925cc26-879f-495c-b6a7-7f0d66ac906a",
     "formerNames": [],
     "displayName": "Advection-Diffusion Models",
@@ -20,13 +20,103 @@
             ]
         },
         {
+            "path": "Estimation/DensityEstimation",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/DensityEstimation/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
             "path": "Estimation/LinearVelocityField",
             "languages": [
                 "matlab"
             ]
         },
         {
-            "path": "Estimation/LinearVelocityField/DensityEstimation",
+            "path": "Estimation/GriddedStreamfunction",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/GriddedStreamfunction/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/GriddedStreamfunction/Examples/FluidsPaperCaseStudy",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/GriddedStreamfunction/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison/Examples/FluidsPaperCaseStudy",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Integrators",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Integrators/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Models",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Models/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Models/KinematicModels",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Models/UnitTests",
             "languages": [
                 "matlab"
             ]
@@ -72,53 +162,17 @@
             "languages": [
                 "matlab"
             ]
-        },
-        {
-            "path": "Integrators",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Integrators/UnitTests",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Models",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Models/Examples",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Models/KinematicModels",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Models/UnitTests",
-            "languages": [
-                "matlab"
-            ]
         }
     ],
     "dependencies": [
         {
             "name": "SplineCore",
-            "compatibleVersions": "^2.0",
+            "compatibleVersions": "^2.2",
             "id": "f723c088-397a-43e5-a0ad-e19422cc3c2a"
         },
         {
             "name": "Distributions",
-            "compatibleVersions": "^1.0",
+            "compatibleVersions": "^2.0",
             "id": "c543ab89-e5a2-4697-830f-12cf8ed03694"
         }
     ],
