@@ -132,6 +132,34 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             end
         end
 
+        function fitForBootstrapMatchesDirectFitWithStoredMetadata(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=13);
+            iBootstrap = 2;
+            sampledTrajectories = reshape( ...
+                bootstrap.observedTrajectories(bootstrap.bootstrapIndices(iBootstrap, :)), [], 1);
+
+            fit = bootstrap.fitForBootstrap(iBootstrap);
+            referenceFit = GriddedStreamfunction( ...
+                sampledTrajectories, ...
+                psiKnotPoints=bootstrap.bootstrapMetadata.psiKnotPoints{iBootstrap}, ...
+                psiS=bootstrap.fullFit.psiS, ...
+                fastKnotPoints=bootstrap.bootstrapMetadata.fastKnotPoints{iBootstrap}, ...
+                fastS=bootstrap.fullFit.fastS, ...
+                mesoscaleConstraint=bootstrap.fullFit.mesoscaleConstraint);
+
+            [summary, scalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
+            [referenceSummary, referenceScalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
+                referenceFit, bootstrap.queryTimes);
+
+            testCase.verifyEqual(summary.uCenter, referenceSummary.uCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(summary.vCenter, referenceSummary.vCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(summary.sigma_n, referenceSummary.sigma_n, "AbsTol", 1e-12)
+            testCase.verifyEqual(summary.sigma_s, referenceSummary.sigma_s, "AbsTol", 1e-12)
+            testCase.verifyEqual(summary.zeta, referenceSummary.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(scalarSummary.kappaEstimate, referenceScalarSummary.kappaEstimate, "AbsTol", 1e-12)
+        end
+
         function defaultKnotsStillReconstructExactly(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 

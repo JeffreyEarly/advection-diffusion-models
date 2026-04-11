@@ -489,6 +489,29 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(sampleData.sampleSupportTimes, expectedSamples.sampleSupportTimes, "AbsTol", 1e-12)
         end
 
+        function resampledTrajectorySampleDataMatchesDirectSampling(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            observedSampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+            sampledIndices = [3 1 3 2].';
+            expectedSamples = GriddedStreamfunctionUnitTests.directTrajectorySamples(trajectories(sampledIndices));
+            sampleData = GriddedStreamfunction.resampledTrajectorySampleData(observedSampleData, sampledIndices);
+
+            for iTrajectory = 1:numel(expectedSamples.tCell)
+                testCase.verifyEqual(sampleData.tCell{iTrajectory}, expectedSamples.tCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.xCell{iTrajectory}, expectedSamples.xCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.yCell{iTrajectory}, expectedSamples.yCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.xDotCell{iTrajectory}, expectedSamples.xDotCell{iTrajectory}, "AbsTol", 1e-12)
+                testCase.verifyEqual(sampleData.yDotCell{iTrajectory}, expectedSamples.yDotCell{iTrajectory}, "AbsTol", 1e-12)
+            end
+
+            testCase.verifyEqual(sampleData.allT, expectedSamples.allT, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allX, expectedSamples.allX, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allY, expectedSamples.allY, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allXDot, expectedSamples.allXDot, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.allYDot, expectedSamples.allYDot, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.sampleSupportTimes, expectedSamples.sampleSupportTimes, "AbsTol", 1e-12)
+        end
+
         function reducedBasisGaugeRemovesScalarSpatialMode(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = GriddedStreamfunction(trajectories);

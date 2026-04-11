@@ -191,6 +191,7 @@ classdef GriddedStreamfunction < handle
                 options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
                 options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
                 options.buildDecomposition (1,1) logical = true
+                options.sampleData struct = struct([])
             end
 
             trajectories = reshape(trajectories, [], 1);
@@ -199,6 +200,7 @@ classdef GriddedStreamfunction < handle
             fastKnotPoints = options.fastKnotPoints;
             fastS = options.fastS;
             mesoscaleConstraint = string(options.mesoscaleConstraint);
+            sampleData = options.sampleData;
 
             if ~isempty(fastKnotPoints)
                 if ~(isnumeric(fastKnotPoints) && isvector(fastKnotPoints) && ...
@@ -247,7 +249,8 @@ classdef GriddedStreamfunction < handle
                 fastKnotPoints, ...
                 fastS, ...
                 mesoscaleConstraint, ...
-                options.buildDecomposition);
+                options.buildDecomposition, ...
+                sampleData);
         end
 
         function values = uBackground(self, t)
@@ -406,7 +409,7 @@ classdef GriddedStreamfunction < handle
     end
 
     methods (Access = private)
-        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition)
+        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition, sampleData)
         [backgroundTrajectory, decomposition] = decomposeTrajectorySet(self, trajectories)
     end
 
@@ -418,11 +421,15 @@ classdef GriddedStreamfunction < handle
         theta = visualPrincipalStrainAngle(sigma_n, sigma_s, options)
     end
 
+    methods (Static, Access = {?GriddedStreamfunction, ?GriddedStreamfunctionBootstrap, ?GriddedStreamfunctionUnitTests, ?GriddedStreamfunctionBootstrapUnitTests})
+        sampleData = sampleTrajectoryData(trajectories)
+        sampleData = resampledTrajectorySampleData(observedSampleData, sampledIndices)
+    end
+
     methods (Static, Access = private)
         representativeTimes = representativeObservationTimes(tCell)
         psiKnotPoints = defaultPsiKnotPoints(qAll, rAll, tAll, psiS)
         Aeq = mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint)
         fastState = fastBasisState(allT, fastKnotPoints, fastS, shouldComputeDerivative)
-        sampleData = sampleTrajectoryData(trajectories)
     end
 end

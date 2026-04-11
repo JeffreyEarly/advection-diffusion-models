@@ -137,6 +137,10 @@ classdef GriddedStreamfunctionBootstrap < handle
         randomSeed (1,1) double {mustBeInteger, mustBeFinite} = 0
     end
 
+    properties (Access = private)
+        observedTrajectorySampleData struct = struct([])
+    end
+
     methods
         function self = GriddedStreamfunctionBootstrap(trajectories, options)
             % Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
@@ -189,20 +193,21 @@ classdef GriddedStreamfunctionBootstrap < handle
                 "fastKnotPoints", {options.fastKnotPoints}, ...
                 "fastS", options.fastS, ...
                 "mesoscaleConstraint", string(options.mesoscaleConstraint));
-            fitArguments = namedargs2cell(fitOptions);
             fitOptionsWithoutDecomposition = fitOptions;
             fitOptionsWithoutDecomposition.buildDecomposition = false;
-            fitArgumentsWithoutDecomposition = namedargs2cell(fitOptionsWithoutDecomposition);
 
             [queryTimes, scoreTimes, scoreIndices] = GriddedStreamfunctionBootstrap.resolveBootstrapTimes( ...
                 trajectories, options.queryTimes, options.scoreTimes, options.scoreStride);
 
             self.observedTrajectories = trajectories;
+            self.observedTrajectorySampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
             self.nBootstraps = options.nBootstraps;
             self.randomSeed = options.randomSeed;
             self.queryTimes = queryTimes;
             self.scoreTimes = scoreTimes;
 
+            fitOptions.sampleData = self.observedTrajectorySampleData;
+            fitArguments = namedargs2cell(fitOptions);
             self.fullFit = GriddedStreamfunction(trajectories, fitArguments{:});
             [self.fullSummary, self.fullScalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit( ...
                 self.fullFit, queryTimes);
@@ -223,6 +228,10 @@ classdef GriddedStreamfunctionBootstrap < handle
             for iBootstrap = 1:self.nBootstraps
                 sampledIndices = randi(nTrajectories, 1, nTrajectories);
                 sampledTrajectories = reshape(trajectories(sampledIndices), [], 1);
+                sampledData = GriddedStreamfunction.resampledTrajectorySampleData( ...
+                    self.observedTrajectorySampleData, sampledIndices);
+                fitOptionsWithoutDecomposition.sampleData = sampledData;
+                fitArgumentsWithoutDecomposition = namedargs2cell(fitOptionsWithoutDecomposition);
                 fit = GriddedStreamfunction(sampledTrajectories, fitArgumentsWithoutDecomposition{:});
                 [summary, scalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit(fit, queryTimes);
 
@@ -290,6 +299,8 @@ classdef GriddedStreamfunctionBootstrap < handle
                 "fastKnotPoints", fastKnotPoints, ...
                 "fastS", self.fullFit.fastS, ...
                 "mesoscaleConstraint", self.fullFit.mesoscaleConstraint);
+            fitOptions.sampleData = GriddedStreamfunction.resampledTrajectorySampleData( ...
+                self.observedTrajectorySampleData, self.bootstrapIndices(iBootstrap, :));
             fitArguments = namedargs2cell(fitOptions);
             fit = GriddedStreamfunction(sampledTrajectories, fitArguments{:});
         end

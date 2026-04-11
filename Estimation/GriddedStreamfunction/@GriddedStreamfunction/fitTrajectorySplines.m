@@ -1,5 +1,9 @@
-function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition)
-sampledData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition, sampleData)
+if isempty(sampleData)
+    sampledData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+else
+    sampledData = sampleData;
+end
 tCell = sampledData.tCell;
 allT = sampledData.allT;
 allX = sampledData.allX;
