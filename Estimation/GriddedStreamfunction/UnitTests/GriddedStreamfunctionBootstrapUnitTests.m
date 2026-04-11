@@ -246,7 +246,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
         end
     end
 
-    methods (Static, Access = private)
+    methods (Static)
         function [model, t, x, y, trajectories] = synchronousLinearFieldData()
             sigma = 4.0e-6;
             theta = pi/9;
