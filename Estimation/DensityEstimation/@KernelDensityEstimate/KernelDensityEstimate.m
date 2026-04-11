@@ -492,58 +492,122 @@ iPowers = cell(1, 6);
 for iOrder = 0:5
     iPowers{iOrder + 1} = iSquared.^iOrder;
 end
+piSquared = pi^2;
+weightedSpectrum = (halfWeights.' * halfWeights) .* aSquared;
+orderPowerMatrix = vertcat(iPowers{:});
+orderConstants = zeros(1, 5);
+for sumOrder = 0:4
+    orderConstants(sumOrder + 1) = (1 + 1/2^(sumOrder + 1))/3;
+end
+kernelConstants = zeros(1, 6);
+for iOrder = 0:5
+    kernelConstants(iOrder + 1) = kernelConstant(iOrder);
+end
+psiScale = zeros(6, 6);
+for iOrderY = 0:5
+    for iOrderX = 0:5
+        psiScale(iOrderY + 1, iOrderX + 1) = (-1)^(iOrderX + iOrderY) * pi^(2 * (iOrderX + iOrderY));
+    end
+end
+baseOrderX = [5 4 3 2 1 0];
+baseOrderY = [0 1 2 3 4 5];
+weightedOrderTimes = zeros(0, 1);
+weightedOrderValues = cell(0, 1);
+objectiveCacheTimes = zeros(0, 1);
+objectiveCacheValues = zeros(0, 1);
+objectiveCacheMoments = zeros(0, 3);
 
-funcCache = containers.Map("KeyType", "char", "ValueType", "double");
-psiCache = containers.Map("KeyType", "char", "ValueType", "double");
 tStar = smallestRoot(@objective, sampleCount);
-p02 = func([0 2], tStar);
-p20 = func([2 0], tStar);
-p11 = func([1 1], tStar);
+[~, p02, p20, p11] = objectiveState(tStar);
 tY = (p02^(3/4)/(4*pi*sampleCount*p20^(3/4)*(p11 + sqrt(p20*p02))))^(1/3);
 tX = (p20^(3/4)/(4*pi*sampleCount*p02^(3/4)*(p11 + sqrt(p20*p02))))^(1/3);
 bandwidth = sqrt([tX tY]).*scaling;
 
     function value = objective(t)
-        value = t - evolveResidual(t);
+        value = objectiveState(t);
     end
 
-    function value = evolveResidual(t)
-        sumFunc = func([0 2], t) + func([2 0], t) + 2 * func([1 1], t);
+    function [objectiveValue, p02, p20, p11] = objectiveState(t)
+        iCached = find(objectiveCacheTimes == t, 1);
+        if ~isempty(iCached)
+            objectiveValue = objectiveCacheValues(iCached);
+            p02 = objectiveCacheMoments(iCached, 1);
+            p20 = objectiveCacheMoments(iCached, 2);
+            p11 = objectiveCacheMoments(iCached, 3);
+            return
+        end
+
+        [p02, p20, p11] = momentsForTime(t);
+        sumFunc = p02 + p20 + 2 * p11;
         timeValue = (2*pi*sampleCount*sumFunc)^(-1/3);
-        value = (t - timeValue)/timeValue;
+        fixedPointValue = (t - timeValue)/timeValue;
+        objectiveValue = t - fixedPointValue;
+        objectiveCacheTimes(end + 1, 1) = t; %#ok<AGROW>
+        objectiveCacheValues(end + 1, 1) = objectiveValue; %#ok<AGROW>
+        objectiveCacheMoments(end + 1, :) = [p02 p20 p11]; %#ok<AGROW>
     end
 
-    function value = func(s, t)
-        cacheKey = sprintf("%d:%d:%.17g", s(1), s(2), t);
-        if isKey(funcCache, cacheKey)
-            value = funcCache(cacheKey);
+    function [p02, p20, p11] = momentsForTime(t)
+        baseValues = baseOrderFiveValues(t);
+        f50 = baseValues(1);
+        f41 = baseValues(2);
+        f32 = baseValues(3);
+        f23 = baseValues(4);
+        f14 = baseValues(5);
+        f05 = baseValues(6);
+
+        f22 = funcFromChildren(2, 2, f32, f23);
+        f13 = funcFromChildren(1, 3, f23, f14);
+        f04 = funcFromChildren(0, 4, f14, f05);
+        f40 = funcFromChildren(4, 0, f50, f41);
+        f31 = funcFromChildren(3, 1, f41, f32);
+
+        f12 = funcFromChildren(1, 2, f22, f13);
+        f03 = funcFromChildren(0, 3, f13, f04);
+        f30 = funcFromChildren(3, 0, f40, f31);
+        f21 = funcFromChildren(2, 1, f31, f22);
+
+        p02 = funcFromChildren(0, 2, f12, f03);
+        p20 = funcFromChildren(2, 0, f30, f21);
+        p11 = funcFromChildren(1, 1, f21, f12);
+    end
+
+    function value = funcFromChildren(orderX, orderY, leftChild, rightChild)
+        sumOrder = orderX + orderY;
+        timeValue = (-2*orderConstants(sumOrder + 1)*kernelConstants(orderX + 1)*kernelConstants(orderY + 1)/sampleCount/(leftChild + rightChild)) ...
+            ^(1/(2 + sumOrder));
+        value = psiValue(orderX, orderY, timeValue);
+    end
+
+    function values = baseOrderFiveValues(timeValue)
+        weightedOrders = weightedOrdersAtTime(timeValue);
+        rowProducts = weightedOrders * weightedSpectrum;
+        values = zeros(1, 6);
+        for iValue = 1:6
+            iOrderX = baseOrderX(iValue);
+            iOrderY = baseOrderY(iValue);
+            values(iValue) = psiScale(iOrderY + 1, iOrderX + 1) * ...
+                (rowProducts(iOrderY + 1, :) * weightedOrders(iOrderX + 1, :).');
+        end
+    end
+
+    function value = psiValue(orderX, orderY, timeValue)
+        weightedOrders = weightedOrdersAtTime(timeValue);
+        value = psiScale(orderY + 1, orderX + 1) * ...
+            (weightedOrders(orderY + 1, :) * weightedSpectrum * weightedOrders(orderX + 1, :).');
+    end
+
+    function weightedOrders = weightedOrdersAtTime(timeValue)
+        iCached = find(weightedOrderTimes == timeValue, 1);
+        if ~isempty(iCached)
+            weightedOrders = weightedOrderValues{iCached};
             return
         end
 
-        if sum(s) <= 4
-            sumFunc = func([s(1) + 1, s(2)], t) + func([s(1), s(2) + 1], t);
-            const = (1 + 1/2^(sum(s) + 1))/3;
-            timeValue = (-2*const*kernelConstant(s(1))*kernelConstant(s(2))/sampleCount/sumFunc)^(1/(2 + sum(s)));
-            value = psi(s, timeValue);
-        else
-            value = psi(s, t);
-        end
-
-        funcCache(cacheKey) = value;
-    end
-
-    function value = psi(s, timeValue)
-        cacheKey = sprintf("%d:%d:%.17g", s(1), s(2), timeValue);
-        if isKey(psiCache, cacheKey)
-            value = psiCache(cacheKey);
-            return
-        end
-
-        w = exp(-iSquared * pi^2 * timeValue) .* halfWeights;
-        wx = w .* iPowers{s(1) + 1};
-        wy = w .* iPowers{s(2) + 1};
-        value = (-1)^sum(s) * (wy * aSquared * wx.') * pi^(2 * sum(s));
-        psiCache(cacheKey) = value;
+        baseWeight = exp(-iSquared * piSquared * timeValue);
+        weightedOrders = orderPowerMatrix .* baseWeight;
+        weightedOrderTimes(end + 1, 1) = timeValue; %#ok<AGROW>
+        weightedOrderValues{end + 1, 1} = weightedOrders; %#ok<AGROW>
     end
 end
 
