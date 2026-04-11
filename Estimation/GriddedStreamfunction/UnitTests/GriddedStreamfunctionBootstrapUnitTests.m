@@ -184,6 +184,20 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyTrue(all(isfinite(zeroStrain.scores.joint)))
         end
 
+        function consensusScoresMatchDirectGaussianReference(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+            scoreIndices = arrayfun(@(ti) find(bootstrap.queryTimes == ti, 1), bootstrap.scoreTimes);
+
+            expected = GriddedStreamfunctionBootstrapUnitTests.directConsensusScores( ...
+                bootstrap.summary, scoreIndices, bootstrap.fullFit.mesoscaleConstraint);
+
+            testCase.verifyEqual(bootstrap.scores.uv, expected.uv, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.scores.strain, expected.strain, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.scores.zeta, expected.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.scores.joint, expected.joint, "AbsTol", 1e-12)
+        end
+
         function summaryQuantilesReturnExpectedShapesAndMonotoneBands(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
@@ -390,6 +404,96 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             end
 
             kappaEstimate = mean(kappaValues);
+        end
+
+        function scores = directConsensusScores(summary, scoreIndices, mesoscaleConstraint)
+            nBootstraps = size(summary.uCenter, 2);
+            scores = struct( ...
+                "uv", zeros(1, nBootstraps), ...
+                "strain", zeros(1, nBootstraps), ...
+                "zeta", zeros(1, nBootstraps), ...
+                "joint", zeros(1, nBootstraps));
+
+            for iScore = reshape(scoreIndices, 1, [])
+                scores.uv = scores.uv + GriddedStreamfunctionBootstrapUnitTests.directScore2DBlock( ...
+                    summary.uCenter(iScore, :), summary.vCenter(iScore, :));
+
+                if mesoscaleConstraint ~= "zeroStrain"
+                    scores.strain = scores.strain + GriddedStreamfunctionBootstrapUnitTests.directScore2DBlock( ...
+                        summary.sigma_n(iScore, :), summary.sigma_s(iScore, :));
+                end
+
+                if mesoscaleConstraint ~= "zeroVorticity"
+                    scores.zeta = scores.zeta + GriddedStreamfunctionBootstrapUnitTests.directScore1DBlock( ...
+                        summary.zeta(iScore, :));
+                end
+            end
+
+            scores.joint = scores.uv + scores.strain + scores.zeta;
+        end
+
+        function score = directScore2DBlock(xValues, yValues)
+            xValues = reshape(xValues, [], 1);
+            yValues = reshape(yValues, [], 1);
+            score = zeros(1, numel(xValues));
+            [isConstantX, isConstantY] = GriddedStreamfunctionBootstrapUnitTests.constantFlags(xValues, yValues);
+
+            if isConstantX && isConstantY
+                return
+            end
+
+            if isConstantX
+                score = GriddedStreamfunctionBootstrapUnitTests.directScore1DBlock(yValues);
+                return
+            end
+
+            if isConstantY
+                score = GriddedStreamfunctionBootstrapUnitTests.directScore1DBlock(xValues);
+                return
+            end
+
+            model = KernelDensityEstimate.fromData([xValues, yValues]);
+            pointDensity = GriddedStreamfunctionBootstrapUnitTests.directGaussianDensity2D(model.data, model.bandwidth, [xValues, yValues]);
+            score = log10(GriddedStreamfunctionBootstrapUnitTests.safeDensity(pointDensity)).';
+        end
+
+        function score = directScore1DBlock(values)
+            values = reshape(values, [], 1);
+            score = zeros(1, numel(values));
+
+            if GriddedStreamfunctionBootstrapUnitTests.isConstant(values)
+                return
+            end
+
+            model = KernelDensityEstimate.fromData(values);
+            pointDensity = GriddedStreamfunctionBootstrapUnitTests.directGaussianDensity1D(model.data, model.bandwidth, values);
+            score = log10(GriddedStreamfunctionBootstrapUnitTests.safeDensity(pointDensity)).';
+        end
+
+        function density = safeDensity(values)
+            density = reshape(values, [], 1);
+            density(~isfinite(density) | density <= 0) = realmin("double");
+        end
+
+        function [isConstantX, isConstantY] = constantFlags(xValues, yValues)
+            isConstantX = GriddedStreamfunctionBootstrapUnitTests.isConstant(xValues);
+            isConstantY = GriddedStreamfunctionBootstrapUnitTests.isConstant(yValues);
+        end
+
+        function tf = isConstant(values)
+            values = reshape(values, [], 1);
+            scale = max([1; abs(values)]);
+            tf = (max(values) - min(values)) <= 1e-12 * scale;
+        end
+
+        function density = directGaussianDensity1D(data, bandwidth, queryPoints)
+            queryPoints = reshape(queryPoints, [], 1);
+            density = mean(exp(-0.5 * ((queryPoints - data.')/bandwidth).^2), 2)/(bandwidth * sqrt(2*pi));
+        end
+
+        function density = directGaussianDensity2D(data, bandwidth, queryPoints)
+            density = mean(exp(-0.5 * (((queryPoints(:, 1) - data(:, 1).')/bandwidth(1)).^2 + ((queryPoints(:, 2) - data(:, 2).')/bandwidth(2)).^2)), 2) ...
+                /(2*pi * bandwidth(1) * bandwidth(2));
         end
     end
 end

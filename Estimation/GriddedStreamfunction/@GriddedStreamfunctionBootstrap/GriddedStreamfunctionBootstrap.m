@@ -12,10 +12,11 @@ classdef GriddedStreamfunctionBootstrap < handle
     % $$\kappa = \langle (x_{\mathrm{sm}}^2 + y_{\mathrm{sm}}^2)/(4\Delta t)\rangle.$$
     %
     % The bootstrap ensemble is ranked by a consensus score formed from
-    % time-local kernel density estimates of the bootstrap cloud. The
-    % score uses a 2-D KDE for `(uCenter, vCenter)`, a 2-D KDE for
-    % `(sigma_n, sigma_s)`, and a 1-D KDE for `zeta`, omitting constrained
-    % blocks when `mesoscaleConstraint` forces them to vanish.
+    % time-local `KernelDensityEstimate` fits to the bootstrap cloud. The
+    % score uses a 2-D density fit for `(uCenter, vCenter)`, a 2-D
+    % density fit for `(sigma_n, sigma_s)`, and a 1-D density fit for
+    % `zeta`, omitting constrained blocks when `mesoscaleConstraint`
+    % forces them to vanish.
     %
     % ```matlab
     % bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=100);

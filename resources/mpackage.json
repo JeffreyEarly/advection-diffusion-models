@@ -20,6 +20,18 @@
             ]
         },
         {
+            "path": "Estimation/DensityEstimation",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/DensityEstimation/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
             "path": "Estimation/LinearVelocityField",
             "languages": [
                 "matlab"
@@ -81,12 +93,6 @@
         },
         {
             "path": "Models/UnitTests",
-            "languages": [
-                "matlab"
-            ]
-        },
-        {
-            "path": "Estimation/LinearVelocityField/DensityEstimation",
             "languages": [
                 "matlab"
             ]

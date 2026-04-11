@@ -41,10 +41,11 @@ sigma_n = sigmaEst.*cos(2*thetaEst);
 sigma_s = sigmaEst.*sin(2*thetaEst);
 
 data = cat(2,sigma_n,sigma_s);
-[~,density,X,Y] = kde2d(data);
+densityModel = KernelDensityEstimate.fromData(data);
+[density, gridVectors] = densityModel.densityOnGrid();
 
 figure
-contourf(X,Y,density);
+contourf(gridVectors{1}, gridVectors{2}, density.');
 hold on
 for iCircle = 2:2:10
     rectangle('Position',[-iCircle -iCircle 2*iCircle 2*iCircle]*1e-6, 'Curvature', [1 1]);

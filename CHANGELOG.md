@@ -3,6 +3,8 @@
 ## [Unreleased]
 - refactored the gridded-streamfunction bootstrap and trajectory-decomposition antiderivative paths to use the public `BSpline` integration utilities added in `SplineCore 2.2`
 - raised the package dependency floor to `SplineCore ^2.2`
+- replaced the legacy `kde` and `kde2d` helpers with the shared `KernelDensityEstimate` subsystem under `Estimation/DensityEstimation`
+- updated bootstrap likelihood and consensus scoring to use direct KDE point evaluation from `KernelDensityEstimate`
 
 ## [2.1.0] - 2026-04-09
 - updated the linear-velocity estimation path to the `Distributions` 2.0 named-argument API

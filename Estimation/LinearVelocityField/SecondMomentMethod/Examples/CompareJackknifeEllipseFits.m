@@ -43,13 +43,13 @@ tic
 for iEst=1:2
 
     % Kernel density estimate of the distribution.
-    % https://www.mathworks.com/matlabcentral/fileexchange/17204-kernel-density-estimation
     data = cat(2,sigmaEst(:,iEst).*cos(2*thetaEst(:,iEst)),sigmaEst(:,iEst).*sin(2*thetaEst(:,iEst)));
-    [bandwidth,density,X,Y]=kde2d(data);
+    densityModel = KernelDensityEstimate.fromData(data);
+    [density, gridVectors] = densityModel.densityOnGrid();
     
     pctTarget = flip(0.1:0.1:0.9);
     
-    dLevels = DensityLevelForCDF(X,Y,density, pctTarget);
+    dLevels = DensityLevelForCDF(gridVectors, density, pctTarget);
     
     pctLabels = cell(length(pctTarget),1);
     for i=1:length(pctTarget)
@@ -59,7 +59,7 @@ for iEst=1:2
     figure('Position',[50 50 1000 400])
     
     subplot(1,2,1)
-    M = contourf(X,Y,density,dLevels);
+    M = contourf(gridVectors{1}, gridVectors{2}, density.', dLevels);
     hold on
     for i=2:2:10
         rectangle('Position',[-i -i 2*i 2*i]*1e-6, 'Curvature', [1 1]);

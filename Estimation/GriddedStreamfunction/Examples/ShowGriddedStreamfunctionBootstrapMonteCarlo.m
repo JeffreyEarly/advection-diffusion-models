@@ -82,11 +82,12 @@ for iModel = 1:nModels
         kappaEstimate = bootstrap.scalarSummary.kappaEstimate;
 
         data = [sigmaNMean(:), sigmaSMean(:)];
-        [~, density, X, Y] = kde2d(data);
+        densityModel = KernelDensityEstimate.fromData(data);
+        [density, gridVectors] = densityModel.densityOnGrid();
 
         figure('Name', plainFigureName, 'NumberTitle', 'off', 'Position', [50 50 900 400])
         subplot(2,4,[1 2 5 6])
-        contourf(X, Y, density);
+        contourf(gridVectors{1}, gridVectors{2}, density.');
         hold on
         for iRadius = 2:2:10
             rectangle('Position', [-iRadius -iRadius 2*iRadius 2*iRadius]*1e-6, 'Curvature', [1 1]);

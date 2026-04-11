@@ -20,7 +20,7 @@ Both estimation methods estimate linear velocity field parameters such as  strai
 The package is organized into four buckets:
 
 1. core direct-estimator APIs in the `LinearVelocityField` root
-2. shared density-estimation helpers in [DensityEstimation](DensityEstimation)
+2. shared density-estimation tools in [../DensityEstimation](../DensityEstimation)
 3. curated runnable scripts in [Examples](Examples), including the premier worked example in [Examples/FluidsPaperCaseStudy](Examples/FluidsPaperCaseStudy)
 4. second-moment estimation tools in [SecondMomentMethod](SecondMomentMethod)
 
@@ -106,7 +106,7 @@ Given a struct of bootstrap estimates, this will construct PDFs from the estimat
 Density estimation support
 ------------
 
-The helper functions [DensityEstimation/kde.m](DensityEstimation/kde.m), [DensityEstimation/kde2d.m](DensityEstimation/kde2d.m), and [DensityEstimation/DensityLevelForCDF.m](DensityEstimation/DensityLevelForCDF.m) provide the shared density-estimation and contour-level support used by bootstrap likelihood scoring and example visualizations.
+The shared density-estimation subsystem lives in [../DensityEstimation](../DensityEstimation). The public class [../DensityEstimation/@KernelDensityEstimate/KernelDensityEstimate.m](../DensityEstimation/@KernelDensityEstimate/KernelDensityEstimate.m) fits one-dimensional and two-dimensional Gaussian KDE models with Botev bandwidth selection, and [../DensityEstimation/DensityLevelForCDF.m](../DensityEstimation/DensityLevelForCDF.m) converts gridded densities into contour levels with prescribed enclosed mass for plotting.
 
 Second moment fits
 ------------

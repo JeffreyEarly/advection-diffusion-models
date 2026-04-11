@@ -16,7 +16,7 @@ function jointLikelihood = EstimateSolutionLikelihoodFromBootstraps(bootstraps,p
 %
 % This is the implementation of equation 36 in Oscroft, Sykulski and Early.
 %
-% Zdravko Botev (2020). kernel density estimation (https://www.mathworks.com/matlabcentral/fileexchange/17204-kernel-density-estimation), MATLAB Central File Exchange. Retrieved November 25, 2020.
+% Gaussian bootstrap densities are fit with `KernelDensityEstimate`.
 
 shouldEstimateU0V0 = 0;
 shouldEstimateU1V1 = 0;
@@ -71,28 +71,39 @@ end
 
 m = bootstraps;
 jointLikelihood = zeros(length(1:stride:nT),nBootstraps);
+iOutput = 1;
 for iTime=1:stride:nT
     if shouldEstimateU0V0 == 1    
-        [~,density,X,Y]=kde2d(cat(2,m.u0(iTime,:).',m.v0(iTime,:).'));
-        jointLikelihood(i,:) = jointLikelihood(i,:) + log10(interp2(X,Y,density,m.u0(iTime,:),m.v0(iTime,:)));
+        model = KernelDensityEstimate.fromData([m.u0(iTime, :).', m.v0(iTime, :).']);
+        pointDensity = model.densityAt([m.u0(iTime, :).', m.v0(iTime, :).']);
+        jointLikelihood(iOutput,:) = jointLikelihood(iOutput,:) + log10(safeDensity(pointDensity)).';
     end
     if shouldEstimateU1V1 == 1
-        [~,density,X,Y]=kde2d(cat(2,m.u1(iTime,:).',m.v1(iTime,:).'));
-        jointLikelihood(i,:) = jointLikelihood(i,:) + log10(interp2(X,Y,density,m.u1(iTime,:),m.v1(iTime,:)));
+        model = KernelDensityEstimate.fromData([m.u1(iTime, :).', m.v1(iTime, :).']);
+        pointDensity = model.densityAt([m.u1(iTime, :).', m.v1(iTime, :).']);
+        jointLikelihood(iOutput,:) = jointLikelihood(iOutput,:) + log10(safeDensity(pointDensity)).';
     end
     if shouldEstimateStrain == 1
-        [~,density,X,Y]=kde2d(cat(2,m.sigma_n(iTime,:).',m.sigma_s(iTime,:).'));
-        jointLikelihood(i,:) = jointLikelihood(i,:) + log10(interp2(X,Y,density,m.sigma_n(iTime,:),m.sigma_s(iTime,:)));
+        model = KernelDensityEstimate.fromData([m.sigma_n(iTime, :).', m.sigma_s(iTime, :).']);
+        pointDensity = model.densityAt([m.sigma_n(iTime, :).', m.sigma_s(iTime, :).']);
+        jointLikelihood(iOutput,:) = jointLikelihood(iOutput,:) + log10(safeDensity(pointDensity)).';
     end
     if shouldEstimateVorticity == 1
-        [~,density,X]=kde(m.zeta(iTime,:).');
-        jointLikelihood(i,:) = jointLikelihood(i,:) + log10(interp1(X,density,m.zeta(iTime,:)));
+        model = KernelDensityEstimate.fromData(m.zeta(iTime, :).');
+        pointDensity = model.densityAt(m.zeta(iTime, :).');
+        jointLikelihood(iOutput,:) = jointLikelihood(iOutput,:) + log10(safeDensity(pointDensity)).';
     end
     if shouldEstimateDivergence == 1
-        [~,density,X]=kde(m.delta(iTime,:).');
-        jointLikelihood(i,:) = jointLikelihood(i,:) + log10(interp1(X,density,m.delta(iTime,:)));
+        model = KernelDensityEstimate.fromData(m.delta(iTime, :).');
+        pointDensity = model.densityAt(m.delta(iTime, :).');
+        jointLikelihood(iOutput,:) = jointLikelihood(iOutput,:) + log10(safeDensity(pointDensity)).';
     end
+    iOutput = iOutput + 1;
 end
 jointLikelihood = sum(jointLikelihood,1);
 end
 
+function density = safeDensity(values)
+density = reshape(values, [], 1);
+density(~isfinite(density) | density <= 0) = realmin("double");
+end

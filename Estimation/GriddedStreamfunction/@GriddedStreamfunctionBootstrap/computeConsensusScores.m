@@ -41,8 +41,8 @@ if isConstantY
     return
 end
 
-[~, density, X, Y] = kde2d([xValues, yValues]);
-pointDensity = interp2(X, Y, density, xValues, yValues);
+model = KernelDensityEstimate.fromData([xValues, yValues]);
+pointDensity = model.densityAt([xValues, yValues]);
 score = log10(safeDensity(pointDensity)).';
 end
 
@@ -54,8 +54,8 @@ if isConstant(values)
     return
 end
 
-[~, density, xMesh] = kde(values);
-pointDensity = interp1(xMesh, density, values, "linear");
+model = KernelDensityEstimate.fromData(values);
+pointDensity = model.densityAt(values);
 score = log10(safeDensity(pointDensity)).';
 end
 
