@@ -27,8 +27,10 @@ myDotAll = reshape(self.centerOfMassTrajectory.v(allT), [], 1);
 [~, qAll, rAll] = centeredCoordinates(self, allT, allX, allY);
 validatePsiDomain(self, qAll, rAll, allT);
 
-uMesoscaleObserved = reshape(self.uMesoscale(allT, allX, allY), [], 1);
-vMesoscaleObserved = reshape(self.vMesoscale(allT, allX, allY), [], 1);
+uMesoscaleObserved = -self.streamfunctionSpline.valueAtPoints(qAll, rAll, allT, D=[0 1 0]);
+vMesoscaleObserved = self.streamfunctionSpline.valueAtPoints(qAll, rAll, allT, D=[1 0 0]);
+uMesoscaleObserved = reshape(uMesoscaleObserved, [], 1);
+vMesoscaleObserved = reshape(vMesoscaleObserved, [], 1);
 
 fastState = GriddedStreamfunction.fastBasisState(allT, self.fastKnotPoints, self.fastS, false);
 % Reuse the fast-basis factorization in the same least-squares projector B * (B \ A).

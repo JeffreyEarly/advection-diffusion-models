@@ -489,6 +489,18 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(sampleData.sampleSupportTimes, expectedSamples.sampleSupportTimes, "AbsTol", 1e-12)
         end
 
+        function decompositionSampleDataMesoscaleValuesMatchLegacyEvaluators(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction(trajectories);
+            sampleData = fit.decompositionSampleData(fit.observedTrajectories);
+
+            expectedU = reshape(fit.uMesoscale(sampleData.allT, sampleData.allX, sampleData.allY), [], 1);
+            expectedV = reshape(fit.vMesoscale(sampleData.allT, sampleData.allX, sampleData.allY), [], 1);
+
+            testCase.verifyEqual(sampleData.uMesoscaleObserved, expectedU, "AbsTol", 1e-12)
+            testCase.verifyEqual(sampleData.vMesoscaleObserved, expectedV, "AbsTol", 1e-12)
+        end
+
         function resampledTrajectorySampleDataMatchesDirectSampling(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             observedSampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);

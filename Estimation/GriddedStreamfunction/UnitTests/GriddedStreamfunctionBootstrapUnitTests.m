@@ -160,6 +160,21 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(scalarSummary.kappaEstimate, referenceScalarSummary.kappaEstimate, "AbsTol", 1e-12)
         end
 
+        function fullSummaryMatchesLegacyCenterDiagnostics(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=7);
+
+            [referenceSummary, referenceScalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
+                bootstrap.fullFit, bootstrap.queryTimes);
+
+            testCase.verifyEqual(bootstrap.fullSummary.uCenter, referenceSummary.uCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullSummary.vCenter, referenceSummary.vCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullSummary.sigma_n, referenceSummary.sigma_n, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullSummary.sigma_s, referenceSummary.sigma_s, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullSummary.zeta, referenceSummary.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, referenceScalarSummary.kappaEstimate, "AbsTol", 1e-12)
+        end
+
         function defaultKnotsStillReconstructExactly(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
