@@ -4,6 +4,9 @@ function decomposition = decomposeTrajectories(self, trajectories)
 % Use this method when a fitted `GriddedStreamfunction` should be applied
 % to a different collection of `TrajectorySpline` drifters without
 % refitting the mesoscale streamfunction or the center-of-mass trajectory.
+% The returned struct has the same field layout as `self.decomposition`,
+% but all trajectory vectors are aligned with the supplied
+% `trajectories` instead of `observedTrajectories`.
 %
 % The returned decomposition keeps the fitted
 % $$m_x(t), m_y(t), u^{\mathrm{meso}}, v^{\mathrm{meso}}$$ fixed and
@@ -25,6 +28,25 @@ function decomposition = decomposeTrajectories(self, trajectories)
 % \qquad
 % \dot{\tilde{y}} = v^{\mathrm{meso}}_{\mathrm{rel}} + v^{\mathrm{sm}}_{\mathrm{rel}}.
 % $$
+%
+% Each `decomposition.fixedFrame.background(k)` is the common fitted
+% background path re-anchored to zero at the first sample time of
+% `trajectories(k)`. The fixed-frame mesoscale path carries the supplied
+% drifter's observed initial position, while the fixed-frame and
+% centered-frame submesoscale paths are zero-anchored.
+%
+% ```matlab
+% decomposition = fit.decomposeTrajectories(otherTrajectories);
+% iDrifter = 1;
+% trajectory = otherTrajectories(iDrifter);
+% ti = trajectory.t;
+%
+% background = decomposition.fixedFrame.background(iDrifter);
+% mesoscale = decomposition.fixedFrame.mesoscale(iDrifter);
+% submesoscale = decomposition.fixedFrame.submesoscale(iDrifter);
+% uRecon = background.u(ti) + mesoscale.u(ti) + submesoscale.u(ti);
+% vRecon = background.v(ti) + mesoscale.v(ti) + submesoscale.v(ti);
+% ```
 %
 % - Topic: Apply fitted decomposition
 % - Declaration: decomposition = decomposeTrajectories(self,trajectories)
