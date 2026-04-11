@@ -5,6 +5,7 @@
 - raised the package dependency floor to `SplineCore ^2.2`
 - replaced the legacy `kde` and `kde2d` helpers with the shared `KernelDensityEstimate` subsystem under `Estimation/DensityEstimation`
 - updated bootstrap likelihood and consensus scoring to use direct KDE point evaluation from `KernelDensityEstimate`
+- optimized the one-dimensional `KernelDensityEstimate` bandwidth-selection path to reduce bootstrap and likelihood scoring cost
 
 ## [2.1.0] - 2026-04-09
 - updated the linear-velocity estimation path to the `Distributions` 2.0 named-argument API

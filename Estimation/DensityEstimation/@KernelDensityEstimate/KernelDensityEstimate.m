@@ -443,7 +443,22 @@ initialData = initialData/sum(initialData);
 a = discreteCosineTransform1D(initialData);
 iSquared = (1:(gridSize - 1))'.^2;
 aSquared = (a(2:end)/2).^2;
-piSquared = pi^2;
+maxOrder = 7;
+momentOrders = 2:maxOrder;
+expScale = iSquared * pi^2;
+orderMomentWeights = zeros(maxOrder - 1, numel(iSquared));
+for iOrder = 1:length(momentOrders)
+    orderMomentWeights(iOrder, :) = 2*pi^(2*momentOrders(iOrder)) * ((iSquared.^momentOrders(iOrder)) .* aSquared).';
+end
+recursiveNumerators = zeros(1, maxOrder - 2);
+recursiveExponents = zeros(1, maxOrder - 2);
+for s = 2:(maxOrder - 1)
+    k0 = prod(1:2:(2*s - 1))/sqrt(2*pi);
+    plugInConstant = (1 + (1/2)^(s + 1/2))/3;
+    recursiveNumerators(s - 1) = 2*plugInConstant*k0/sampleCount;
+    recursiveExponents(s - 1) = 2/(3 + 2*s);
+end
+finalResidualScale = 2*sampleCount*sqrt(pi);
 cachedTimes = zeros(0, 1);
 cachedResiduals = zeros(0, 1);
 tStar = smallestRoot(@fixedPointResidual, sampleCount);
@@ -456,21 +471,18 @@ bandwidth = sqrt(tStar) * rangeWidth;
             return
         end
 
-        l = 7;
-        momentValue = derivativeMoment(l, t);
-        for s = l - 1:-1:2
-            k0 = prod(1:2:(2*s - 1))/sqrt(2*pi);
-            const = (1 + (1/2)^(s + 1/2))/3;
-            timeValue = (2*const*k0/sampleCount/momentValue)^(2/(3 + 2*s));
+        momentValue = derivativeMoment(maxOrder, t);
+        for s = (maxOrder - 1):-1:2
+            timeValue = (recursiveNumerators(s - 1)/momentValue)^recursiveExponents(s - 1);
             momentValue = derivativeMoment(s, timeValue);
         end
-        residual = t - (2*sampleCount*sqrt(pi)*momentValue)^(-2/5);
+        residual = t - (finalResidualScale*momentValue)^(-2/5);
         cachedTimes(end + 1, 1) = t; %#ok<AGROW>
         cachedResiduals(end + 1, 1) = residual; %#ok<AGROW>
     end
 
     function momentValue = derivativeMoment(order, timeValue)
-        momentValue = 2*pi^(2*order) * sum((iSquared.^order) .* aSquared .* exp(-iSquared * piSquared * timeValue));
+        momentValue = orderMomentWeights(order - 1, :) * exp(-expScale * timeValue);
     end
 end
 

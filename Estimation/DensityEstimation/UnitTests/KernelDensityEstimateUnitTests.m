@@ -10,6 +10,49 @@ classdef KernelDensityEstimateUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(model.bandwidth, 2.21333986156179, "AbsTol", 1e-12)
         end
 
+        function fitOneDimensionalDataMatchesFrozenBandwidthOnAdditionalDataset(testCase)
+            datasets = KernelDensityEstimateUnitTests.oneDimensionalDatasets();
+            model = KernelDensityEstimate.fromData(datasets(2).data);
+
+            testCase.verifyEqual(model.bandwidth, datasets(2).bandwidth, "AbsTol", 1e-12)
+        end
+
+        function fitOneDimensionalDataIsPermutationInvariant(testCase)
+            datasets = KernelDensityEstimateUnitTests.oneDimensionalDatasets();
+
+            for iDataset = 1:numel(datasets)
+                data = datasets(iDataset).data;
+                baseline = KernelDensityEstimate.fromData(data);
+                permuted = KernelDensityEstimate.fromData(data(end:-1:1));
+
+                testCase.verifyEqual(permuted.bandwidth, baseline.bandwidth, "AbsTol", 1e-12)
+            end
+        end
+
+        function fitOneDimensionalDataIsTranslationInvariant(testCase)
+            datasets = KernelDensityEstimateUnitTests.oneDimensionalDatasets();
+            translation = 8;
+
+            for iDataset = 1:numel(datasets)
+                baseline = KernelDensityEstimate.fromData(datasets(iDataset).data);
+                translated = KernelDensityEstimate.fromData(datasets(iDataset).data + translation);
+
+                testCase.verifyEqual(translated.bandwidth, baseline.bandwidth, "AbsTol", 1e-12)
+            end
+        end
+
+        function fitOneDimensionalDataIsPositiveScaleEquivariant(testCase)
+            datasets = KernelDensityEstimateUnitTests.oneDimensionalDatasets();
+            scaleFactor = 4;
+
+            for iDataset = 1:numel(datasets)
+                baseline = KernelDensityEstimate.fromData(datasets(iDataset).data);
+                scaled = KernelDensityEstimate.fromData(datasets(iDataset).data * scaleFactor);
+
+                testCase.verifyEqual(scaled.bandwidth, baseline.bandwidth * scaleFactor, "AbsTol", 1e-10, "RelTol", 1e-10)
+            end
+        end
+
         function fitTwoDimensionalDataPreservesLegacyKde2dBandwidthSmokeTest(testCase)
             data = KernelDensityEstimateUnitTests.twoDimensionalData();
             model = KernelDensityEstimate.fromData(data);
@@ -167,7 +210,20 @@ classdef KernelDensityEstimateUnitTests < matlab.unittest.TestCase
 
     methods (Static, Access = private)
         function data = oneDimensionalData()
-            data = [-3.1; -1.2; -0.8; 0.1; 0.4; 0.9; 1.7; 2.4; 3.0];
+            datasets = KernelDensityEstimateUnitTests.oneDimensionalDatasets();
+            data = datasets(1).data;
+        end
+
+        function datasets = oneDimensionalDatasets()
+            datasets = [ ...
+                struct( ...
+                    "name", "Original sparse sample", ...
+                    "data", [-3.1; -1.2; -0.8; 0.1; 0.4; 0.9; 1.7; 2.4; 3.0], ...
+                    "bandwidth", 2.21333986156179), ...
+                struct( ...
+                    "name", "Bimodal cloud with repeated sample", ...
+                    "data", [-5.0; -4.5; -4.0; -3.0; 2.5; 3.0; 3.0; 4.0; 4.5; 5.0], ...
+                    "bandwidth", 1.73785891998607)];
         end
 
         function data = twoDimensionalData()
