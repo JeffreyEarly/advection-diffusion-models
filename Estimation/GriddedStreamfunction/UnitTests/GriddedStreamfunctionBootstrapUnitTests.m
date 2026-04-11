@@ -389,6 +389,15 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
 
             testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, legacyKappa, "AbsTol", 1e-12)
         end
+
+        function scalarDiffusivityDiagnosticMatchesDirectTotalDisplacementFormula(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+
+            directKappa = GriddedStreamfunctionBootstrapUnitTests.totalDisplacementKappaFromSubmesoscaleTrajectories(bootstrap.fullFit);
+
+            testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, directKappa, "AbsTol", 1e-12)
+        end
     end
 
     methods (Static)
@@ -546,6 +555,26 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 yEnd = cumsum(vSpline);
                 kappaValues(iTrajectory) = (xEnd(ti(end)).^2 + yEnd(ti(end)).^2) / (4 * duration);
                 sampleStartIndex = sampleStartIndex + nSamples;
+            end
+
+            kappaEstimate = mean(kappaValues);
+        end
+
+        function kappaEstimate = totalDisplacementKappaFromSubmesoscaleTrajectories(fit)
+            trajectories = reshape(fit.decomposition.fixedFrame.submesoscale, [], 1);
+            nTrajectories = numel(trajectories);
+            kappaValues = zeros(nTrajectories, 1);
+
+            for iTrajectory = 1:nTrajectories
+                trajectory = trajectories(iTrajectory);
+                ti = trajectory.t;
+                duration = ti(end) - ti(1);
+                componentS = min(3, numel(ti) - 1);
+                tKnot = BSpline.knotPointsForDataPoints(ti, S=componentS);
+                totalDisplacementWeights = BSpline.integralMatrixForDataPoints(ti, ti(end), knotPoints=tKnot, S=componentS);
+                xTotal = totalDisplacementWeights * reshape(trajectory.u(ti), [], 1);
+                yTotal = totalDisplacementWeights * reshape(trajectory.v(ti), [], 1);
+                kappaValues(iTrajectory) = (xTotal.^2 + yTotal.^2) / (4 * duration);
             end
 
             kappaEstimate = mean(kappaValues);
