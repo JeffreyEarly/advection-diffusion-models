@@ -521,10 +521,23 @@ for iOrderY = 0:5
         psiScale(iOrderY + 1, iOrderX + 1) = (-1)^(iOrderX + iOrderY) * pi^(2 * (iOrderX + iOrderY));
     end
 end
+funcTimeNumerator = zeros(6, 6);
+funcTimeExponent = zeros(6, 6);
+for iOrderY = 0:5
+    for iOrderX = 0:5
+        sumOrder = iOrderX + iOrderY;
+        if sumOrder <= 4
+            funcTimeNumerator(iOrderY + 1, iOrderX + 1) = -2*orderConstants(sumOrder + 1) * kernelConstants(iOrderX + 1) * kernelConstants(iOrderY + 1)/sampleCount;
+            funcTimeExponent(iOrderY + 1, iOrderX + 1) = 1/(2 + sumOrder);
+        end
+    end
+end
+columnWeightedSpectra = cell(1, 6);
+for iOrderX = 0:5
+    columnWeightedSpectra{iOrderX + 1} = weightedSpectrum .* iPowers{iOrderX + 1};
+end
 baseOrderX = [5 4 3 2 1 0];
 baseOrderY = [0 1 2 3 4 5];
-weightedOrderTimes = zeros(0, 1);
-weightedOrderValues = cell(0, 1);
 objectiveCacheTimes = zeros(0, 1);
 objectiveCacheValues = zeros(0, 1);
 objectiveCacheMoments = zeros(0, 3);
@@ -585,14 +598,12 @@ bandwidth = sqrt([tX tY]).*scaling;
     end
 
     function value = funcFromChildren(orderX, orderY, leftChild, rightChild)
-        sumOrder = orderX + orderY;
-        timeValue = (-2*orderConstants(sumOrder + 1)*kernelConstants(orderX + 1)*kernelConstants(orderY + 1)/sampleCount/(leftChild + rightChild)) ...
-            ^(1/(2 + sumOrder));
+        timeValue = (funcTimeNumerator(orderY + 1, orderX + 1)/(leftChild + rightChild))^funcTimeExponent(orderY + 1, orderX + 1);
         value = psiValue(orderX, orderY, timeValue);
     end
 
     function values = baseOrderFiveValues(timeValue)
-        weightedOrders = weightedOrdersAtTime(timeValue);
+        weightedOrders = orderPowerMatrix .* exp(-iSquared * piSquared * timeValue);
         rowProducts = weightedOrders * weightedSpectrum;
         values = zeros(1, 6);
         for iValue = 1:6
@@ -604,22 +615,10 @@ bandwidth = sqrt([tX tY]).*scaling;
     end
 
     function value = psiValue(orderX, orderY, timeValue)
-        weightedOrders = weightedOrdersAtTime(timeValue);
-        value = psiScale(orderY + 1, orderX + 1) * ...
-            (weightedOrders(orderY + 1, :) * weightedSpectrum * weightedOrders(orderX + 1, :).');
-    end
-
-    function weightedOrders = weightedOrdersAtTime(timeValue)
-        iCached = find(weightedOrderTimes == timeValue, 1);
-        if ~isempty(iCached)
-            weightedOrders = weightedOrderValues{iCached};
-            return
-        end
-
         baseWeight = exp(-iSquared * piSquared * timeValue);
-        weightedOrders = orderPowerMatrix .* baseWeight;
-        weightedOrderTimes(end + 1, 1) = timeValue; %#ok<AGROW>
-        weightedOrderValues{end + 1, 1} = weightedOrders; %#ok<AGROW>
+        weightedOrderY = iPowers{orderY + 1} .* baseWeight;
+        value = psiScale(orderY + 1, orderX + 1) * ...
+            (weightedOrderY * columnWeightedSpectra{orderX + 1} * baseWeight.');
     end
 end
 
