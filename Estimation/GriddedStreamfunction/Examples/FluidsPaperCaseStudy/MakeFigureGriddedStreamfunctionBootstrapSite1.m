@@ -19,7 +19,7 @@ end
 trajectories = vertcat(trajectoryCell{:});
 
 bootstrap = loadOrBuildCaseStudyBootstrap( ...
-    1, trajectories, nBootstraps=1000, randomSeed=0, scoreStride=6, psiS=[2 2 4], mesoscaleConstraint="zeroVorticity");
+    1, trajectories, nBootstraps=1000, randomSeed=0, scoreStride=6, psiS=[2 2 3], mesoscaleConstraint="zeroVorticity");
 bestFit = bootstrap.bestFit();
 decomposition = bestFit.decomposeTrajectories(trajectories);
 

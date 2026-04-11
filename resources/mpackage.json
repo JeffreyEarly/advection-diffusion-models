@@ -62,6 +62,30 @@
             ]
         },
         {
+            "path": "Estimation/MethodComparison",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison/Examples",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison/Examples/FluidsPaperCaseStudy",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
+            "path": "Estimation/MethodComparison/UnitTests",
+            "languages": [
+                "matlab"
+            ]
+        },
+        {
             "path": "Integrators",
             "languages": [
                 "matlab"
