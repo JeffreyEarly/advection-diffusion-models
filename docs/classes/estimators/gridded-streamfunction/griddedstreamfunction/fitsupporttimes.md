@@ -3,7 +3,7 @@ layout: default
 title: fitSupportTimes
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 9
+nav_order: 11
 mathjax: true
 ---
 
@@ -13,7 +13,4 @@ Sorted unique observation times used as trajectory support.
 
 
 ---
-
-## Discussion
-
 

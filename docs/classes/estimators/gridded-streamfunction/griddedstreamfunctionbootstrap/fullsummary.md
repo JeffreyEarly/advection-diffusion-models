@@ -3,7 +3,7 @@ layout: default
 title: fullSummary
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 9
+nav_order: 32
 mathjax: true
 ---
 

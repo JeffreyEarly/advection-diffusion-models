@@ -1,4 +1,4 @@
-classdef GriddedStreamfunction < handle
+classdef GriddedStreamfunction < CAAnnotatedClass
     % Fit a COM-frame streamfunction estimator and trajectory decomposition.
     %
     % `GriddedStreamfunction` fits a mesoscale streamfunction
@@ -45,20 +45,22 @@ classdef GriddedStreamfunction < handle
     % the centered submesoscale trajectory is zero-anchored.
     %
     % ```matlab
-    % fit = GriddedStreamfunction(trajectories);
+    % fit = GriddedStreamfunction.fromTrajectories(trajectories);
     % uMeso = fit.uMesoscale(tQuery, xQuery, yQuery);
     % xMeso = fit.decomposition.fixedFrame.mesoscale(1).x(tQuery);
     % decomposition = fit.decomposeTrajectories(otherTrajectories);
     % ```
     %
     % - Topic: Fit the estimator
+    % - Topic: Read from file
+    % - Topic: Write to file
     % - Topic: Inspect fitted components
     % - Topic: Inspect decomposition trajectories
     % - Topic: Apply fitted decomposition
     % - Topic: Evaluate fitted mesoscale
     % - Topic: Evaluate fitted diagnostics
     % - Topic: Visualize strain angle
-    % - Declaration: classdef GriddedStreamfunction < handle
+    % - Declaration: classdef GriddedStreamfunction < CAAnnotatedClass
 
     properties (SetAccess = private)
         % Fitted COM-frame mesoscale streamfunction spline.
@@ -99,6 +101,28 @@ classdef GriddedStreamfunction < handle
         % - Topic: Inspect fitted components
         backgroundTrajectory
 
+        % Hard constraint applied to the fitted mesoscale streamfunction.
+        %
+        % `mesoscaleConstraint` is `"none"`, `"zeroVorticity"`, or
+        % `"zeroStrain"`.
+        %
+        % - Topic: Inspect fitted components
+        mesoscaleConstraint string = "none"
+
+        % Representative pooled times from the stride-rule fast basis.
+        %
+        % This is empty when `fastKnotPoints` are supplied directly.
+        %
+        % - Topic: Inspect fitted components
+        representativeTimes
+
+        % Sorted unique observation times used as trajectory support.
+        %
+        % - Topic: Inspect fitted components
+        fitSupportTimes
+    end
+
+    properties (Dependent)
         % Per-drifter decomposition trajectories in fixed and centered frames.
         %
         % Use `fit.decomposition` to inspect how the fitted estimator
@@ -162,7 +186,7 @@ classdef GriddedStreamfunction < handle
         % ```
         %
         % - Topic: Inspect decomposition trajectories
-        decomposition struct = struct()
+        decomposition
 
         % Fast temporal knot vector used for COM and background fits.
         %
@@ -183,26 +207,14 @@ classdef GriddedStreamfunction < handle
         %
         % - Topic: Inspect fitted components
         psiS
+    end
 
-        % Hard constraint applied to the fitted mesoscale streamfunction.
-        %
-        % `mesoscaleConstraint` is `"none"`, `"zeroVorticity"`, or
-        % `"zeroStrain"`.
-        %
-        % - Topic: Inspect fitted components
-        mesoscaleConstraint string = "none"
-
-        % Representative pooled times from the stride-rule fast basis.
-        %
-        % This is empty when `fastKnotPoints` are supplied directly.
-        %
-        % - Topic: Inspect fitted components
-        representativeTimes
-
-        % Sorted unique observation times used as trajectory support.
-        %
-        % - Topic: Inspect fitted components
-        fitSupportTimes
+    properties (Hidden, SetAccess = private)
+        fixedFrameBackgroundTrajectories = TrajectorySpline.empty(0, 1)
+        fixedFrameMesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+        fixedFrameSubmesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+        centeredFrameMesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+        centeredFrameSubmesoscaleTrajectories = TrajectorySpline.empty(0, 1)
     end
 
     properties (Access = private)
@@ -210,10 +222,105 @@ classdef GriddedStreamfunction < handle
     end
 
     methods
-        function self = GriddedStreamfunction(trajectories, options)
+        function self = GriddedStreamfunction(options)
+            % Create a fit from canonical solved-state properties.
+            %
+            % Use this low-level constructor when the fitted spline state
+            % is already available, for example after reading a persisted
+            % restart file. For fitting from observed drifter trajectories,
+            % use `GriddedStreamfunction.fromTrajectories(...)`.
+            %
+            % ```matlab
+            % fit = GriddedStreamfunction( ...
+            %     streamfunctionSpline=psiSpline, ...
+            %     observedTrajectories=trajectories, ...
+            %     centerOfMassTrajectory=centerTrajectory, ...
+            %     backgroundTrajectory=backgroundTrajectory, ...
+            %     fixedFrameBackgroundTrajectories=backgroundTrajectories, ...
+            %     fixedFrameMesoscaleTrajectories=mesoscaleTrajectories, ...
+            %     fixedFrameSubmesoscaleTrajectories=submesoscaleTrajectories, ...
+            %     centeredFrameMesoscaleTrajectories=centeredMesoscaleTrajectories, ...
+            %     centeredFrameSubmesoscaleTrajectories=centeredSubmesoscaleTrajectories, ...
+            %     mesoscaleConstraint="none", ...
+            %     representativeTimes=representativeTimes, ...
+            %     fitSupportTimes=fitSupportTimes);
+            % ```
+            %
+            % - Topic: Fit the estimator
+            % - Declaration: self = GriddedStreamfunction(options)
+            % - Parameter options.streamfunctionSpline: fitted centered-frame mesoscale streamfunction spline
+            % - Parameter options.observedTrajectories: observed drifter trajectory splines aligned with the fit
+            % - Parameter options.centerOfMassTrajectory: fitted center-of-mass trajectory
+            % - Parameter options.backgroundTrajectory: fitted common background trajectory
+            % - Parameter options.fixedFrameBackgroundTrajectories: stored fixed-frame background decomposition trajectories
+            % - Parameter options.fixedFrameMesoscaleTrajectories: stored fixed-frame mesoscale decomposition trajectories
+            % - Parameter options.fixedFrameSubmesoscaleTrajectories: stored fixed-frame submesoscale decomposition trajectories
+            % - Parameter options.centeredFrameMesoscaleTrajectories: stored centered-frame mesoscale decomposition trajectories
+            % - Parameter options.centeredFrameSubmesoscaleTrajectories: stored centered-frame submesoscale decomposition trajectories
+            % - Parameter options.mesoscaleConstraint: hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
+            % - Parameter options.representativeTimes: pooled representative times from the stride-rule fast basis
+            % - Parameter options.fitSupportTimes: sorted unique observation times used as trajectory support
+            % - Returns self: canonical `GriddedStreamfunction` instance
+            arguments
+                options.streamfunctionSpline = TensorSpline.empty(0, 1)
+                options.observedTrajectories = TrajectorySpline.empty(0, 1)
+                options.centerOfMassTrajectory = TrajectorySpline.empty(0, 1)
+                options.backgroundTrajectory = TrajectorySpline.empty(0, 1)
+                options.fixedFrameBackgroundTrajectories = TrajectorySpline.empty(0, 1)
+                options.fixedFrameMesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+                options.fixedFrameSubmesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+                options.centeredFrameMesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+                options.centeredFrameSubmesoscaleTrajectories = TrajectorySpline.empty(0, 1)
+                options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
+                options.representativeTimes (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.fitSupportTimes (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+            end
+
+            self@CAAnnotatedClass();
+
+            if nargin == 0
+                return
+            end
+
+            GriddedStreamfunction.validateCanonicalState(options);
+            self.streamfunctionSpline = options.streamfunctionSpline;
+            self.observedTrajectories = reshape(options.observedTrajectories, [], 1);
+            self.centerOfMassTrajectory = options.centerOfMassTrajectory;
+            self.backgroundTrajectory = reshape(options.backgroundTrajectory, [], 1);
+            self.fixedFrameBackgroundTrajectories = reshape(options.fixedFrameBackgroundTrajectories, [], 1);
+            self.fixedFrameMesoscaleTrajectories = reshape(options.fixedFrameMesoscaleTrajectories, [], 1);
+            self.fixedFrameSubmesoscaleTrajectories = reshape(options.fixedFrameSubmesoscaleTrajectories, [], 1);
+            self.centeredFrameMesoscaleTrajectories = reshape(options.centeredFrameMesoscaleTrajectories, [], 1);
+            self.centeredFrameSubmesoscaleTrajectories = reshape(options.centeredFrameSubmesoscaleTrajectories, [], 1);
+            self.mesoscaleConstraint = string(options.mesoscaleConstraint);
+            self.representativeTimes = options.representativeTimes;
+            self.fitSupportTimes = options.fitSupportTimes;
+            self.refreshObservedTrajectorySampleData();
+        end
+    end
+
+    methods (Static)
+        function self = fromFile(path)
+            % Read a fitted estimator from a NetCDF restart file.
+            %
+            % `fromFile` reconstructs the canonical solved state written by
+            % `writeToFile` without rerunning the trajectory fit.
+            %
+            % - Topic: Read from file
+            % - Declaration: self = fromFile(path)
+            % - Parameter path: path to the NetCDF restart file
+            % - Returns self: reconstructed `GriddedStreamfunction` estimator
+            arguments (Input)
+                path {mustBeTextScalar}
+            end
+
+            self = griddedStreamfunctionFromFile(char(path));
+        end
+
+        function self = fromTrajectories(trajectories, options)
             % Fit the estimator from drifter trajectory splines.
             %
-            % Use this constructor with one `TrajectorySpline` per drifter.
+            % Use this factory with one `TrajectorySpline` per drifter.
             % Positions are sampled with `trajectory.x(trajectory.t)` and
             % `trajectory.y(trajectory.t)`, and observed velocities are the
             % first derivatives of the same trajectory splines.
@@ -227,7 +334,7 @@ classdef GriddedStreamfunction < handle
             % zero-strain mesoscale fit.
             %
             % - Topic: Fit the estimator
-            % - Declaration: self = GriddedStreamfunction(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
+            % - Declaration: self = fromTrajectories(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
             % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
             % - Parameter psiKnotPoints: optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
             % - Parameter psiS: optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
@@ -293,6 +400,7 @@ classdef GriddedStreamfunction < handle
                 end
             end
 
+            self = GriddedStreamfunction();
             fitTrajectorySplines( ...
                 self, ...
                 trajectories, ...
@@ -304,7 +412,69 @@ classdef GriddedStreamfunction < handle
                 options.buildDecomposition, ...
                 sampleData);
         end
+    end
 
+    methods
+        function decomposition = get.decomposition(self)
+            if isempty(self.fixedFrameBackgroundTrajectories)
+                decomposition = struct();
+                return
+            end
+
+            decomposition = struct( ...
+                "fixedFrame", struct( ...
+                    "background", self.fixedFrameBackgroundTrajectories, ...
+                    "mesoscale", self.fixedFrameMesoscaleTrajectories, ...
+                    "submesoscale", self.fixedFrameSubmesoscaleTrajectories), ...
+                "centeredFrame", struct( ...
+                    "mesoscale", self.centeredFrameMesoscaleTrajectories, ...
+                    "submesoscale", self.centeredFrameSubmesoscaleTrajectories));
+        end
+
+        function fastKnotPoints = get.fastKnotPoints(self)
+            if isempty(self.centerOfMassTrajectory)
+                fastKnotPoints = zeros(0, 1);
+                return
+            end
+
+            fastKnotPoints = reshape(self.centerOfMassTrajectory.x.knotPoints, [], 1);
+        end
+
+        function fastS = get.fastS(self)
+            if isempty(self.centerOfMassTrajectory)
+                fastS = [];
+                return
+            end
+
+            fastS = reshape(self.centerOfMassTrajectory.x.S, 1, []);
+        end
+
+        function psiKnotPoints = get.psiKnotPoints(self)
+            if isempty(self.streamfunctionSpline)
+                psiKnotPoints = cell(1, 0);
+                return
+            end
+
+            psiKnotPoints = self.streamfunctionSpline.knotPoints;
+        end
+
+        function psiS = get.psiS(self)
+            if isempty(self.streamfunctionSpline)
+                psiS = [];
+                return
+            end
+
+            psiS = reshape(self.streamfunctionSpline.S, 1, []);
+        end
+    end
+
+    methods (Access = protected)
+        function restoreOptionalPersistedPropertiesFromGroup(self, ~)
+            self.refreshObservedTrajectorySampleData();
+        end
+    end
+
+    methods
         function values = uBackground(self, t)
             % Evaluate the fitted background x-velocity.
             %
@@ -478,10 +648,132 @@ classdef GriddedStreamfunction < handle
         sampleData = resampledTrajectorySampleData(observedSampleData, sampledIndices)
     end
 
+    methods (Static, Hidden)
+        function self = annotatedClassFromGroup(group)
+            vars = CAAnnotatedClass.propertyValuesFromGroup(group, { ...
+                'observedTrajectories', ...
+                'fixedFrameBackgroundTrajectories', ...
+                'fixedFrameMesoscaleTrajectories', ...
+                'fixedFrameSubmesoscaleTrajectories', ...
+                'centeredFrameMesoscaleTrajectories', ...
+                'centeredFrameSubmesoscaleTrajectories', ...
+                'mesoscaleConstraint', ...
+                'representativeTimes', ...
+                'fitSupportTimes'});
+            vars.streamfunctionSpline = TensorSpline.annotatedClassFromGroup(group.groupWithName('streamfunctionSpline'));
+            vars.centerOfMassTrajectory = TrajectorySpline.annotatedClassFromGroup(group.groupWithName('centerOfMassTrajectory'));
+            vars.backgroundTrajectory = TrajectorySpline.annotatedClassFromGroup(group.groupWithName('backgroundTrajectory'));
+            GriddedStreamfunction.validateCanonicalState(vars);
+
+            self = GriddedStreamfunction();
+            self.streamfunctionSpline = vars.streamfunctionSpline;
+            self.observedTrajectories = reshape(vars.observedTrajectories, [], 1);
+            self.centerOfMassTrajectory = vars.centerOfMassTrajectory;
+            self.backgroundTrajectory = reshape(vars.backgroundTrajectory, [], 1);
+            self.fixedFrameBackgroundTrajectories = reshape(vars.fixedFrameBackgroundTrajectories, [], 1);
+            self.fixedFrameMesoscaleTrajectories = reshape(vars.fixedFrameMesoscaleTrajectories, [], 1);
+            self.fixedFrameSubmesoscaleTrajectories = reshape(vars.fixedFrameSubmesoscaleTrajectories, [], 1);
+            self.centeredFrameMesoscaleTrajectories = reshape(vars.centeredFrameMesoscaleTrajectories, [], 1);
+            self.centeredFrameSubmesoscaleTrajectories = reshape(vars.centeredFrameSubmesoscaleTrajectories, [], 1);
+            self.mesoscaleConstraint = string(vars.mesoscaleConstraint);
+            self.representativeTimes = vars.representativeTimes;
+            self.fitSupportTimes = vars.fitSupportTimes;
+            self.refreshObservedTrajectorySampleData();
+        end
+
+        function propertyAnnotations = classDefinedPropertyAnnotations()
+            propertyAnnotations = CAPropertyAnnotation.empty(0, 0);
+            propertyAnnotations(end+1) = CAObjectProperty('streamfunctionSpline', 'Fitted centered-frame mesoscale streamfunction spline.');
+            propertyAnnotations(end+1) = CAObjectProperty('observedTrajectories', 'Observed drifter trajectory splines used for the fit.');
+            propertyAnnotations(end+1) = CAObjectProperty('centerOfMassTrajectory', 'Fitted center-of-mass trajectory.');
+            propertyAnnotations(end+1) = CAObjectProperty('backgroundTrajectory', 'Fitted common background trajectory.');
+            propertyAnnotations(end+1) = CAObjectProperty('fixedFrameBackgroundTrajectories', 'Stored fixed-frame background decomposition trajectories.');
+            propertyAnnotations(end+1) = CAObjectProperty('fixedFrameMesoscaleTrajectories', 'Stored fixed-frame mesoscale decomposition trajectories.');
+            propertyAnnotations(end+1) = CAObjectProperty('fixedFrameSubmesoscaleTrajectories', 'Stored fixed-frame submesoscale decomposition trajectories.');
+            propertyAnnotations(end+1) = CAObjectProperty('centeredFrameMesoscaleTrajectories', 'Stored centered-frame mesoscale decomposition trajectories.');
+            propertyAnnotations(end+1) = CAObjectProperty('centeredFrameSubmesoscaleTrajectories', 'Stored centered-frame submesoscale decomposition trajectories.');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('mesoscaleConstraint', 'Hard mesoscale constraint applied to the fit.');
+            propertyAnnotations(end+1) = CADimensionProperty('representativeTimes', '', 'Representative pooled times from the stride-rule fast basis.');
+            propertyAnnotations(end+1) = CADimensionProperty('fitSupportTimes', '', 'Sorted unique observation times used as trajectory support.');
+        end
+
+        function names = classRequiredPropertyNames()
+            names = { ...
+                'streamfunctionSpline', ...
+                'observedTrajectories', ...
+                'centerOfMassTrajectory', ...
+                'backgroundTrajectory', ...
+                'fixedFrameBackgroundTrajectories', ...
+                'fixedFrameMesoscaleTrajectories', ...
+                'fixedFrameSubmesoscaleTrajectories', ...
+                'centeredFrameMesoscaleTrajectories', ...
+                'centeredFrameSubmesoscaleTrajectories', ...
+                'mesoscaleConstraint', ...
+                'representativeTimes', ...
+                'fitSupportTimes'};
+        end
+    end
+
     methods (Static, Access = private)
+        function validateCanonicalState(options)
+            if isempty(options.streamfunctionSpline) && isempty(options.observedTrajectories) && ...
+                    isempty(options.centerOfMassTrajectory) && isempty(options.backgroundTrajectory) && ...
+                    isempty(options.fixedFrameBackgroundTrajectories) && isempty(options.fixedFrameMesoscaleTrajectories) && ...
+                    isempty(options.fixedFrameSubmesoscaleTrajectories) && isempty(options.centeredFrameMesoscaleTrajectories) && ...
+                    isempty(options.centeredFrameSubmesoscaleTrajectories) && isempty(options.representativeTimes) && ...
+                    isempty(options.fitSupportTimes) && string(options.mesoscaleConstraint) == "none"
+                return
+            end
+
+            if ~(isa(options.streamfunctionSpline, 'TensorSpline') && isscalar(options.streamfunctionSpline))
+                error('GriddedStreamfunction:InvalidCanonicalState', ...
+                    'streamfunctionSpline must be a scalar TensorSpline.');
+            end
+            if ~(isa(options.observedTrajectories, 'TrajectorySpline') && isvector(options.observedTrajectories) && ~isempty(options.observedTrajectories))
+                error('GriddedStreamfunction:InvalidCanonicalState', ...
+                    'observedTrajectories must be a nonempty vector of TrajectorySpline objects.');
+            end
+            if ~(isa(options.centerOfMassTrajectory, 'TrajectorySpline') && isscalar(options.centerOfMassTrajectory))
+                error('GriddedStreamfunction:InvalidCanonicalState', ...
+                    'centerOfMassTrajectory must be a scalar TrajectorySpline.');
+            end
+            if ~(isa(options.backgroundTrajectory, 'TrajectorySpline') && isvector(options.backgroundTrajectory))
+                error('GriddedStreamfunction:InvalidCanonicalState', ...
+                    'backgroundTrajectory must be a TrajectorySpline or empty TrajectorySpline array.');
+            end
+
+            trajectoryArrays = { ...
+                options.fixedFrameBackgroundTrajectories, ...
+                options.fixedFrameMesoscaleTrajectories, ...
+                options.fixedFrameSubmesoscaleTrajectories, ...
+                options.centeredFrameMesoscaleTrajectories, ...
+                options.centeredFrameSubmesoscaleTrajectories};
+            for iArray = 1:numel(trajectoryArrays)
+                if ~(isa(trajectoryArrays{iArray}, 'TrajectorySpline') && isvector(trajectoryArrays{iArray}))
+                    error('GriddedStreamfunction:InvalidCanonicalState', ...
+                        'Stored decomposition trajectories must be TrajectorySpline vectors.');
+                end
+            end
+
+            if ~isempty(options.backgroundTrajectory) && ~isscalar(options.backgroundTrajectory)
+                error('GriddedStreamfunction:InvalidCanonicalState', ...
+                    'backgroundTrajectory must be a scalar TrajectorySpline when it is present.');
+            end
+        end
+
         representativeTimes = representativeObservationTimes(tCell)
         psiKnotPoints = defaultPsiKnotPoints(qAll, rAll, tAll, psiS)
         Aeq = mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint)
         fastState = fastBasisState(allT, fastKnotPoints, fastS, shouldComputeDerivative)
+    end
+
+    methods (Access = private)
+        function refreshObservedTrajectorySampleData(self)
+            if isempty(self.observedTrajectories)
+                self.observedTrajectorySampleData = struct([]);
+            else
+                self.observedTrajectorySampleData = GriddedStreamfunction.sampleTrajectoryData(self.observedTrajectories);
+            end
+        end
     end
 end

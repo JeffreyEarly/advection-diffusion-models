@@ -1,8 +1,4 @@
-function [summary, scalarSummary] = extractSummaryFromFit(fit, queryTimes, totalDisplacementWeightsByTrajectory)
-if nargin < 3
-    totalDisplacementWeightsByTrajectory = {};
-end
-
+function summary = extractSummaryFromFit(fit, queryTimes)
 qCenter = zeros(size(queryTimes));
 rCenter = zeros(size(queryTimes));
 uCenter = -fit.streamfunctionSpline.valueAtPoints(qCenter, rCenter, queryTimes, D=[0 1 0]);
@@ -17,6 +13,4 @@ summary = struct( ...
     "sigma_n", reshape(sigma_n, [], 1), ...
     "sigma_s", reshape(dqq - drr, [], 1), ...
     "zeta", reshape(dqq + drr, [], 1));
-scalarSummary = struct( ...
-    "kappaEstimate", GriddedStreamfunctionBootstrap.kappaEstimateFromFit(fit, totalDisplacementWeightsByTrajectory));
 end

@@ -24,7 +24,7 @@ for iDrifter = 1:size(x, 2)
     trajectories(end+1, 1) = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
 
-fit = GriddedStreamfunction(trajectories);
+fit = GriddedStreamfunction.fromTrajectories(trajectories);
 tGrid = repmat(t, 1, size(x, 2));
 
 uBackgroundFit = fit.uBackground(t);

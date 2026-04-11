@@ -3,7 +3,7 @@ layout: default
 title: summaryQuantiles
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 18
+nav_order: 49
 mathjax: true
 ---
 
@@ -29,7 +29,7 @@ Return bootstrap quantiles for the stored summaries.
   The returned struct contains the time-varying summary fields
   `uCenter`, `vCenter`, `sigma_n`, `sigma_s`, and `zeta` with
   size `[numel(queryTimes) numel(probabilities)]`, together
-  with the scalar field `kappaEstimate` of size
+  with the scalar fields `kappa` and `coherence` of size
   `[1 numel(probabilities)]`.
 
 

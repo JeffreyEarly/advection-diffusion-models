@@ -3,7 +3,7 @@ layout: default
 title: psiMesoscale
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 13
+nav_order: 20
 mathjax: true
 ---
 

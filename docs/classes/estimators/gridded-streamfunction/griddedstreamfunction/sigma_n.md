@@ -3,7 +3,7 @@ layout: default
 title: sigma_n
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 16
+nav_order: 23
 mathjax: true
 ---
 

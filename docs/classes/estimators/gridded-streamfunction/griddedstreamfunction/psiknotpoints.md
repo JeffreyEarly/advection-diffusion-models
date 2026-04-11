@@ -3,7 +3,7 @@ layout: default
 title: psiKnotPoints
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 12
+nav_order: 19
 mathjax: true
 ---
 

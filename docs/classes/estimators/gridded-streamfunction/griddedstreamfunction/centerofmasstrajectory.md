@@ -14,9 +14,3 @@ Fitted center-of-mass trajectory.
 
 ---
 
-## Discussion
-
-  `centerOfMassTrajectory.x(t)` evaluates $$m_x(t)$$ and
-  `centerOfMassTrajectory.y(t)` evaluates $$m_y(t)$$.
-
-

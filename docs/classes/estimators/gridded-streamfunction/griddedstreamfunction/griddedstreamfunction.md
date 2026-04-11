@@ -9,39 +9,53 @@ mathjax: true
 
 #  GriddedStreamfunction
 
-Fit the estimator from drifter trajectory splines.
+Create a fit from canonical solved-state properties.
 
 
 ---
 
 ## Declaration
 ```matlab
- self = GriddedStreamfunction(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
+ self = GriddedStreamfunction(options)
 ```
 ## Parameters
-+ `trajectories`  nonempty vector of `TrajectorySpline` drifters
-+ `psiKnotPoints`  optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
-+ `psiS`  optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
-+ `fastKnotPoints`  optional fast temporal knot vector for COM and background
-+ `fastS`  optional fast temporal spline degree, default `3`
-+ `mesoscaleConstraint`  optional hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
++ `options.streamfunctionSpline`  fitted centered-frame mesoscale streamfunction spline
++ `options.observedTrajectories`  observed drifter trajectory splines aligned with the fit
++ `options.centerOfMassTrajectory`  fitted center-of-mass trajectory
++ `options.backgroundTrajectory`  fitted common background trajectory
++ `options.fixedFrameBackgroundTrajectories`  stored fixed-frame background decomposition trajectories
++ `options.fixedFrameMesoscaleTrajectories`  stored fixed-frame mesoscale decomposition trajectories
++ `options.fixedFrameSubmesoscaleTrajectories`  stored fixed-frame submesoscale decomposition trajectories
++ `options.centeredFrameMesoscaleTrajectories`  stored centered-frame mesoscale decomposition trajectories
++ `options.centeredFrameSubmesoscaleTrajectories`  stored centered-frame submesoscale decomposition trajectories
++ `options.mesoscaleConstraint`  hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
++ `options.representativeTimes`  pooled representative times from the stride-rule fast basis
++ `options.fitSupportTimes`  sorted unique observation times used as trajectory support
 
 ## Returns
-+ `self`  fitted `GriddedStreamfunction` estimator
++ `self`  canonical `GriddedStreamfunction` instance
 
 ## Discussion
 
-  Use this constructor with one `TrajectorySpline` per drifter.
-  Positions are sampled with `trajectory.x(trajectory.t)` and
-  `trajectory.y(trajectory.t)`, and observed velocities are the
-  first derivatives of the same trajectory splines.
+  Use this low-level constructor when the fitted spline state
+  is already available, for example after reading a persisted
+  restart file. For fitting from observed drifter trajectories,
+  use `GriddedStreamfunction.fromTrajectories(...)`.
 
-  The fast temporal basis is used for both the center-of-mass
-  trajectory and the recovered common background path. The
-  tensor basis defined by `psiS` and `psiKnotPoints` is used
-  only for the mesoscale streamfunction in the centered frame,
-  with only the additive streamfunction gauge removed. Set
-  `mesoscaleConstraint` to impose a hard zero-vorticity or
-  zero-strain mesoscale fit.
+  ```matlab
+  fit = GriddedStreamfunction( ...
+      streamfunctionSpline=psiSpline, ...
+      observedTrajectories=trajectories, ...
+      centerOfMassTrajectory=centerTrajectory, ...
+      backgroundTrajectory=backgroundTrajectory, ...
+      fixedFrameBackgroundTrajectories=backgroundTrajectories, ...
+      fixedFrameMesoscaleTrajectories=mesoscaleTrajectories, ...
+      fixedFrameSubmesoscaleTrajectories=submesoscaleTrajectories, ...
+      centeredFrameMesoscaleTrajectories=centeredMesoscaleTrajectories, ...
+      centeredFrameSubmesoscaleTrajectories=centeredSubmesoscaleTrajectories, ...
+      mesoscaleConstraint="none", ...
+      representativeTimes=representativeTimes, ...
+      fitSupportTimes=fitSupportTimes);
+  ```
 
 

@@ -3,7 +3,7 @@ layout: default
 title: bootstrapIndices
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 4
+nav_order: 16
 mathjax: true
 ---
 
@@ -14,9 +14,6 @@ Whole-drifter resampling indices for each bootstrap replicate.
 
 ---
 
-## Discussion
-
-  `bootstrapIndices(i,:)` contains the drifter indices drawn with
-  replacement for bootstrap replicate `i`.
-
+## Description
+Real valued property with dimensions $$(bootstrapIndex,trajectoryIndex)$$ and no units.
 

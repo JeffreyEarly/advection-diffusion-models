@@ -290,7 +290,7 @@ classdef OscroftFairComparisonUnitTests < matlab.unittest.TestCase
                 "buildDecomposition", false);
             fitArguments = namedargs2cell(fitOptions);
 
-            fullFit = GriddedStreamfunction(trajectories, fitArguments{:});
+            fullFit = GriddedStreamfunction.fromTrajectories(trajectories, fitArguments{:});
             fullSummary = OscroftFairComparisonUnitTests.griddedSummaryFromFit(fullFit, queryTimes);
 
             nTime = numel(queryTimes);
@@ -304,7 +304,7 @@ classdef OscroftFairComparisonUnitTests < matlab.unittest.TestCase
 
             for iBootstrap = 1:nBootstraps
                 sampledTrajectories = reshape(trajectories(bootstrapIndices(iBootstrap, :)), [], 1);
-                fit = GriddedStreamfunction(sampledTrajectories, fitArguments{:});
+                fit = GriddedStreamfunction.fromTrajectories(sampledTrajectories, fitArguments{:});
                 bootstrapSummary = OscroftFairComparisonUnitTests.griddedSummaryFromFit(fit, queryTimes);
                 summary.uCenter(:, iBootstrap) = bootstrapSummary.uCenter;
                 summary.vCenter(:, iBootstrap) = bootstrapSummary.vCenter;

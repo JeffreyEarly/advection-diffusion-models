@@ -3,7 +3,7 @@ layout: default
 title: observedTrajectories
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 11
+nav_order: 39
 mathjax: true
 ---
 
@@ -13,11 +13,4 @@ Original drifter trajectories used to seed the bootstrap ensemble.
 
 
 ---
-
-## Discussion
-
-  `observedTrajectories` preserves the original
-  `TrajectorySpline` column vector in the user-supplied drifter
-  order.
-
 

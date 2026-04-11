@@ -3,7 +3,7 @@ layout: default
 title: uMesoscale
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 20
+nav_order: 27
 mathjax: true
 ---
 

@@ -9,7 +9,7 @@ mathjax: true
 
 #  v
 
-Evaluate the affine y-velocity.
+Evaluate the y-velocity.
 
 
 ---

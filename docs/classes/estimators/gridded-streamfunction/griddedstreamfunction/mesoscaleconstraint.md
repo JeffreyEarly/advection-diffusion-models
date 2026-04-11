@@ -3,20 +3,14 @@ layout: default
 title: mesoscaleConstraint
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 10
+nav_order: 17
 mathjax: true
 ---
 
 #  mesoscaleConstraint
 
-Hard constraint applied to the fitted mesoscale streamfunction.
+Hard mesoscale constraint applied to the fit.
 
 
 ---
-
-## Discussion
-
-  `mesoscaleConstraint` is `"none"`, `"zeroVorticity"`, or
-  `"zeroStrain"`.
-
 

@@ -3,7 +3,7 @@ layout: default
 title: randomSeed
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 13
+nav_order: 41
 mathjax: true
 ---
 
@@ -14,6 +14,6 @@ Random-number seed used for whole-drifter resampling.
 
 ---
 
-## Discussion
-
+## Description
+Real valued property with no dimensions and no units.
 

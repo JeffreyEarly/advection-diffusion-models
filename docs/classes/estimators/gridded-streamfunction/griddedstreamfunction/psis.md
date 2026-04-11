@@ -3,7 +3,7 @@ layout: default
 title: psiS
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 14
+nav_order: 21
 mathjax: true
 ---
 

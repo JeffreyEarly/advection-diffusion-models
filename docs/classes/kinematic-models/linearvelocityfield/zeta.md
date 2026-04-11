@@ -16,7 +16,7 @@ Relative vorticity in $$s^{-1}$$.
 
 ## Discussion
 
-  `zeta` controls the antisymmetric part of the affine velocity
+  `zeta` controls the antisymmetric part of the velocity
   gradient.
 
 

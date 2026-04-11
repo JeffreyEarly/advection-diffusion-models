@@ -77,6 +77,12 @@ for iGroup = 1:numel(classGroups)
             parent=group.parent, ...
             grandparent=group.grandparent, ...
             excludedMethodNames=excludedMethodNames);
+        normalizeAnnotatedObjectPropertyDocumentation(classDocumentation(iName));
+
+        if ismember(className, ["GriddedStreamfunction", "GriddedStreamfunctionBootstrap"])
+            classDocumentation(iName).addMethodDocumentation( ...
+                annotatedWriteToFileDocumentation(className));
+        end
     end
     arrayfun(@(a) a.writeToFile(), classDocumentation)
 end
@@ -110,4 +116,39 @@ if isfile(metadataPath)
     end
     addpath(folderPaths{:});
 end
+end
+
+function normalizeAnnotatedObjectPropertyDocumentation(classDocumentation)
+classMetadata = meta.class.fromName(classDocumentation.name);
+propertyNames = string({classMetadata.PropertyList.Name});
+for iDoc = 1:numel(classDocumentation.allMethodDocumentation)
+    metadata = classDocumentation.allMethodDocumentation(iDoc);
+    if isempty(metadata.functionType) && ismember(metadata.name, propertyNames)
+        metadata.functionType = FunctionType.instanceProperty;
+        classDocumentation.allMethodDocumentation(iDoc) = metadata;
+    end
+end
+end
+
+function metadata = annotatedWriteToFileDocumentation(className)
+metadata = MethodDocumentation("writeToFile");
+metadata.shortDescription = "Write this instance to a NetCDF restart file.";
+metadata.declaration = "ncfile = writeToFile(path,properties,options)";
+metadata.parameters = [ ...
+    struct("name", "path", "description", "path to the NetCDF restart file to write"), ...
+    struct("name", "properties", "description", "optional property names to include in addition to the required restart state"), ...
+    struct("name", "shouldOverwriteExisting", "description", "(optional) boolean indicating whether to overwrite an existing file at `path`. Default `false`."), ...
+    struct("name", "shouldAddRequiredProperties", "description", "(optional) boolean indicating whether to include the required restart properties automatically. Default `true`."), ...
+    struct("name", "attributes", "description", "(optional) dictionary of additional NetCDF attributes to attach to the root group")];
+metadata.returns = struct("name", "ncfile", "description", "NetCDF file handle for the written restart file");
+metadata.detailedDescription = char( ...
+    "  Writes the canonical restart state for `" + className + ...
+    "` to a NetCDF file so `fromFile` can reconstruct the saved object " + ...
+    "later without rerunning the expensive fitting or bootstrap workflow." + ...
+    newline + newline + ...
+    "  Pass additional property names when you want to persist optional " + ...
+    "state beyond the required restart payload.");
+metadata.definingClassName = "CAAnnotatedClass";
+metadata.addDeclaringClass(className);
+metadata.functionType = FunctionType.instanceMethod;
 end

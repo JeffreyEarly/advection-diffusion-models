@@ -3,7 +3,7 @@ layout: default
 title: decomposeTrajectories
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 5
+nav_order: 7
 mathjax: true
 ---
 

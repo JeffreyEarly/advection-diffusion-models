@@ -11,7 +11,7 @@ nav_order: 5
 
 #  LinearVelocityField
 
-Two-dimensional affine velocity field with analytical solutions.
+Two-dimensional linear velocity field with analytical solutions.
 
 
 ---
@@ -22,9 +22,9 @@ Two-dimensional affine velocity field with analytical solutions.
 
 ## Overview
 
-This model defines the affine flow
+This model defines the linear velocity field
 
-$$ \dot{\mathbf{r}} = \mathbf{u}_0 + A\mathbf{r}, $$
+$$ \dot{\mathbf{x}} = \mathbf{u}_0 + A\mathbf{x}, $$
 
 with
 
@@ -39,10 +39,16 @@ The strain components satisfy
 
 $$ \sigma_n = \sigma \cos(2\theta), \qquad \sigma_s = \sigma \sin(2\theta). $$
 
+### Analytical solutions
+
 The method `momentTensorEvolution` integrates the corresponding
 second-moment system
 
 $$ \dot{M} = AM + MA^{\top} + 2\kappa I. $$
+
+The method `particlePath` returns the analytical solution for the
+particle paths, as computed in [Oscroft, et al.
+2020](https://doi.org/10.3390/fluids6010014).
 
 ```matlab
 model = LinearVelocityField(sigma=1e-5, theta=pi / 8, zeta=0);
@@ -69,8 +75,8 @@ model.plotTrajectories(x, y)
   + [`v0`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/v0.html) Uniform background y-velocity in $$m s^{-1}$$.
   + [`zeta`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/zeta.html) Relative vorticity in $$s^{-1}$$.
 + Evaluate the velocity field
-  + [`u`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/u.html) Evaluate the affine x-velocity.
-  + [`v`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/v.html) Evaluate the affine y-velocity.
+  + [`u`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/u.html) Evaluate the x-velocity.
+  + [`v`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/v.html) Evaluate the y-velocity.
 + Evaluate the streamfunction
   + [`psi`](/advection-diffusion-models/classes/kinematic-models/linearvelocityfield/psi.html) Evaluate the quadratic streamfunction.
 + Analyze particle and moment evolution

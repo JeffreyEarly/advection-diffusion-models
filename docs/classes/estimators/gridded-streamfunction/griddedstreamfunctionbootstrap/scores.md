@@ -3,7 +3,7 @@ layout: default
 title: scores
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 16
+nav_order: 47
 mathjax: true
 ---
 

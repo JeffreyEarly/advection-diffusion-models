@@ -342,7 +342,7 @@ fitOptions = struct( ...
     "buildDecomposition", false);
 fitArguments = namedargs2cell(fitOptions);
 
-fullFit = GriddedStreamfunction(site.trajectories, fitArguments{:});
+fullFit = GriddedStreamfunction.fromTrajectories(site.trajectories, fitArguments{:});
 fullSummary = summaryFromGriddedFit(fullFit, site.queryTimes);
 
 nTime = numel(site.queryTimes);
@@ -351,7 +351,7 @@ summary = emptyCommonSummary(nTime, nBootstraps);
 
 for iBootstrap = 1:nBootstraps
     sampledTrajectories = reshape(site.trajectories(bootstrapIndices(iBootstrap, :)), [], 1);
-    fit = GriddedStreamfunction(sampledTrajectories, fitArguments{:});
+    fit = GriddedStreamfunction.fromTrajectories(sampledTrajectories, fitArguments{:});
     bootstrapSummary = summaryFromGriddedFit(fit, site.queryTimes);
     summary.uCenter(:, iBootstrap) = bootstrapSummary.uCenter;
     summary.vCenter(:, iBootstrap) = bootstrapSummary.vCenter;
@@ -705,7 +705,7 @@ if isfile(bootstrapPath)
     end
 end
 
-bootstrap = GriddedStreamfunctionBootstrap( ...
+bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
     trajectories, ...
     nBootstraps=options.nBootstraps, ...
     randomSeed=options.randomSeed, ...

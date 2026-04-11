@@ -4,7 +4,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
         function constructorFitsAndReturnsHandle(testCase)
             [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             testCase.verifyClass(fit, "GriddedStreamfunction")
             testCase.verifyTrue(isa(fit, "handle"))
@@ -34,7 +34,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
         function removedPropertiesAreNotStored(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
             removedProperties = [ ...
                 "sampleCounts", "observationTimes", "observedX", "observedY", ...
                 "observedXVelocity", "observedYVelocity", "centeredX", "centeredY", ...
@@ -51,10 +51,52 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             end
         end
 
+        function persistenceRoundTripPreservesSolvedState(testCase)
+            [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroVorticity");
+            path = [tempname, '.nc'];
+            cleanup = onCleanup(@() GriddedStreamfunctionUnitTests.deleteIfExists(path)); %#ok<NASGU>
+
+            fit.writeToFile(path, shouldOverwriteExisting=true);
+            restored = GriddedStreamfunction.fromFile(path);
+            tGrid = repmat(t, 1, size(x, 2));
+
+            testCase.verifyEqual(restored.mesoscaleConstraint, fit.mesoscaleConstraint)
+            testCase.verifyEqual(restored.fastKnotPoints, fit.fastKnotPoints, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.fastS, fit.fastS, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.psiS, fit.psiS, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.representativeTimes, fit.representativeTimes, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.fitSupportTimes, fit.fitSupportTimes, "AbsTol", 1e-12)
+            for iDim = 1:3
+                testCase.verifyEqual(restored.psiKnotPoints{iDim}, fit.psiKnotPoints{iDim}, "AbsTol", 1e-12)
+            end
+
+            testCase.verifyEqual(restored.backgroundTrajectory.x(t), fit.backgroundTrajectory.x(t), "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.backgroundTrajectory.y(t), fit.backgroundTrajectory.y(t), "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.uMesoscale(tGrid, x, y), fit.uMesoscale(tGrid, x, y), "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.vMesoscale(tGrid, x, y), fit.vMesoscale(tGrid, x, y), "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.sigma_n(tGrid, x, y), fit.sigma_n(tGrid, x, y), "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.sigma_s(tGrid, x, y), fit.sigma_s(tGrid, x, y), "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.zeta(tGrid, x, y), fit.zeta(tGrid, x, y), "AbsTol", 1e-12)
+
+            for iTrajectory = 1:numel(trajectories)
+                ti = fit.observedTrajectories(iTrajectory).t;
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, restored.decomposition.fixedFrame.background(iTrajectory), ...
+                    fit.decomposition.fixedFrame.background(iTrajectory), ti)
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, restored.decomposition.fixedFrame.mesoscale(iTrajectory), ...
+                    fit.decomposition.fixedFrame.mesoscale(iTrajectory), ti)
+                GriddedStreamfunctionUnitTests.verifyTrajectorySplineEqualAtSamples( ...
+                    testCase, restored.decomposition.fixedFrame.submesoscale(iTrajectory), ...
+                    fit.decomposition.fixedFrame.submesoscale(iTrajectory), ti)
+            end
+        end
+
         function constructorRejectsRawSampleInputs(testCase)
             x = randn(10, 3);
 
-            testCase.verifyError(@() GriddedStreamfunction(x), "MATLAB:validators:mustBeA")
+            testCase.verifyError(@() GriddedStreamfunction.fromTrajectories(x), "MATLAB:validators:mustBeA")
         end
 
         function constructorRejectsCellArrayInputs(testCase)
@@ -64,13 +106,13 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
                 cellInput{iTrajectory} = trajectories(iTrajectory);
             end
 
-            testCase.verifyError(@() GriddedStreamfunction(cellInput), "MATLAB:validators:mustBeA")
+            testCase.verifyError(@() GriddedStreamfunction.fromTrajectories(cellInput), "MATLAB:validators:mustBeA")
         end
 
         function constructorStoresMesoscaleConstraint(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
-            fit = GriddedStreamfunction(trajectories, mesoscaleConstraint="zeroVorticity");
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroVorticity");
 
             testCase.verifyEqual(fit.mesoscaleConstraint, "zeroVorticity")
         end
@@ -78,14 +120,14 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
         function constructorRejectsInvalidMesoscaleConstraint(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
-            testCase.verifyError(@() GriddedStreamfunction(trajectories, mesoscaleConstraint="badConstraint"), "MATLAB:validators:mustBeMember")
+            testCase.verifyError(@() GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="badConstraint"), "MATLAB:validators:mustBeMember")
         end
 
         function explicitNoneConstraintMatchesDefaultFit(testCase)
             [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
-            fitDefault = GriddedStreamfunction(trajectories);
-            fitNone = GriddedStreamfunction(trajectories, mesoscaleConstraint="none");
+            fitDefault = GriddedStreamfunction.fromTrajectories(trajectories);
+            fitNone = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="none");
             tGrid = repmat(t, 1, size(x, 2));
 
             testCase.verifyEqual(fitNone.mesoscaleConstraint, "none")
@@ -162,7 +204,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
         function synchronousLinearFieldRecovery(testCase)
             [model, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
             tGrid = repmat(t, 1, size(x, 2));
             uBackgroundGrid = repmat(fit.uBackground(t), 1, size(x, 2));
             vBackgroundGrid = repmat(fit.vBackground(t), 1, size(x, 2));
@@ -181,7 +223,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function asynchronousLinearFieldRecovery(testCase)
             [model, trajectories] = GriddedStreamfunctionUnitTests.asynchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             uResolvedError = zeros(numel(trajectories), 1);
             vResolvedError = zeros(numel(trajectories), 1);
@@ -212,7 +254,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
         function zeroVorticityConstraintZerosOffSampleVorticity(testCase)
             [~, trajectories, tQuery, xQuery, yQuery] = GriddedStreamfunctionUnitTests.offSampleLinearFieldData(4.0e-6, pi/9, 0);
 
-            fit = GriddedStreamfunction(trajectories, mesoscaleConstraint="zeroVorticity");
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroVorticity");
             zetaValues = fit.zeta(tQuery, xQuery, yQuery);
 
             testCase.verifyEqual(fit.mesoscaleConstraint, "zeroVorticity")
@@ -224,7 +266,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
         function zeroStrainConstraintZerosOffSampleStrain(testCase)
             [~, trajectories, tQuery, xQuery, yQuery] = GriddedStreamfunctionUnitTests.offSampleLinearFieldData(0, pi/9, -1.5e-6);
 
-            fit = GriddedStreamfunction(trajectories, mesoscaleConstraint="zeroStrain");
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroStrain");
             sigmaNValues = fit.sigma_n(tQuery, xQuery, yQuery);
             sigmaSValues = fit.sigma_s(tQuery, xQuery, yQuery);
 
@@ -238,7 +280,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function anchoredTrajectoryComponentsMatchConventionsAndReconstructPositions(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             for iTrajectory = 1:numel(trajectories)
                 trajectory = fit.observedTrajectories(iTrajectory);
@@ -282,7 +324,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function componentTrajectoryDerivativesMatchVelocityDecomposition(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             for iTrajectory = 1:numel(trajectories)
                 trajectory = fit.observedTrajectories(iTrajectory);
@@ -317,7 +359,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function decomposeTrajectoriesReproducesStoredDecomposition(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
             decomposition = fit.decomposeTrajectories(fit.observedTrajectories);
 
             for iTrajectory = 1:numel(trajectories)
@@ -343,7 +385,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function decomposeTrajectoriesSupportsTrimmedAsynchronousInputs(testCase)
             [fitTrajectories, evaluationTrajectories] = GriddedStreamfunctionUnitTests.trimmedTrajectoryData();
-            fit = GriddedStreamfunction(fitTrajectories);
+            fit = GriddedStreamfunction.fromTrajectories(fitTrajectories);
             decomposition = fit.decomposeTrajectories(evaluationTrajectories);
 
             testCase.verifyEqual(numel(decomposition.fixedFrame.background), numel(evaluationTrajectories))
@@ -385,7 +427,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function decomposeTrajectoriesRejectsTrajectoriesOutsideFitDomains(testCase)
             [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             timeOutsideTrajectories = GriddedStreamfunctionUnitTests.trajectorySplinesFromMatrices(t + 2 * 900, x, y);
             qRange = fit.psiKnotPoints{1}(end) - fit.psiKnotPoints{1}(1);
@@ -399,7 +441,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function constructorReadsTrajectoryEvaluationsInsteadOfDataValues(testCase)
             trajectories = GriddedStreamfunctionUnitTests.smoothedTrajectoryData();
-            fit = GriddedStreamfunction(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
 
             maxObservedRawDifference = 0;
             for iTrajectory = 1:numel(trajectories)
@@ -426,7 +468,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function decompositionSampleDataMatchesObservedTrajectorySamples(testCase)
             trajectories = GriddedStreamfunctionUnitTests.smoothedTrajectoryData();
-            fit = GriddedStreamfunction(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, psiKnotPoints=GriddedStreamfunctionUnitTests.zeroPsiKnotPoints());
             sampleData = fit.decompositionSampleData(fit.observedTrajectories);
             expectedSamples = GriddedStreamfunctionUnitTests.directTrajectorySamples(fit.observedTrajectories);
 
@@ -468,7 +510,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function decompositionSampleDataUsesPassedTrajectoryOrdering(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
             reorderedTrajectories = flipud(fit.observedTrajectories);
             sampleData = fit.decompositionSampleData(reorderedTrajectories);
             expectedSamples = GriddedStreamfunctionUnitTests.directTrajectorySamples(reorderedTrajectories);
@@ -491,7 +533,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function decompositionSampleDataMesoscaleValuesMatchLegacyEvaluators(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
             sampleData = fit.decompositionSampleData(fit.observedTrajectories);
 
             expectedU = reshape(fit.uMesoscale(sampleData.allT, sampleData.allX, sampleData.allY), [], 1);
@@ -526,7 +568,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function reducedBasisGaugeRemovesScalarSpatialMode(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             basisSize = fit.streamfunctionSpline.basisSize;
             xiByTime = reshape(fit.streamfunctionSpline.xi, prod(basisSize(1:2)), basisSize(3));
@@ -538,7 +580,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function fastBasisProjectionMatchesLegacyProjector(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             nTrajectories = numel(trajectories);
             tCell = cell(nTrajectories, 1);
@@ -581,7 +623,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
 
         function evaluationInputShapes(testCase)
             [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
-            fit = GriddedStreamfunction(trajectories);
+            fit = GriddedStreamfunction.fromTrajectories(trajectories);
 
             tGrid = repmat(t, 1, size(x, 2));
             mxGrid = repmat(fit.centerOfMassTrajectory.x(t), 1, size(x, 2));
@@ -796,6 +838,12 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(actual.y(ti), expected.y(ti), "AbsTol", 1e-12)
             testCase.verifyEqual(actual.u(ti), expected.u(ti), "AbsTol", 1e-12)
             testCase.verifyEqual(actual.v(ti), expected.v(ti), "AbsTol", 1e-12)
+        end
+
+        function deleteIfExists(path)
+            if isfile(path)
+                delete(path);
+            end
         end
     end
 end

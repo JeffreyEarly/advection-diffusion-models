@@ -9,44 +9,56 @@ mathjax: true
 
 #  GriddedStreamfunctionBootstrap
 
-Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
+Create a bootstrap from canonical restart-state properties.
 
 
 ---
 
 ## Declaration
 ```matlab
- self = GriddedStreamfunctionBootstrap(trajectories,nBootstraps=...,randomSeed=...,queryTimes=...,scoreTimes=...,scoreStride=...,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
+ self = GriddedStreamfunctionBootstrap(options)
 ```
 ## Parameters
-+ `trajectories`  nonempty vector of `TrajectorySpline` drifters
-+ `nBootstraps`  number of whole-drifter bootstrap replicates, default `100`
-+ `randomSeed`  integer random seed used for resampling, default `0`
-+ `queryTimes`  optional strictly increasing query times for stored summaries
-+ `scoreTimes`  optional strictly increasing subset of `queryTimes` used for consensus scoring
-+ `scoreStride`  optional positive stride used to subsample `queryTimes` into `scoreTimes`, default `1`
-+ `psiKnotPoints`  optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
-+ `psiS`  optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
-+ `fastKnotPoints`  optional fast temporal knot vector for COM and background
-+ `fastS`  optional fast temporal spline degree, default `3`
-+ `mesoscaleConstraint`  optional hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
++ `options.fullFit`  full-data `GriddedStreamfunction` fit
++ `options.observedTrajectories`  original drifter trajectories used for resampling
++ `options.bootstrapIndices`  whole-drifter resampling indices for each replicate
++ `options.queryTimes`  stored summary times
++ `options.scoreTimes`  stored consensus-score times
++ `options.fullSummaryUCenter`  persisted full-fit `uCenter` summary values
++ `options.fullSummaryVCenter`  persisted full-fit `vCenter` summary values
++ `options.fullSummarySigmaN`  persisted full-fit `sigma_n` summary values
++ `options.fullSummarySigmaS`  persisted full-fit `sigma_s` summary values
++ `options.fullSummaryZeta`  persisted full-fit `zeta` summary values
++ `options.summaryUCenter`  persisted bootstrap `uCenter` summary matrix
++ `options.summaryVCenter`  persisted bootstrap `vCenter` summary matrix
++ `options.summarySigmaN`  persisted bootstrap `sigma_n` summary matrix
++ `options.summarySigmaS`  persisted bootstrap `sigma_s` summary matrix
++ `options.summaryZeta`  persisted bootstrap `zeta` summary matrix
++ `options.fullFitKappaValue`  persisted full-fit scalar diffusivity diagnostic
++ `options.fullFitCoherenceValue`  persisted full-fit scalar mean coherence
++ `options.fullFitCoherenceFrequency`  persisted full-fit coherence-spectrum frequencies
++ `options.fullFitCoherenceValues`  persisted full-fit coherence-spectrum values
++ `options.bestFitKappaValue`  persisted best-fit scalar diffusivity diagnostic
++ `options.bestFitCoherenceValue`  persisted best-fit scalar mean coherence
++ `options.bestFitCoherenceFrequency`  persisted best-fit coherence-spectrum frequencies
++ `options.bestFitCoherenceValues`  persisted best-fit coherence-spectrum values
++ `options.scoreUv`  persisted bootstrap velocity consensus scores
++ `options.scoreStrain`  persisted bootstrap strain consensus scores
++ `options.scoreZeta`  persisted bootstrap vorticity consensus scores
++ `options.scoreJoint`  persisted bootstrap joint consensus scores
++ `options.bootstrapFitMetadata`  persisted exact reconstruction metadata for each bootstrap replicate
++ `options.nBootstraps`  number of bootstrap replicates
++ `options.randomSeed`  random seed used for resampling
 
 ## Returns
-+ `self`  fitted bootstrap ensemble
++ `self`  canonical `GriddedStreamfunctionBootstrap` instance
 
 ## Discussion
 
-  Use this constructor when the uncertainty analysis should
-  reflect sensitivity to which drifters were observed, rather
-  than only the residual variability within one fitted
-  ensemble.
-
-  The constructor first fits the full-data
-  `GriddedStreamfunction`, then resamples the drifter
-  trajectories with replacement and fits one replicate per
-  bootstrap draw. Each replicate stores COM-local mesoscale
-  diagnostics on `queryTimes`, a scalar submesoscale
-  diffusivity diagnostic, and the resolved spline knot vectors
-  required to reconstruct the replicate exactly later.
+  Use this low-level constructor when the full fit, stored
+  summaries, scores, and reconstruction metadata already exist,
+  for example after reading a persisted restart file. For
+  ordinary bootstrap fitting from observed trajectories, use
+  `GriddedStreamfunctionBootstrap.fromTrajectories(...)`.
 
 

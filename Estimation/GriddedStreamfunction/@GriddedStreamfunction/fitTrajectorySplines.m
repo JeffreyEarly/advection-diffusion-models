@@ -123,17 +123,23 @@ self.streamfunctionSpline = streamfunctionSpline;
 self.observedTrajectories = trajectories;
 self.observedTrajectorySampleData = sampledData;
 self.centerOfMassTrajectory = centerOfMassTrajectory;
-self.fastKnotPoints = fastKnotPoints;
-self.fastS = fastS;
-self.psiKnotPoints = psiKnotPoints;
-self.psiS = psiS;
 self.mesoscaleConstraint = mesoscaleConstraint;
 self.representativeTimes = representativeTimes;
 self.fitSupportTimes = fitSupportTimes;
 if buildDecomposition
-    [self.backgroundTrajectory, self.decomposition] = decomposeTrajectorySet(self, trajectories);
+    [backgroundTrajectory, decomposition] = decomposeTrajectorySet(self, trajectories);
+    self.backgroundTrajectory = backgroundTrajectory;
+    self.fixedFrameBackgroundTrajectories = decomposition.fixedFrame.background;
+    self.fixedFrameMesoscaleTrajectories = decomposition.fixedFrame.mesoscale;
+    self.fixedFrameSubmesoscaleTrajectories = decomposition.fixedFrame.submesoscale;
+    self.centeredFrameMesoscaleTrajectories = decomposition.centeredFrame.mesoscale;
+    self.centeredFrameSubmesoscaleTrajectories = decomposition.centeredFrame.submesoscale;
 else
-    self.backgroundTrajectory = [];
-    self.decomposition = struct();
+    self.backgroundTrajectory = TrajectorySpline.empty(0, 1);
+    self.fixedFrameBackgroundTrajectories = TrajectorySpline.empty(0, 1);
+    self.fixedFrameMesoscaleTrajectories = TrajectorySpline.empty(0, 1);
+    self.fixedFrameSubmesoscaleTrajectories = TrajectorySpline.empty(0, 1);
+    self.centeredFrameMesoscaleTrajectories = TrajectorySpline.empty(0, 1);
+    self.centeredFrameSubmesoscaleTrajectories = TrajectorySpline.empty(0, 1);
 end
 end

@@ -4,8 +4,8 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
         function constructorStoresOutputsAndReproducesSeed(testCase)
             [~, t, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
-            bootstrapA = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=6, randomSeed=17);
-            bootstrapB = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=6, randomSeed=17);
+            bootstrapA = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=6, randomSeed=17);
+            bootstrapB = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=6, randomSeed=17);
 
             testCase.verifyClass(bootstrapA, "GriddedStreamfunctionBootstrap")
             testCase.verifyTrue(isa(bootstrapA, "handle"))
@@ -17,7 +17,8 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(bootstrapA.scoreTimes, t, "AbsTol", 1e-12)
             testCase.verifySize(bootstrapA.summary.uCenter, [numel(t), 6])
             testCase.verifySize(bootstrapA.summary.sigma_n, [numel(t), 6])
-            testCase.verifySize(bootstrapA.scalarSummary.kappaEstimate, [1 6])
+            testCase.verifySize(bootstrapA.bootstrapKappa, [1 6])
+            testCase.verifySize(bootstrapA.bootstrapCoherence, [1 6])
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.uv), "all"))
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.strain), "all"))
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.zeta), "all"))
@@ -31,7 +32,10 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(bootstrapA.summary.sigma_n, bootstrapB.summary.sigma_n, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.summary.sigma_s, bootstrapB.summary.sigma_s, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.summary.zeta, bootstrapB.summary.zeta, "AbsTol", 1e-12)
-            testCase.verifyEqual(bootstrapA.scalarSummary.kappaEstimate, bootstrapB.scalarSummary.kappaEstimate, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapA.bootstrapKappa, bootstrapB.bootstrapKappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrapA.bootstrapCoherence, bootstrapB.bootstrapCoherence))
+            testCase.verifyEqual(bootstrapA.fullFitKappa, bootstrapB.fullFitKappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrapA.fullFitCoherence, bootstrapB.fullFitCoherence))
             testCase.verifyEqual(bootstrapA.scores.uv, bootstrapB.scores.uv, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.scores.strain, bootstrapB.scores.strain, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.scores.zeta, bootstrapB.scores.zeta, "AbsTol", 1e-12)
@@ -47,10 +51,134 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             end
         end
 
+        function persistenceRoundTripPreservesBootstrapState(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=12);
+            path = [tempname, '.nc'];
+            cleanup = onCleanup(@() GriddedStreamfunctionBootstrapUnitTests.deleteFileIfExists(path));
+
+            bootstrap.writeToFile(path, shouldOverwriteExisting=true);
+            ncfile = NetCDFFile(path, shouldReadOnly=true);
+            cleanupFile = onCleanup(@() ncfile.close());
+            group = ncfile;
+            if ncfile.hasGroupWithName('GriddedStreamfunctionBootstrap')
+                group = ncfile.groupWithName('GriddedStreamfunctionBootstrap');
+            end
+            testCase.verifyFalse(group.hasVariableWithName('bootstrapKappaCache'))
+            testCase.verifyFalse(group.hasVariableWithName('bootstrapCoherenceCache'))
+            restored = GriddedStreamfunctionBootstrap.fromFile(path);
+
+            testCase.verifyEqual(restored.nBootstraps, bootstrap.nBootstraps)
+            testCase.verifyEqual(restored.randomSeed, bootstrap.randomSeed)
+            testCase.verifyEqual(restored.queryTimes, bootstrap.queryTimes, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.scoreTimes, bootstrap.scoreTimes, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.bootstrapIndices, bootstrap.bootstrapIndices)
+            testCase.verifyEqual(restored.summary.uCenter, bootstrap.summary.uCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.summary.vCenter, bootstrap.summary.vCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.summary.sigma_n, bootstrap.summary.sigma_n, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.summary.sigma_s, bootstrap.summary.sigma_s, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.summary.zeta, bootstrap.summary.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.fullSummary.uCenter, bootstrap.fullSummary.uCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.fullFitKappa, bootstrap.fullFitKappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(restored.fullFitCoherence, bootstrap.fullFitCoherence))
+            testCase.verifyEqual(restored.bestFitKappa, bootstrap.bestFitKappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(restored.bestFitCoherence, bootstrap.bestFitCoherence))
+            testCase.verifyEqual(restored.scores.uv, bootstrap.scores.uv, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.scores.strain, bootstrap.scores.strain, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.scores.zeta, bootstrap.scores.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.scores.joint, bootstrap.scores.joint, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.bestBootstrapIndex(), bootstrap.bestBootstrapIndex())
+
+            restoredFit = restored.fitForBootstrap(2);
+            referenceFit = bootstrap.fitForBootstrap(2);
+            [restoredSummary, restoredDiagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(restoredFit, restored.queryTimes);
+            [referenceSummary, referenceDiagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(referenceFit, bootstrap.queryTimes);
+
+            testCase.verifyEqual(restoredSummary.uCenter, referenceSummary.uCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(restoredSummary.vCenter, referenceSummary.vCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(restoredSummary.sigma_n, referenceSummary.sigma_n, "AbsTol", 1e-12)
+            testCase.verifyEqual(restoredSummary.sigma_s, referenceSummary.sigma_s, "AbsTol", 1e-12)
+            testCase.verifyEqual(restoredSummary.zeta, referenceSummary.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(restoredDiagnostics.kappa, referenceDiagnostics.kappa, "AbsTol", 1e-12)
+        end
+
+        function persistenceRoundTripPreservesMaterializedBootstrapDiagnostics(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=12);
+            bootstrapKappa = bootstrap.bootstrapKappa;
+            bootstrapCoherence = bootstrap.bootstrapCoherence;
+            path = [tempname, '.nc'];
+            cleanup = onCleanup(@() GriddedStreamfunctionBootstrapUnitTests.deleteFileIfExists(path));
+
+            bootstrap.writeToFile(path, shouldOverwriteExisting=true);
+            ncfile = NetCDFFile(path, shouldReadOnly=true);
+            cleanupFile = onCleanup(@() ncfile.close());
+            group = ncfile;
+            if ncfile.hasGroupWithName('GriddedStreamfunctionBootstrap')
+                group = ncfile.groupWithName('GriddedStreamfunctionBootstrap');
+            end
+            testCase.verifyTrue(group.hasVariableWithName('bootstrapKappaCache'))
+            testCase.verifyTrue(group.hasVariableWithName('bootstrapCoherenceCache'))
+
+            restored = GriddedStreamfunctionBootstrap.fromFile(path);
+            testCase.verifyEqual(restored.bootstrapKappa, bootstrapKappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(restored.bootstrapCoherence, bootstrapCoherence))
+        end
+
+        function caseStudyBootstrapCacheReloadsPersistentRestart(testCase)
+            [~, t, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            cacheDirectory = tempname;
+            mkdir(cacheDirectory);
+            cleanup = onCleanup(@() GriddedStreamfunctionBootstrapUnitTests.deleteDirectoryIfExists(cacheDirectory));
+
+            siteNumber = 1;
+            nBootstraps = 4;
+            randomSeed = 3;
+            scoreStride = 2;
+            psiS = [2 2 4];
+            fastS = 3;
+            mesoscaleConstraint = "none";
+            queryTimes = t;
+            psiSTag = join(string(psiS), "-");
+            cacheFilename = "Rho" + siteNumber + ...
+                "GriddedStreamfunctionBootstrapFits" + nBootstraps + ...
+                "_seed" + randomSeed + ...
+                "_stride" + scoreStride + ...
+                "_fastS" + fastS + ...
+                "_psiS" + psiSTag + ...
+                "_mesoscaleConstraint-" + mesoscaleConstraint + ".nc";
+            cachePath = fullfile(cacheDirectory, cacheFilename);
+
+            bootstrapA = GriddedStreamfunctionBootstrap.fromTrajectories( ...
+                trajectories, ...
+                nBootstraps=nBootstraps, ...
+                randomSeed=randomSeed, ...
+                queryTimes=queryTimes, ...
+                scoreStride=scoreStride, ...
+                psiS=psiS, ...
+                fastS=fastS, ...
+                mesoscaleConstraint=mesoscaleConstraint);
+            bootstrapA.writeToFile(cachePath, shouldOverwriteExisting=true);
+            bootstrapB = GriddedStreamfunctionBootstrap.fromFile(cachePath);
+
+            testCase.verifyTrue(isfile(cachePath))
+            testCase.verifyEqual(bootstrapB.queryTimes, queryTimes, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.scoreTimes, queryTimes(1:scoreStride:end), "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.bootstrapIndices, bootstrapA.bootstrapIndices)
+            testCase.verifyEqual(bootstrapB.summary.uCenter, bootstrapA.summary.uCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.summary.vCenter, bootstrapA.summary.vCenter, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.summary.sigma_n, bootstrapA.summary.sigma_n, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.summary.sigma_s, bootstrapA.summary.sigma_s, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.summary.zeta, bootstrapA.summary.zeta, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.scores.joint, bootstrapA.scores.joint, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrapB.fullFitKappa, bootstrapA.fullFitKappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrapB.fullFitCoherence, bootstrapA.fullFitCoherence))
+        end
+
         function fullSummaryMatchesSynchronousLinearFieldTruth(testCase)
             [model, t, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=5);
 
             testCase.verifyLessThanOrEqual(max(abs(bootstrap.fullSummary.uCenter - model.u0)), 2e-3)
             testCase.verifyLessThanOrEqual(max(abs(bootstrap.fullSummary.vCenter - model.v0)), 5e-3)
@@ -63,10 +191,10 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
         function bestFitAndStoredReplicateReconstructExactly(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=6, randomSeed=9);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=6, randomSeed=9);
             iBest = bootstrap.bestBootstrapIndex();
             fit = bootstrap.bestFit();
-            [summary, scalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
+            [summary, diagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
 
             testCase.verifyEqual(fit.fastKnotPoints, bootstrap.bootstrapMetadata.fastKnotPoints{iBest}, "AbsTol", 1e-12)
             for iDim = 1:3
@@ -77,17 +205,19 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(summary.sigma_n, bootstrap.summary.sigma_n(:, iBest), "AbsTol", 1e-12)
             testCase.verifyEqual(summary.sigma_s, bootstrap.summary.sigma_s(:, iBest), "AbsTol", 1e-12)
             testCase.verifyEqual(summary.zeta, bootstrap.summary.zeta(:, iBest), "AbsTol", 1e-12)
-            testCase.verifyEqual(scalarSummary.kappaEstimate, bootstrap.scalarSummary.kappaEstimate(iBest), "AbsTol", 1e-12)
+            testCase.verifyEqual(diagnostics.kappa, bootstrap.bootstrapKappa(iBest), "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.bestFitKappa, bootstrap.bootstrapKappa(iBest), "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrap.bestFitCoherence, bootstrap.bootstrapCoherence(iBest)))
         end
 
         function storedOutputsMatchFullyReconstructedFitsForAllReplicates(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=11);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=11);
 
             for iBootstrap = 1:bootstrap.nBootstraps
                 fit = bootstrap.fitForBootstrap(iBootstrap);
-                [summary, scalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
+                [summary, diagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
 
                 testCase.verifyEqual(fit.fastKnotPoints, bootstrap.bootstrapMetadata.fastKnotPoints{iBootstrap}, "AbsTol", 1e-12)
                 for iDim = 1:3
@@ -100,15 +230,15 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 testCase.verifyEqual(summary.sigma_n, bootstrap.summary.sigma_n(:, iBootstrap), "AbsTol", 1e-12)
                 testCase.verifyEqual(summary.sigma_s, bootstrap.summary.sigma_s(:, iBootstrap), "AbsTol", 1e-12)
                 testCase.verifyEqual(summary.zeta, bootstrap.summary.zeta(:, iBootstrap), "AbsTol", 1e-12)
-                testCase.verifyEqual(scalarSummary.kappaEstimate, bootstrap.scalarSummary.kappaEstimate(iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(diagnostics.kappa, bootstrap.bootstrapKappa(iBootstrap), "AbsTol", 1e-12)
             end
         end
 
         function explicitKnotsAreStoredAndReusedDuringReconstruction(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            referenceFit = GriddedStreamfunction(trajectories);
+            referenceFit = GriddedStreamfunction.fromTrajectories(trajectories);
 
-            bootstrap = GriddedStreamfunctionBootstrap( ...
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
                 trajectories, ...
                 nBootstraps=4, ...
                 randomSeed=4, ...
@@ -134,13 +264,13 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
 
         function fitForBootstrapMatchesDirectFitWithStoredMetadata(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=13);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=13);
             iBootstrap = 2;
             sampledTrajectories = reshape( ...
                 bootstrap.observedTrajectories(bootstrap.bootstrapIndices(iBootstrap, :)), [], 1);
 
             fit = bootstrap.fitForBootstrap(iBootstrap);
-            referenceFit = GriddedStreamfunction( ...
+            referenceFit = GriddedStreamfunction.fromTrajectories( ...
                 sampledTrajectories, ...
                 psiKnotPoints=bootstrap.bootstrapMetadata.psiKnotPoints{iBootstrap}, ...
                 psiS=bootstrap.fullFit.psiS, ...
@@ -148,8 +278,8 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 fastS=bootstrap.fullFit.fastS, ...
                 mesoscaleConstraint=bootstrap.fullFit.mesoscaleConstraint);
 
-            [summary, scalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
-            [referenceSummary, referenceScalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
+            [summary, diagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
+            [referenceSummary, referenceDiagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
                 referenceFit, bootstrap.queryTimes);
 
             testCase.verifyEqual(summary.uCenter, referenceSummary.uCenter, "AbsTol", 1e-12)
@@ -157,35 +287,35 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(summary.sigma_n, referenceSummary.sigma_n, "AbsTol", 1e-12)
             testCase.verifyEqual(summary.sigma_s, referenceSummary.sigma_s, "AbsTol", 1e-12)
             testCase.verifyEqual(summary.zeta, referenceSummary.zeta, "AbsTol", 1e-12)
-            testCase.verifyEqual(scalarSummary.kappaEstimate, referenceScalarSummary.kappaEstimate, "AbsTol", 1e-12)
+            testCase.verifyEqual(diagnostics.kappa, referenceDiagnostics.kappa, "AbsTol", 1e-12)
         end
 
-        function storedScalarSummaryMatchesDirectReferenceFitForReplicate(testCase)
+        function storedBootstrapDiagnosticsMatchDirectReferenceFitForReplicate(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=13);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=13);
             iBootstrap = 2;
             sampledTrajectories = reshape( ...
                 bootstrap.observedTrajectories(bootstrap.bootstrapIndices(iBootstrap, :)), [], 1);
 
-            referenceFit = GriddedStreamfunction( ...
+            referenceFit = GriddedStreamfunction.fromTrajectories( ...
                 sampledTrajectories, ...
                 psiKnotPoints=bootstrap.bootstrapMetadata.psiKnotPoints{iBootstrap}, ...
                 psiS=bootstrap.fullFit.psiS, ...
                 fastKnotPoints=bootstrap.bootstrapMetadata.fastKnotPoints{iBootstrap}, ...
                 fastS=bootstrap.fullFit.fastS, ...
                 mesoscaleConstraint=bootstrap.fullFit.mesoscaleConstraint);
-            [~, referenceScalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
+            [~, referenceDiagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
                 referenceFit, bootstrap.queryTimes);
 
-            testCase.verifyEqual( ...
-                bootstrap.scalarSummary.kappaEstimate(iBootstrap), referenceScalarSummary.kappaEstimate, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.bootstrapKappa(iBootstrap), referenceDiagnostics.kappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrap.bootstrapCoherence(iBootstrap), referenceDiagnostics.coherence))
         end
 
         function fullSummaryMatchesLegacyCenterDiagnostics(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=7);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=7);
 
-            [referenceSummary, referenceScalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
+            [referenceSummary, referenceDiagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit( ...
                 bootstrap.fullFit, bootstrap.queryTimes);
 
             testCase.verifyEqual(bootstrap.fullSummary.uCenter, referenceSummary.uCenter, "AbsTol", 1e-12)
@@ -193,96 +323,20 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(bootstrap.fullSummary.sigma_n, referenceSummary.sigma_n, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrap.fullSummary.sigma_s, referenceSummary.sigma_s, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrap.fullSummary.zeta, referenceSummary.zeta, "AbsTol", 1e-12)
-            testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, referenceScalarSummary.kappaEstimate, "AbsTol", 1e-12)
-        end
-
-        function caseStudyBootstrapCacheFilenameEncodesFullCacheIdentity(testCase)
-            filenameDefault = caseStudyBootstrapCacheFilename( ...
-                1, ...
-                nBootstraps=1000, ...
-                randomSeed=0, ...
-                scoreStride=6, ...
-                psiS=[2 2 4], ...
-                fastS=3, ...
-                mesoscaleConstraint="zeroVorticity");
-
-            testCase.verifyEqual( ...
-                filenameDefault, ...
-                "Rho1GriddedStreamfunctionBootstrapFits1000_seed0_stride6_fastS3_psiS2-2-4_mesoscaleConstraint-zeroVorticity.mat")
-
-            testCase.verifyNotEqual( ...
-                filenameDefault, ...
-                caseStudyBootstrapCacheFilename( ...
-                    1, ...
-                    nBootstraps=1000, ...
-                    randomSeed=0, ...
-                    scoreStride=6, ...
-                    psiS=[3 2 4], ...
-                    fastS=3, ...
-                    mesoscaleConstraint="zeroVorticity"))
-
-            testCase.verifyNotEqual( ...
-                filenameDefault, ...
-                caseStudyBootstrapCacheFilename( ...
-                    1, ...
-                    nBootstraps=1000, ...
-                    randomSeed=0, ...
-                    scoreStride=6, ...
-                    psiS=[2 2 4], ...
-                    fastS=3, ...
-                    mesoscaleConstraint="none"))
-
-            testCase.verifyNotEqual( ...
-                filenameDefault, ...
-                caseStudyBootstrapCacheFilename( ...
-                    1, ...
-                    nBootstraps=1000, ...
-                    randomSeed=1, ...
-                    scoreStride=6, ...
-                    psiS=[2 2 4], ...
-                    fastS=3, ...
-                    mesoscaleConstraint="zeroVorticity"))
-
-            testCase.verifyNotEqual( ...
-                filenameDefault, ...
-                caseStudyBootstrapCacheFilename( ...
-                    1, ...
-                    nBootstraps=1000, ...
-                    randomSeed=0, ...
-                    scoreStride=4, ...
-                    psiS=[2 2 4], ...
-                    fastS=3, ...
-                    mesoscaleConstraint="zeroVorticity"))
-
-            testCase.verifyNotEqual( ...
-                filenameDefault, ...
-                caseStudyBootstrapCacheFilename( ...
-                    1, ...
-                    nBootstraps=1000, ...
-                    randomSeed=0, ...
-                    scoreStride=6, ...
-                    psiS=[2 2 4], ...
-                    fastS=4, ...
-                    mesoscaleConstraint="zeroVorticity"))
-
-            testCase.verifyNotEqual( ...
-                filenameDefault, ...
-                caseStudyBootstrapCacheFilename( ...
-                    1, ...
-                    nBootstraps=500, ...
-                    randomSeed=0, ...
-                    scoreStride=6, ...
-                    psiS=[2 2 4], ...
-                    fastS=3, ...
-                    mesoscaleConstraint="zeroVorticity"))
+            testCase.verifyEqual(bootstrap.fullFitKappa, referenceDiagnostics.kappa, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrap.fullFitCoherence, referenceDiagnostics.coherence))
+            testCase.verifyEqual(bootstrap.fullFitCoherenceSpectrum.frequency, ...
+                referenceDiagnostics.coherenceSpectrum.frequency, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrap.fullFitCoherenceSpectrum.coherence, ...
+                referenceDiagnostics.coherenceSpectrum.coherence))
         end
 
         function defaultKnotsStillReconstructExactly(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=5, randomSeed=12);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=5, randomSeed=12);
             fit = bootstrap.fitForBootstrap(2);
-            [summary, scalarSummary] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
+            [summary, diagnostics] = GriddedStreamfunctionBootstrapUnitTests.summaryFromFit(fit, bootstrap.queryTimes);
 
             testCase.verifyEqual(fit.fastKnotPoints, bootstrap.bootstrapMetadata.fastKnotPoints{2}, "AbsTol", 1e-12)
             for iDim = 1:3
@@ -293,14 +347,14 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(summary.sigma_n, bootstrap.summary.sigma_n(:, 2), "AbsTol", 1e-12)
             testCase.verifyEqual(summary.sigma_s, bootstrap.summary.sigma_s(:, 2), "AbsTol", 1e-12)
             testCase.verifyEqual(summary.zeta, bootstrap.summary.zeta(:, 2), "AbsTol", 1e-12)
-            testCase.verifyEqual(scalarSummary.kappaEstimate, bootstrap.scalarSummary.kappaEstimate(2), "AbsTol", 1e-12)
+            testCase.verifyEqual(diagnostics.kappa, bootstrap.bootstrapKappa(2), "AbsTol", 1e-12)
         end
 
         function defaultQueryTimesUseOriginalCommonOverlap(testCase)
             [trajectories, expectedQueryTimes, overlapBounds] = ...
                 GriddedStreamfunctionBootstrapUnitTests.partialSupportTrajectoryData();
 
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=3);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=3);
 
             testCase.verifyEqual(bootstrap.queryTimes, expectedQueryTimes, "AbsTol", 1e-12)
             testCase.verifyGreaterThanOrEqual(min(bootstrap.queryTimes), overlapBounds(1))
@@ -309,13 +363,24 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyTrue(all(isfinite(bootstrap.summary.sigma_n), "all"))
         end
 
+        function irregularSupportCoherenceUsesCommonUniformOverlapGrid(testCase)
+            [trajectories, ~, ~] = GriddedStreamfunctionBootstrapUnitTests.partialSupportTrajectoryData();
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=3);
+            referenceDiagnostics = GriddedStreamfunctionBootstrapUnitTests.diagnosticsFromFit(bootstrap.fullFit);
+
+            testCase.verifyEqual(bootstrap.fullFitCoherenceSpectrum.frequency, ...
+                referenceDiagnostics.coherenceSpectrum.frequency, "AbsTol", 1e-12)
+            testCase.verifyTrue(isequaln(bootstrap.fullFitCoherenceSpectrum.coherence, ...
+                referenceDiagnostics.coherenceSpectrum.coherence))
+        end
+
         function constrainedBootstrapSkipsDegenerateScoreBlocks(testCase)
             [trajectoriesVorticity, trajectoriesStrain] = ...
                 GriddedStreamfunctionBootstrapUnitTests.constrainedTrajectoryData();
 
-            zeroVorticity = GriddedStreamfunctionBootstrap( ...
+            zeroVorticity = GriddedStreamfunctionBootstrap.fromTrajectories( ...
                 trajectoriesVorticity, nBootstraps=4, randomSeed=8, mesoscaleConstraint="zeroVorticity");
-            zeroStrain = GriddedStreamfunctionBootstrap( ...
+            zeroStrain = GriddedStreamfunctionBootstrap.fromTrajectories( ...
                 trajectoriesStrain, nBootstraps=4, randomSeed=8, mesoscaleConstraint="zeroStrain");
 
             testCase.verifyEqual(zeroVorticity.scores.zeta, zeros(1, zeroVorticity.nBootstraps), "AbsTol", 1e-12)
@@ -331,7 +396,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
 
         function consensusScoresMatchDirectGaussianReference(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=5);
             scoreIndices = arrayfun(@(ti) find(bootstrap.queryTimes == ti, 1), bootstrap.scoreTimes);
 
             expected = GriddedStreamfunctionBootstrapUnitTests.directConsensusScores( ...
@@ -346,7 +411,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
         function summaryQuantilesReturnExpectedShapesAndMonotoneBands(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=5, randomSeed=14);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=5, randomSeed=14);
             quantiles = bootstrap.summaryQuantiles([0.1 0.5 0.9]);
 
             testCase.verifySize(quantiles.uCenter, [numel(bootstrap.queryTimes), 3])
@@ -354,49 +419,79 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifySize(quantiles.sigma_n, [numel(bootstrap.queryTimes), 3])
             testCase.verifySize(quantiles.sigma_s, [numel(bootstrap.queryTimes), 3])
             testCase.verifySize(quantiles.zeta, [numel(bootstrap.queryTimes), 3])
-            testCase.verifySize(quantiles.kappaEstimate, [1, 3])
+            testCase.verifySize(quantiles.kappa, [1, 3])
+            testCase.verifySize(quantiles.coherence, [1, 3])
 
             testCase.verifyTrue(all(quantiles.uCenter(:, 1) <= quantiles.uCenter(:, 2)))
             testCase.verifyTrue(all(quantiles.uCenter(:, 2) <= quantiles.uCenter(:, 3)))
             testCase.verifyTrue(all(quantiles.sigma_n(:, 1) <= quantiles.sigma_n(:, 2)))
             testCase.verifyTrue(all(quantiles.sigma_n(:, 2) <= quantiles.sigma_n(:, 3)))
-            testCase.verifyTrue(all(quantiles.kappaEstimate(1) <= quantiles.kappaEstimate(2)))
-            testCase.verifyTrue(all(quantiles.kappaEstimate(2) <= quantiles.kappaEstimate(3)))
+            testCase.verifyTrue(all(quantiles.kappa(1) <= quantiles.kappa(2)))
+            testCase.verifyTrue(all(quantiles.kappa(2) <= quantiles.kappa(3)))
         end
 
         function scalarDiffusivityDiagnosticIsFiniteAndIncreases(testCase)
             trajectoriesLow = GriddedStreamfunctionBootstrapUnitTests.diffusiveTrajectoryData(0.25, 21);
             trajectoriesHigh = GriddedStreamfunctionBootstrapUnitTests.diffusiveTrajectoryData(2.0, 21);
 
-            bootstrapLow = GriddedStreamfunctionBootstrap(trajectoriesLow, nBootstraps=4, randomSeed=5);
-            bootstrapHigh = GriddedStreamfunctionBootstrap(trajectoriesHigh, nBootstraps=4, randomSeed=5);
+            bootstrapLow = GriddedStreamfunctionBootstrap.fromTrajectories(trajectoriesLow, nBootstraps=4, randomSeed=5);
+            bootstrapHigh = GriddedStreamfunctionBootstrap.fromTrajectories(trajectoriesHigh, nBootstraps=4, randomSeed=5);
 
-            testCase.verifyTrue(isfinite(bootstrapLow.fullScalarSummary.kappaEstimate))
-            testCase.verifyTrue(isfinite(bootstrapHigh.fullScalarSummary.kappaEstimate))
-            testCase.verifyGreaterThanOrEqual(bootstrapLow.fullScalarSummary.kappaEstimate, 0)
-            testCase.verifyGreaterThanOrEqual(bootstrapHigh.fullScalarSummary.kappaEstimate, 0)
-            testCase.verifyGreaterThan(bootstrapHigh.fullScalarSummary.kappaEstimate, ...
-                bootstrapLow.fullScalarSummary.kappaEstimate)
-            testCase.verifyGreaterThan(mean(bootstrapHigh.scalarSummary.kappaEstimate), ...
-                mean(bootstrapLow.scalarSummary.kappaEstimate))
+            testCase.verifyTrue(isfinite(bootstrapLow.fullFitKappa))
+            testCase.verifyTrue(isfinite(bootstrapHigh.fullFitKappa))
+            testCase.verifyGreaterThanOrEqual(bootstrapLow.fullFitKappa, 0)
+            testCase.verifyGreaterThanOrEqual(bootstrapHigh.fullFitKappa, 0)
+            testCase.verifyGreaterThan(bootstrapHigh.fullFitKappa, bootstrapLow.fullFitKappa)
+            testCase.verifyGreaterThan(mean(bootstrapHigh.bootstrapKappa), mean(bootstrapLow.bootstrapKappa))
         end
 
         function scalarDiffusivityDiagnosticMatchesLegacySplineIntegration(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=5);
 
             legacyKappa = GriddedStreamfunctionBootstrapUnitTests.legacyKappaFromFit(bootstrap.fullFit);
 
-            testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, legacyKappa, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullFitKappa, legacyKappa, "AbsTol", 1e-12)
         end
 
         function scalarDiffusivityDiagnosticMatchesDirectTotalDisplacementFormula(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
-            bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=4, randomSeed=5);
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=5);
 
             directKappa = GriddedStreamfunctionBootstrapUnitTests.totalDisplacementKappaFromSubmesoscaleTrajectories(bootstrap.fullFit);
 
-            testCase.verifyEqual(bootstrap.fullScalarSummary.kappaEstimate, directKappa, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.fullFitKappa, directKappa, "AbsTol", 1e-12)
+        end
+
+        function missingCoherenceBackendWarnsOnceAndLeavesCoherenceUnavailable(testCase)
+            if ~GriddedStreamfunctionBootstrapUnitTests.hasCoherenceBackend()
+                return
+            end
+
+            sleptapPath = fileparts(which('sleptap'));
+            mspecPath = fileparts(which('mspec'));
+            removedPaths = unique({sleptapPath, mspecPath}, 'stable');
+            clear sleptap mspec
+            for iPath = 1:numel(removedPaths)
+                rmpath(removedPaths{iPath});
+            end
+            cleanup = onCleanup(@() GriddedStreamfunctionBootstrapUnitTests.restorePaths(removedPaths));
+
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            lastwarn('');
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=5);
+            [~, warningId] = lastwarn;
+            testCase.verifyEqual(string(warningId), "GriddedStreamfunctionBootstrap:MissingCoherenceBackend")
+
+            lastwarn('');
+            bootstrap.bootstrapCoherence;
+            [~, warningId] = lastwarn;
+            testCase.verifyEqual(string(warningId), "")
+            testCase.verifyTrue(all(isnan(bootstrap.bootstrapCoherence)))
+            testCase.verifyTrue(isnan(bootstrap.fullFitCoherence))
+            testCase.verifyTrue(isnan(bootstrap.bestFitCoherence))
+            testCase.verifyEmpty(bootstrap.fullFitCoherenceSpectrum.frequency)
+            testCase.verifyEmpty(bootstrap.bestFitCoherenceSpectrum.frequency)
         end
     end
 
@@ -478,7 +573,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             end
         end
 
-        function [summary, scalarSummary] = summaryFromFit(fit, queryTimes)
+        function [summary, diagnostics] = summaryFromFit(fit, queryTimes)
             mx = reshape(fit.centerOfMassTrajectory.x(queryTimes), [], 1);
             my = reshape(fit.centerOfMassTrajectory.y(queryTimes), [], 1);
 
@@ -488,7 +583,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 "sigma_n", reshape(fit.sigma_n(queryTimes, mx, my), [], 1), ...
                 "sigma_s", reshape(fit.sigma_s(queryTimes, mx, my), [], 1), ...
                 "zeta", reshape(fit.zeta(queryTimes, mx, my), [], 1));
-            scalarSummary = struct("kappaEstimate", GriddedStreamfunctionBootstrapUnitTests.kappaFromFit(fit));
+            diagnostics = GriddedStreamfunctionBootstrapUnitTests.diagnosticsFromFit(fit);
         end
 
         function kappaEstimate = kappaFromFit(fit)
@@ -503,6 +598,107 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             end
 
             kappaEstimate = mean(kappaValues);
+        end
+
+        function diagnostics = diagnosticsFromFit(fit)
+            diagnostics = struct( ...
+                "kappa", GriddedStreamfunctionBootstrapUnitTests.kappaFromFit(fit), ...
+                "coherence", NaN, ...
+                "coherenceSpectrum", struct("frequency", zeros(0, 1), "coherence", zeros(0, 1)));
+
+            if ~GriddedStreamfunctionBootstrapUnitTests.hasCoherenceBackend()
+                return
+            end
+
+            trajectories = reshape(fit.observedTrajectories, [], 1);
+            tCell = arrayfun(@(trajectory) reshape(trajectory.t, [], 1), trajectories, 'UniformOutput', false);
+            tCoherence = GriddedStreamfunctionBootstrapUnitTests.coherenceEvaluationTimes(tCell);
+            if numel(tCoherence) < 2
+                return
+            end
+
+            centeredFrame = fit.decomposition.centeredFrame;
+            nTrajectories = numel(centeredFrame.mesoscale);
+            cvMesoscale = complex(zeros(numel(tCoherence), nTrajectories));
+            cvSubmesoscale = complex(zeros(numel(tCoherence), nTrajectories));
+
+            for iTrajectory = 1:nTrajectories
+                mesoscale = centeredFrame.mesoscale(iTrajectory);
+                submesoscale = centeredFrame.submesoscale(iTrajectory);
+                cvMesoscale(:, iTrajectory) = reshape(mesoscale.u(tCoherence), [], 1) + 1i * reshape(mesoscale.v(tCoherence), [], 1);
+                cvSubmesoscale(:, iTrajectory) = reshape(submesoscale.u(tCoherence), [], 1) + 1i * reshape(submesoscale.v(tCoherence), [], 1);
+            end
+
+            [psi, ~] = sleptap(size(cvMesoscale, 1));
+            dtCoherence = tCoherence(2) - tCoherence(1);
+            [frequency, sxx, syy, sxy] = mspec(dtCoherence, cvMesoscale, cvSubmesoscale, psi, 'cyclic');
+            gamma = abs(sxy).^2 ./ (sxx .* syy);
+            meanCoherence = GriddedStreamfunctionBootstrapUnitTests.meanOverFinite(gamma);
+            frequency = reshape(frequency, [], 1);
+            meanCoherence = reshape(meanCoherence, [], 1);
+            finiteCoherence = isfinite(meanCoherence);
+            if ~any(finiteCoherence)
+                return
+            end
+
+            diagnostics.coherence = mean(meanCoherence(finiteCoherence));
+            diagnostics.coherenceSpectrum = struct( ...
+                "frequency", frequency, ...
+                "coherence", meanCoherence);
+        end
+
+        function tf = hasCoherenceBackend()
+            tf = exist('sleptap', 'file') ~= 0 && exist('mspec', 'file') ~= 0;
+        end
+
+        function tCoherence = coherenceEvaluationTimes(tCell)
+            nTrajectories = numel(tCell);
+            tStart = -Inf;
+            tEnd = Inf;
+            dtValues = zeros(nTrajectories, 1);
+
+            for iTrajectory = 1:nTrajectories
+                ti = reshape(tCell{iTrajectory}, [], 1);
+                if numel(ti) < 2
+                    tCoherence = zeros(0, 1);
+                    return
+                end
+
+                dtValues(iTrajectory) = median(diff(ti));
+                if ~isfinite(dtValues(iTrajectory)) || dtValues(iTrajectory) <= 0
+                    tCoherence = zeros(0, 1);
+                    return
+                end
+
+                tStart = max(tStart, ti(1));
+                tEnd = min(tEnd, ti(end));
+            end
+
+            if ~(isfinite(tStart) && isfinite(tEnd)) || tEnd <= tStart
+                tCoherence = zeros(0, 1);
+                return
+            end
+
+            dtCoherence = max(dtValues);
+            nStep = floor((tEnd - tStart) / dtCoherence);
+            if nStep < 1
+                tCoherence = zeros(0, 1);
+                return
+            end
+
+            tCoherence = tStart + (0:nStep).' * dtCoherence;
+        end
+
+        function meanValues = meanOverFinite(values)
+            meanValues = zeros(size(values, 1), 1);
+            for iRow = 1:size(values, 1)
+                finiteValues = values(iRow, isfinite(values(iRow, :)));
+                if isempty(finiteValues)
+                    meanValues(iRow) = NaN;
+                else
+                    meanValues(iRow) = mean(finiteValues);
+                end
+            end
         end
 
         function kappaEstimate = legacyKappaFromFit(fit)
@@ -668,6 +864,25 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
         function density = directGaussianDensity2D(data, bandwidth, queryPoints)
             density = mean(exp(-0.5 * (((queryPoints(:, 1) - data(:, 1).')/bandwidth(1)).^2 + ((queryPoints(:, 2) - data(:, 2).')/bandwidth(2)).^2)), 2) ...
                 /(2*pi * bandwidth(1) * bandwidth(2));
+        end
+
+        function deleteFileIfExists(path)
+            if isfile(path)
+                delete(path);
+            end
+        end
+
+        function deleteDirectoryIfExists(path)
+            if exist(path, 'dir') ~= 0
+                rmdir(path, 's');
+            end
+        end
+
+        function restorePaths(paths)
+            for iPath = 1:numel(paths)
+                addpath(paths{iPath});
+            end
+            clear sleptap mspec
         end
     end
 end

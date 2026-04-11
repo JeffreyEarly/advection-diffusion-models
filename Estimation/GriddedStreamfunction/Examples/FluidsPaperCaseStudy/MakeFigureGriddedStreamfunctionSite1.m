@@ -12,12 +12,13 @@ y = siteData.y(:, 1:(end - 1));
 nDrifters = size(x, 2);
 f0 = 2 * 7.2921e-5 * sin(siteData.lat0*pi/180);
 
-trajectories = TrajectorySpline.empty(0, 1);
+trajectoryCell = cell(nDrifters, 1);
 for iDrifter = 1:nDrifters
-    trajectories(end + 1, 1) = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
+    trajectoryCell{iDrifter} = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
+trajectories = vertcat(trajectoryCell{:});
 
-fit = GriddedStreamfunction(trajectories, psiS=[2 2 4], mesoscaleConstraint="zeroVorticity");
+fit = GriddedStreamfunction.fromTrajectories(trajectories, psiS=[2 2 4], mesoscaleConstraint="zeroVorticity");
 
 scaleFactor = 1;
 run(fullfile(scriptDir, "LoadFigureDefaults.m"));

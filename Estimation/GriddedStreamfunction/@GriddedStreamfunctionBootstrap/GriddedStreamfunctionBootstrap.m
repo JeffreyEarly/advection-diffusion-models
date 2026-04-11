@@ -1,4 +1,4 @@
-classdef GriddedStreamfunctionBootstrap < handle
+classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
     % Bootstrap whole-drifter gridded-streamfunction fits and consensus scores.
     %
     % `GriddedStreamfunctionBootstrap` fits one deterministic
@@ -7,9 +7,12 @@ classdef GriddedStreamfunctionBootstrap < handle
     % `TrajectorySpline` objects with replacement. Each replicate is
     % summarized by COM-local mesoscale diagnostics
     % $$u_c(t), v_c(t), \sigma_n(t), \sigma_s(t), \zeta(t)$$ evaluated at
-    % the fitted center-of-mass trajectory, together with a scalar
-    % diffusivity diagnostic
-    % $$\kappa = \langle (x_{\mathrm{sm}}^2 + y_{\mathrm{sm}}^2)/(4\Delta t)\rangle.$$
+    % the fitted center-of-mass trajectory. The class also reports the
+    % scalar diffusivity diagnostic
+    % $$\kappa = \langle (x_{\mathrm{sm}}^2 + y_{\mathrm{sm}}^2)/(4\Delta t)\rangle,$$
+    % together with a scalar mean coherence and mean coherence spectrum
+    % between the fitted centered-frame mesoscale and submesoscale
+    % velocities when the jLab coherence tools are available.
     %
     % The bootstrap ensemble is ranked by a consensus score formed from
     % time-local `KernelDensityEstimate` fits to the bootstrap cloud. The
@@ -19,16 +22,20 @@ classdef GriddedStreamfunctionBootstrap < handle
     % forces them to vanish.
     %
     % ```matlab
-    % bootstrap = GriddedStreamfunctionBootstrap(trajectories, nBootstraps=100);
+    % bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=100);
     % bestFit = bootstrap.bestFit();
     % quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
     % ```
     %
     % - Topic: Create a bootstrap ensemble
+    % - Topic: Read from file
+    % - Topic: Write to file
     % - Topic: Inspect bootstrap properties
+    % - Topic: Inspect full-fit diagnostics
+    % - Topic: Inspect best-fit diagnostics
     % - Topic: Reconstruct bootstrap fits
     % - Topic: Summarize bootstrap uncertainty
-    % - Declaration: classdef GriddedStreamfunctionBootstrap < handle
+    % - Declaration: classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
 
     properties (SetAccess = private)
         % Full-data gridded-streamfunction fit used as the reference solution.
@@ -36,7 +43,7 @@ classdef GriddedStreamfunctionBootstrap < handle
         % `fullFit` is the deterministic `GriddedStreamfunction` fit on
         % the original input drifters before any resampling is applied.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect full-fit diagnostics
         fullFit
 
         % Original drifter trajectories used to seed the bootstrap ensemble.
@@ -73,14 +80,26 @@ classdef GriddedStreamfunctionBootstrap < handle
         % - Topic: Inspect bootstrap properties
         scoreTimes
 
+        % Number of bootstrap replicates in the ensemble.
+        %
+        % - Topic: Inspect bootstrap properties
+        nBootstraps (1,1) double {mustBeInteger,mustBeNonnegative} = 0
+
+        % Random-number seed used for whole-drifter resampling.
+        %
+        % - Topic: Inspect bootstrap properties
+        randomSeed (1,1) double {mustBeInteger,mustBeFinite} = 0
+    end
+
+    properties (Dependent)
         % Full-data COM-local mesoscale summary evaluated on `queryTimes`.
         %
         % `fullSummary` contains the fields `uCenter`, `vCenter`,
         % `sigma_n`, `sigma_s`, and `zeta`, each stored as a column vector
         % aligned with `queryTimes`.
         %
-        % - Topic: Inspect bootstrap properties
-        fullSummary struct = struct()
+        % - Topic: Inspect full-fit diagnostics
+        fullSummary
 
         % Bootstrap COM-local mesoscale summaries evaluated on `queryTimes`.
         %
@@ -88,33 +107,79 @@ classdef GriddedStreamfunctionBootstrap < handle
         % `summary.sigma_s`, and `summary.zeta` are arrays of size
         % `[numel(queryTimes) nBootstraps]`.
         %
-        % - Topic: Inspect bootstrap properties
-        summary struct = struct()
+        % - Topic: Summarize bootstrap uncertainty
+        summary
 
-        % Full-data scalar bootstrap diagnostic summary.
+        % Full-fit scalar submesoscale diffusivity diagnostic.
         %
-        % `fullScalarSummary.kappaEstimate` stores the scalar diffusivity
-        % diagnostic computed from the full-data fitted submesoscale
-        % trajectories.
+        % `fullFitKappa` is computed from the fitted full-data
+        % submesoscale trajectories and is eager because it only requires
+        % one fit-level diagnostic evaluation.
         %
-        % - Topic: Inspect bootstrap properties
-        fullScalarSummary struct = struct()
+        % - Topic: Inspect full-fit diagnostics
+        fullFitKappa
 
-        % Scalar diagnostic summaries for each bootstrap replicate.
+        % Full-fit scalar mean coherence between mesoscale and submesoscale velocities.
         %
-        % `scalarSummary.kappaEstimate` is a row vector of length
-        % `nBootstraps`.
+        % `fullFitCoherence` is the mean of the finite values in
+        % `fullFitCoherenceSpectrum.coherence`.
         %
-        % - Topic: Inspect bootstrap properties
-        scalarSummary struct = struct()
+        % - Topic: Inspect full-fit diagnostics
+        fullFitCoherence
+
+        % Full-fit mean coherence spectrum on the common overlap grid.
+        %
+        % `fullFitCoherenceSpectrum.frequency` and
+        % `fullFitCoherenceSpectrum.coherence` are column vectors. When
+        % the coherence backend is unavailable or no usable common uniform
+        % overlap grid exists, both vectors are empty.
+        %
+        % - Topic: Inspect full-fit diagnostics
+        fullFitCoherenceSpectrum
+
+        % Best-bootstrap scalar submesoscale diffusivity diagnostic.
+        %
+        % `bestFitKappa` is eager and corresponds to the fit returned by
+        % `bestFit()`.
+        %
+        % - Topic: Inspect best-fit diagnostics
+        bestFitKappa
+
+        % Best-bootstrap scalar mean coherence.
+        %
+        % `bestFitCoherence` is the mean of the finite values in
+        % `bestFitCoherenceSpectrum.coherence`.
+        %
+        % - Topic: Inspect best-fit diagnostics
+        bestFitCoherence
+
+        % Best-bootstrap mean coherence spectrum on the common overlap grid.
+        %
+        % - Topic: Inspect best-fit diagnostics
+        bestFitCoherenceSpectrum
+
+        % Lazy scalar diffusivity diagnostics for each bootstrap replicate.
+        %
+        % `bootstrapKappa` is a row vector of length `nBootstraps`.
+        %
+        % - Topic: Summarize bootstrap uncertainty
+        bootstrapKappa
+
+        % Lazy scalar coherence diagnostics for each bootstrap replicate.
+        %
+        % `bootstrapCoherence` is a row vector of length `nBootstraps`.
+        % When coherence is unavailable, the vector is filled with `NaN`.
+        %
+        % - Topic: Summarize bootstrap uncertainty
+        bootstrapCoherence
 
         % Consensus-score components and joint score for each bootstrap fit.
         %
         % `scores.uv`, `scores.strain`, `scores.zeta`, and `scores.joint`
         % are row vectors of length `nBootstraps`.
         %
-        % - Topic: Inspect bootstrap properties
-        scores struct = struct()
+        % - Topic: Summarize bootstrap uncertainty
+        scores
 
         % Exact reconstruction metadata for each bootstrap replicate.
         %
@@ -124,139 +189,259 @@ classdef GriddedStreamfunctionBootstrap < handle
         % resolved mesoscale knot cell `{qKnot, rKnot, tKnot}`.
         %
         % - Topic: Reconstruct bootstrap fits
-        bootstrapMetadata struct = struct()
+        bootstrapMetadata
+    end
 
-        % Number of bootstrap replicates in the ensemble.
-        %
-        % - Topic: Inspect bootstrap properties
-        nBootstraps (1,1) double {mustBeInteger, mustBeNonnegative} = 0
-
-        % Random-number seed used for whole-drifter resampling.
-        %
-        % - Topic: Inspect bootstrap properties
-        randomSeed (1,1) double {mustBeInteger, mustBeFinite} = 0
+    properties (Hidden, SetAccess = private)
+        fullSummaryUCenter = zeros(0, 1)
+        fullSummaryVCenter = zeros(0, 1)
+        fullSummarySigmaN = zeros(0, 1)
+        fullSummarySigmaS = zeros(0, 1)
+        fullSummaryZeta = zeros(0, 1)
+        summaryUCenter = zeros(0, 0)
+        summaryVCenter = zeros(0, 0)
+        summarySigmaN = zeros(0, 0)
+        summarySigmaS = zeros(0, 0)
+        summaryZeta = zeros(0, 0)
+        fullFitKappaValue (1,1) double {mustBeReal} = NaN
+        fullFitCoherenceValue (1,1) double {mustBeReal} = NaN
+        fullFitCoherenceFrequency (:,1) double {mustBeReal} = zeros(0, 1)
+        fullFitCoherenceValues (:,1) double {mustBeReal} = zeros(0, 1)
+        bestFitKappaValue (1,1) double {mustBeReal} = NaN
+        bestFitCoherenceValue (1,1) double {mustBeReal} = NaN
+        bestFitCoherenceFrequency (:,1) double {mustBeReal} = zeros(0, 1)
+        bestFitCoherenceValues (:,1) double {mustBeReal} = zeros(0, 1)
+        scoreUv = zeros(1, 0)
+        scoreStrain = zeros(1, 0)
+        scoreZeta = zeros(1, 0)
+        scoreJoint = zeros(1, 0)
+        bootstrapFitMetadata = GriddedStreamfunctionBootstrapFitMetadata.empty(0, 1)
+        bootstrapKappaCache = zeros(1, 0)
+        bootstrapCoherenceCache = zeros(1, 0)
     end
 
     properties (Access = private)
         observedTrajectorySampleData struct = struct([])
     end
 
+    properties (Dependent, Hidden, SetAccess = private)
+        bootstrapIndex
+        trajectoryIndex
+        fullFitCoherenceFrequencyIndex
+        bestFitCoherenceFrequencyIndex
+    end
+
     methods
-        function self = GriddedStreamfunctionBootstrap(trajectories, options)
-            % Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
+        function self = GriddedStreamfunctionBootstrap(options)
+            % Create a bootstrap from canonical restart-state properties.
             %
-            % Use this constructor when the uncertainty analysis should
-            % reflect sensitivity to which drifters were observed, rather
-            % than only the residual variability within one fitted
-            % ensemble.
-            %
-            % The constructor first fits the full-data
-            % `GriddedStreamfunction`, then resamples the drifter
-            % trajectories with replacement and fits one replicate per
-            % bootstrap draw. Each replicate stores COM-local mesoscale
-            % diagnostics on `queryTimes`, a scalar submesoscale
-            % diffusivity diagnostic, and the resolved spline knot vectors
-            % required to reconstruct the replicate exactly later.
+            % Use this low-level constructor when the full fit, stored
+            % summaries, scores, and reconstruction metadata already exist,
+            % for example after reading a persisted restart file. For
+            % ordinary bootstrap fitting from observed trajectories, use
+            % `GriddedStreamfunctionBootstrap.fromTrajectories(...)`.
             %
             % - Topic: Create a bootstrap ensemble
-            % - Declaration: self = GriddedStreamfunctionBootstrap(trajectories,nBootstraps=...,randomSeed=...,queryTimes=...,scoreTimes=...,scoreStride=...,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
-            % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
-            % - Parameter nBootstraps: number of whole-drifter bootstrap replicates, default `100`
-            % - Parameter randomSeed: integer random seed used for resampling, default `0`
-            % - Parameter queryTimes: optional strictly increasing query times for stored summaries
-            % - Parameter scoreTimes: optional strictly increasing subset of `queryTimes` used for consensus scoring
-            % - Parameter scoreStride: optional positive stride used to subsample `queryTimes` into `scoreTimes`, default `1`
-            % - Parameter psiKnotPoints: optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
-            % - Parameter psiS: optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
-            % - Parameter fastKnotPoints: optional fast temporal knot vector for COM and background
-            % - Parameter fastS: optional fast temporal spline degree, default `3`
-            % - Parameter mesoscaleConstraint: optional hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
-            % - Returns self: fitted bootstrap ensemble
-            arguments (Input)
-                trajectories {mustBeA(trajectories, "TrajectorySpline"), mustBeVector, mustBeNonempty}
-                options.nBootstraps (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.nBootstraps, 3)} = 100
-                options.randomSeed (1,1) double {mustBeInteger, mustBeFinite} = 0
-                options.queryTimes = []
-                options.scoreTimes = []
-                options.scoreStride (1,1) double {mustBeInteger, mustBePositive} = 1
-                options.psiKnotPoints = []
-                options.psiS (1,3) double {mustBeInteger, mustBeNonnegative} = [2 2 0]
-                options.fastKnotPoints = []
-                options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
-                options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
+            % - Declaration: self = GriddedStreamfunctionBootstrap(options)
+            % - Parameter options.fullFit: full-data `GriddedStreamfunction` fit
+            % - Parameter options.observedTrajectories: original drifter trajectories used for resampling
+            % - Parameter options.bootstrapIndices: whole-drifter resampling indices for each replicate
+            % - Parameter options.queryTimes: stored summary times
+            % - Parameter options.scoreTimes: stored consensus-score times
+            % - Parameter options.fullSummaryUCenter: persisted full-fit `uCenter` summary values
+            % - Parameter options.fullSummaryVCenter: persisted full-fit `vCenter` summary values
+            % - Parameter options.fullSummarySigmaN: persisted full-fit `sigma_n` summary values
+            % - Parameter options.fullSummarySigmaS: persisted full-fit `sigma_s` summary values
+            % - Parameter options.fullSummaryZeta: persisted full-fit `zeta` summary values
+            % - Parameter options.summaryUCenter: persisted bootstrap `uCenter` summary matrix
+            % - Parameter options.summaryVCenter: persisted bootstrap `vCenter` summary matrix
+            % - Parameter options.summarySigmaN: persisted bootstrap `sigma_n` summary matrix
+            % - Parameter options.summarySigmaS: persisted bootstrap `sigma_s` summary matrix
+            % - Parameter options.summaryZeta: persisted bootstrap `zeta` summary matrix
+            % - Parameter options.fullFitKappaValue: persisted full-fit scalar diffusivity diagnostic
+            % - Parameter options.fullFitCoherenceValue: persisted full-fit scalar mean coherence
+            % - Parameter options.fullFitCoherenceFrequency: persisted full-fit coherence-spectrum frequencies
+            % - Parameter options.fullFitCoherenceValues: persisted full-fit coherence-spectrum values
+            % - Parameter options.bestFitKappaValue: persisted best-fit scalar diffusivity diagnostic
+            % - Parameter options.bestFitCoherenceValue: persisted best-fit scalar mean coherence
+            % - Parameter options.bestFitCoherenceFrequency: persisted best-fit coherence-spectrum frequencies
+            % - Parameter options.bestFitCoherenceValues: persisted best-fit coherence-spectrum values
+            % - Parameter options.scoreUv: persisted bootstrap velocity consensus scores
+            % - Parameter options.scoreStrain: persisted bootstrap strain consensus scores
+            % - Parameter options.scoreZeta: persisted bootstrap vorticity consensus scores
+            % - Parameter options.scoreJoint: persisted bootstrap joint consensus scores
+            % - Parameter options.bootstrapFitMetadata: persisted exact reconstruction metadata for each bootstrap replicate
+            % - Parameter options.nBootstraps: number of bootstrap replicates
+            % - Parameter options.randomSeed: random seed used for resampling
+            % - Returns self: canonical `GriddedStreamfunctionBootstrap` instance
+            arguments
+                options.fullFit = GriddedStreamfunction.empty(0, 1)
+                options.observedTrajectories = TrajectorySpline.empty(0, 1)
+                options.bootstrapIndices double {mustBeReal,mustBeFinite} = zeros(0, 0)
+                options.queryTimes (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.scoreTimes (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.fullSummaryUCenter (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.fullSummaryVCenter (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.fullSummarySigmaN (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.fullSummarySigmaS (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.fullSummaryZeta (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.summaryUCenter double {mustBeReal,mustBeFinite} = zeros(0, 0)
+                options.summaryVCenter double {mustBeReal,mustBeFinite} = zeros(0, 0)
+                options.summarySigmaN double {mustBeReal,mustBeFinite} = zeros(0, 0)
+                options.summarySigmaS double {mustBeReal,mustBeFinite} = zeros(0, 0)
+                options.summaryZeta double {mustBeReal,mustBeFinite} = zeros(0, 0)
+                options.fullFitKappaValue (1,1) double {mustBeReal} = NaN
+                options.fullFitCoherenceValue (1,1) double {mustBeReal} = NaN
+                options.fullFitCoherenceFrequency (:,1) double {mustBeReal} = zeros(0, 1)
+                options.fullFitCoherenceValues (:,1) double {mustBeReal} = zeros(0, 1)
+                options.bestFitKappaValue (1,1) double {mustBeReal} = NaN
+                options.bestFitCoherenceValue (1,1) double {mustBeReal} = NaN
+                options.bestFitCoherenceFrequency (:,1) double {mustBeReal} = zeros(0, 1)
+                options.bestFitCoherenceValues (:,1) double {mustBeReal} = zeros(0, 1)
+                options.scoreUv double {mustBeReal,mustBeFinite} = zeros(1, 0)
+                options.scoreStrain double {mustBeReal,mustBeFinite} = zeros(1, 0)
+                options.scoreZeta double {mustBeReal,mustBeFinite} = zeros(1, 0)
+                options.scoreJoint double {mustBeReal,mustBeFinite} = zeros(1, 0)
+                options.bootstrapFitMetadata = GriddedStreamfunctionBootstrapFitMetadata.empty(0, 1)
+                options.nBootstraps (1,1) double {mustBeInteger,mustBeNonnegative} = 0
+                options.randomSeed (1,1) double {mustBeInteger,mustBeFinite} = 0
             end
 
-            trajectories = reshape(trajectories, [], 1);
-            fitOptions = struct( ...
-                "psiKnotPoints", {options.psiKnotPoints}, ...
-                "psiS", options.psiS, ...
-                "fastKnotPoints", {options.fastKnotPoints}, ...
-                "fastS", options.fastS, ...
-                "mesoscaleConstraint", string(options.mesoscaleConstraint));
-            fitOptionsWithoutDecomposition = fitOptions;
-            fitOptionsWithoutDecomposition.buildDecomposition = false;
+            self@CAAnnotatedClass();
 
-            [queryTimes, scoreTimes, scoreIndices] = GriddedStreamfunctionBootstrap.resolveBootstrapTimes( ...
-                trajectories, options.queryTimes, options.scoreTimes, options.scoreStride);
+            if nargin == 0
+                return
+            end
 
-            self.observedTrajectories = trajectories;
-            self.observedTrajectorySampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
-            observedTotalDisplacementWeights = GriddedStreamfunctionBootstrap.totalDisplacementWeightsForSampleTimes( ...
-                self.observedTrajectorySampleData.tCell);
+            GriddedStreamfunctionBootstrap.validateCanonicalState(options);
+            self.fullFit = options.fullFit;
+            self.observedTrajectories = reshape(options.observedTrajectories, [], 1);
+            self.bootstrapIndices = options.bootstrapIndices;
+            self.queryTimes = options.queryTimes;
+            self.scoreTimes = options.scoreTimes;
+            self.fullSummaryUCenter = options.fullSummaryUCenter;
+            self.fullSummaryVCenter = options.fullSummaryVCenter;
+            self.fullSummarySigmaN = options.fullSummarySigmaN;
+            self.fullSummarySigmaS = options.fullSummarySigmaS;
+            self.fullSummaryZeta = options.fullSummaryZeta;
+            self.summaryUCenter = options.summaryUCenter;
+            self.summaryVCenter = options.summaryVCenter;
+            self.summarySigmaN = options.summarySigmaN;
+            self.summarySigmaS = options.summarySigmaS;
+            self.summaryZeta = options.summaryZeta;
+            self.fullFitKappaValue = options.fullFitKappaValue;
+            self.fullFitCoherenceValue = options.fullFitCoherenceValue;
+            self.fullFitCoherenceFrequency = options.fullFitCoherenceFrequency;
+            self.fullFitCoherenceValues = options.fullFitCoherenceValues;
+            self.bestFitKappaValue = options.bestFitKappaValue;
+            self.bestFitCoherenceValue = options.bestFitCoherenceValue;
+            self.bestFitCoherenceFrequency = options.bestFitCoherenceFrequency;
+            self.bestFitCoherenceValues = options.bestFitCoherenceValues;
+            self.scoreUv = reshape(options.scoreUv, 1, []);
+            self.scoreStrain = reshape(options.scoreStrain, 1, []);
+            self.scoreZeta = reshape(options.scoreZeta, 1, []);
+            self.scoreJoint = reshape(options.scoreJoint, 1, []);
+            self.bootstrapFitMetadata = reshape(options.bootstrapFitMetadata, [], 1);
             self.nBootstraps = options.nBootstraps;
             self.randomSeed = options.randomSeed;
-            self.queryTimes = queryTimes;
-            self.scoreTimes = scoreTimes;
-
-            fitOptions.sampleData = self.observedTrajectorySampleData;
-            fitArguments = namedargs2cell(fitOptions);
-            self.fullFit = GriddedStreamfunction(trajectories, fitArguments{:});
-            [self.fullSummary, self.fullScalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit( ...
-                self.fullFit, queryTimes, observedTotalDisplacementWeights);
-
-            nQuery = numel(queryTimes);
-            nTrajectories = numel(trajectories);
-            self.bootstrapIndices = zeros(self.nBootstraps, nTrajectories);
-            self.summary = emptyTimeSummary(nQuery, self.nBootstraps);
-            self.scalarSummary = emptyScalarSummary(self.nBootstraps);
-            self.bootstrapMetadata = struct( ...
-                "fastKnotPoints", {cell(self.nBootstraps, 1)}, ...
-                "psiKnotPoints", {cell(self.nBootstraps, 1)});
-
-            originalRng = rng;
-            cleanupRng = onCleanup(@() rng(originalRng));
-            rng(self.randomSeed);
-
-            for iBootstrap = 1:self.nBootstraps
-                sampledIndices = randi(nTrajectories, 1, nTrajectories);
-                sampledTrajectories = reshape(trajectories(sampledIndices), [], 1);
-                sampledData = GriddedStreamfunction.resampledTrajectorySampleData( ...
-                    self.observedTrajectorySampleData, sampledIndices);
-                fitOptionsWithoutDecomposition.sampleData = sampledData;
-                fitArgumentsWithoutDecomposition = namedargs2cell(fitOptionsWithoutDecomposition);
-                fit = GriddedStreamfunction(sampledTrajectories, fitArgumentsWithoutDecomposition{:});
-                [summary, scalarSummary] = GriddedStreamfunctionBootstrap.extractSummaryFromFit( ...
-                    fit, queryTimes, observedTotalDisplacementWeights(sampledIndices));
-
-                self.bootstrapIndices(iBootstrap, :) = sampledIndices;
-                self.summary.uCenter(:, iBootstrap) = summary.uCenter;
-                self.summary.vCenter(:, iBootstrap) = summary.vCenter;
-                self.summary.sigma_n(:, iBootstrap) = summary.sigma_n;
-                self.summary.sigma_s(:, iBootstrap) = summary.sigma_s;
-                self.summary.zeta(:, iBootstrap) = summary.zeta;
-                self.scalarSummary.kappaEstimate(1, iBootstrap) = scalarSummary.kappaEstimate;
-                self.bootstrapMetadata.fastKnotPoints{iBootstrap} = fit.fastKnotPoints;
-                self.bootstrapMetadata.psiKnotPoints{iBootstrap} = fit.psiKnotPoints;
-            end
-
-            self.scores = GriddedStreamfunctionBootstrap.computeConsensusScores( ...
-                self.summary, scoreIndices, self.fullFit.mesoscaleConstraint);
+            self.refreshObservedTrajectorySampleData();
         end
 
+        function fullSummary = get.fullSummary(self)
+            fullSummary = struct( ...
+                "uCenter", self.fullSummaryUCenter, ...
+                "vCenter", self.fullSummaryVCenter, ...
+                "sigma_n", self.fullSummarySigmaN, ...
+                "sigma_s", self.fullSummarySigmaS, ...
+                "zeta", self.fullSummaryZeta);
+        end
+
+        function summary = get.summary(self)
+            summary = struct( ...
+                "uCenter", self.summaryUCenter, ...
+                "vCenter", self.summaryVCenter, ...
+                "sigma_n", self.summarySigmaN, ...
+                "sigma_s", self.summarySigmaS, ...
+                "zeta", self.summaryZeta);
+        end
+
+        function kappa = get.fullFitKappa(self)
+            kappa = self.fullFitKappaValue;
+        end
+
+        function coherence = get.fullFitCoherence(self)
+            coherence = self.fullFitCoherenceValue;
+        end
+
+        function spectrum = get.fullFitCoherenceSpectrum(self)
+            spectrum = GriddedStreamfunctionBootstrap.coherenceSpectrumFromStorage( ...
+                self.fullFitCoherenceFrequency, self.fullFitCoherenceValues);
+        end
+
+        function kappa = get.bestFitKappa(self)
+            kappa = self.bestFitKappaValue;
+        end
+
+        function coherence = get.bestFitCoherence(self)
+            coherence = self.bestFitCoherenceValue;
+        end
+
+        function spectrum = get.bestFitCoherenceSpectrum(self)
+            spectrum = GriddedStreamfunctionBootstrap.coherenceSpectrumFromStorage( ...
+                self.bestFitCoherenceFrequency, self.bestFitCoherenceValues);
+        end
+
+        function kappa = get.bootstrapKappa(self)
+            ensureBootstrapDiagnostics(self);
+            kappa = self.bootstrapKappaCache;
+        end
+
+        function coherence = get.bootstrapCoherence(self)
+            ensureBootstrapDiagnostics(self);
+            coherence = self.bootstrapCoherenceCache;
+        end
+
+        function scores = get.scores(self)
+            scores = struct( ...
+                "uv", self.scoreUv, ...
+                "strain", self.scoreStrain, ...
+                "zeta", self.scoreZeta, ...
+                "joint", self.scoreJoint);
+        end
+
+        function metadata = get.bootstrapMetadata(self)
+            nMetadata = numel(self.bootstrapFitMetadata);
+            metadata = struct( ...
+                "fastKnotPoints", {cell(nMetadata, 1)}, ...
+                "psiKnotPoints", {cell(nMetadata, 1)});
+            for iMetadata = 1:nMetadata
+                metadata.fastKnotPoints{iMetadata} = self.bootstrapFitMetadata(iMetadata).fastKnotPoints;
+                metadata.psiKnotPoints{iMetadata} = self.bootstrapFitMetadata(iMetadata).psiKnotPoints;
+            end
+        end
+
+        function bootstrapIndex = get.bootstrapIndex(self)
+            bootstrapIndex = reshape(1:self.nBootstraps, [], 1);
+        end
+
+        function trajectoryIndex = get.trajectoryIndex(self)
+            trajectoryIndex = reshape(1:size(self.bootstrapIndices, 2), [], 1);
+        end
+
+        function frequencyIndex = get.fullFitCoherenceFrequencyIndex(self)
+            frequencyIndex = reshape(1:numel(self.fullFitCoherenceFrequency), [], 1);
+        end
+
+        function frequencyIndex = get.bestFitCoherenceFrequencyIndex(self)
+            frequencyIndex = reshape(1:numel(self.bestFitCoherenceFrequency), [], 1);
+        end
+    end
+
+    methods
         function index = bestBootstrapIndex(self)
             % Return the bootstrap index with the highest joint consensus score.
             %
-            % - Topic: Reconstruct bootstrap fits
+            % - Topic: Inspect best-fit diagnostics
             % - Declaration: index = bestBootstrapIndex(self)
             % - Returns index: 1-based bootstrap index of the top-ranked replicate
             arguments (Input)
@@ -266,7 +451,7 @@ classdef GriddedStreamfunctionBootstrap < handle
                 index (1,1) double
             end
 
-            [~, index] = max(self.scores.joint, [], 2);
+            [~, index] = max(self.scoreJoint, [], 2);
         end
 
         function fit = fitForBootstrap(self, iBootstrap)
@@ -282,7 +467,7 @@ classdef GriddedStreamfunctionBootstrap < handle
             % - Returns fit: reconstructed `GriddedStreamfunction` replicate
             arguments (Input)
                 self (1,1) GriddedStreamfunctionBootstrap
-                iBootstrap (1,1) double {mustBeInteger, mustBePositive}
+                iBootstrap (1,1) double {mustBeInteger,mustBePositive}
             end
             arguments (Output)
                 fit (1,1) GriddedStreamfunction
@@ -294,24 +479,23 @@ classdef GriddedStreamfunctionBootstrap < handle
             end
 
             sampledTrajectories = reshape(self.observedTrajectories(self.bootstrapIndices(iBootstrap, :)), [], 1);
-            psiKnotPoints = self.bootstrapMetadata.psiKnotPoints(iBootstrap);
-            fastKnotPoints = self.bootstrapMetadata.fastKnotPoints(iBootstrap);
+            metadata = self.bootstrapFitMetadata(iBootstrap);
             fitOptions = struct( ...
-                "psiKnotPoints", psiKnotPoints, ...
+                "psiKnotPoints", {metadata.psiKnotPoints}, ...
                 "psiS", self.fullFit.psiS, ...
-                "fastKnotPoints", fastKnotPoints, ...
+                "fastKnotPoints", metadata.fastKnotPoints, ...
                 "fastS", self.fullFit.fastS, ...
                 "mesoscaleConstraint", self.fullFit.mesoscaleConstraint);
             fitOptions.sampleData = GriddedStreamfunction.resampledTrajectorySampleData( ...
                 self.observedTrajectorySampleData, self.bootstrapIndices(iBootstrap, :));
             fitArguments = namedargs2cell(fitOptions);
-            fit = GriddedStreamfunction(sampledTrajectories, fitArguments{:});
+            fit = GriddedStreamfunction.fromTrajectories(sampledTrajectories, fitArguments{:});
         end
 
         function fit = bestFit(self)
             % Reconstruct the top-ranked bootstrap replicate.
             %
-            % - Topic: Reconstruct bootstrap fits
+            % - Topic: Inspect best-fit diagnostics
             % - Declaration: fit = bestFit(self)
             % - Returns fit: reconstructed `GriddedStreamfunction` for the best bootstrap replicate
             arguments (Input)
@@ -330,7 +514,7 @@ classdef GriddedStreamfunctionBootstrap < handle
             % The returned struct contains the time-varying summary fields
             % `uCenter`, `vCenter`, `sigma_n`, `sigma_s`, and `zeta` with
             % size `[numel(queryTimes) numel(probabilities)]`, together
-            % with the scalar field `kappaEstimate` of size
+            % with the scalar fields `kappa` and `coherence` of size
             % `[1 numel(probabilities)]`.
             %
             % - Topic: Summarize bootstrap uncertainty
@@ -339,7 +523,7 @@ classdef GriddedStreamfunctionBootstrap < handle
             % - Returns quantiles: struct of bootstrap quantiles for the stored summary fields
             arguments (Input)
                 self (1,1) GriddedStreamfunctionBootstrap
-                probabilities {mustBeNumeric, mustBeReal, mustBeFinite, mustBeVector}
+                probabilities {mustBeNumeric,mustBeReal,mustBeFinite,mustBeVector}
             end
             arguments (Output)
                 quantiles struct
@@ -352,34 +536,429 @@ classdef GriddedStreamfunctionBootstrap < handle
             end
 
             quantiles = struct( ...
-                "uCenter", quantile(self.summary.uCenter, probabilities, 2), ...
-                "vCenter", quantile(self.summary.vCenter, probabilities, 2), ...
-                "sigma_n", quantile(self.summary.sigma_n, probabilities, 2), ...
-                "sigma_s", quantile(self.summary.sigma_s, probabilities, 2), ...
-                "zeta", quantile(self.summary.zeta, probabilities, 2), ...
-                "kappaEstimate", quantile(self.scalarSummary.kappaEstimate, probabilities, 2));
+                "uCenter", quantile(self.summaryUCenter, probabilities, 2), ...
+                "vCenter", quantile(self.summaryVCenter, probabilities, 2), ...
+                "sigma_n", quantile(self.summarySigmaN, probabilities, 2), ...
+                "sigma_s", quantile(self.summarySigmaS, probabilities, 2), ...
+                "zeta", quantile(self.summaryZeta, probabilities, 2), ...
+                "kappa", quantile(self.bootstrapKappa, probabilities, 2), ...
+                "coherence", quantile(self.bootstrapCoherence, probabilities, 2));
+        end
+    end
+
+    methods (Static)
+        function self = fromFile(path)
+            % Read a bootstrap ensemble from a NetCDF restart file.
+            %
+            % `fromFile` reconstructs the canonical bootstrap state written
+            % by `writeToFile` without rerunning the whole-drifter
+            % resampling workflow.
+            %
+            % - Topic: Read from file
+            % - Declaration: self = fromFile(path)
+            % - Parameter path: path to the NetCDF restart file
+            % - Returns self: reconstructed `GriddedStreamfunctionBootstrap` ensemble
+            arguments (Input)
+                path {mustBeTextScalar}
+            end
+
+            self = griddedStreamfunctionBootstrapFromFile(char(path));
+        end
+
+        function self = fromTrajectories(trajectories, options)
+            % Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
+            %
+            % Use this factory when the uncertainty analysis should
+            % reflect sensitivity to which drifters were observed, rather
+            % than only the residual variability within one fitted
+            % ensemble.
+            %
+            % The factory first fits the full-data
+            % `GriddedStreamfunction`, then resamples the drifter
+            % trajectories with replacement and fits one replicate per
+            % bootstrap draw. Each replicate stores COM-local mesoscale
+            % diagnostics on `queryTimes`, while scalar bootstrap
+            % diagnostics are computed lazily on demand. The class also
+            % stores the resolved spline knot vectors required to
+            % reconstruct each replicate exactly later.
+            %
+            % - Topic: Create a bootstrap ensemble
+            % - Declaration: self = fromTrajectories(trajectories,nBootstraps=...,randomSeed=...,queryTimes=...,scoreTimes=...,scoreStride=...,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
+            % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
+            % - Parameter nBootstraps: number of whole-drifter bootstrap replicates, default `100`
+            % - Parameter randomSeed: integer random seed used for resampling, default `0`
+            % - Parameter queryTimes: optional strictly increasing query times for stored summaries
+            % - Parameter scoreTimes: optional strictly increasing subset of `queryTimes` used for consensus scoring
+            % - Parameter scoreStride: optional positive stride used to subsample `queryTimes` into `scoreTimes`, default `1`
+            % - Parameter psiKnotPoints: optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
+            % - Parameter psiS: optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
+            % - Parameter fastKnotPoints: optional fast temporal knot vector for COM and background
+            % - Parameter fastS: optional fast temporal spline degree, default `3`
+            % - Parameter mesoscaleConstraint: optional hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
+            % - Returns self: fitted bootstrap ensemble
+            arguments (Input)
+                trajectories {mustBeA(trajectories, "TrajectorySpline"), mustBeVector, mustBeNonempty}
+                options.nBootstraps (1,1) double {mustBeInteger,mustBeGreaterThanOrEqual(options.nBootstraps, 3)} = 100
+                options.randomSeed (1,1) double {mustBeInteger,mustBeFinite} = 0
+                options.queryTimes = []
+                options.scoreTimes = []
+                options.scoreStride (1,1) double {mustBeInteger,mustBePositive} = 1
+                options.psiKnotPoints = []
+                options.psiS (1,3) double {mustBeInteger,mustBeNonnegative} = [2 2 0]
+                options.fastKnotPoints = []
+                options.fastS (1,1) double {mustBeInteger,mustBeNonnegative} = 3
+                options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
+            end
+
+            trajectories = reshape(trajectories, [], 1);
+            fitOptions = struct( ...
+                "psiKnotPoints", {options.psiKnotPoints}, ...
+                "psiS", options.psiS, ...
+                "fastKnotPoints", {options.fastKnotPoints}, ...
+                "fastS", options.fastS, ...
+                "mesoscaleConstraint", string(options.mesoscaleConstraint));
+            fitOptionsWithoutDecomposition = fitOptions;
+            fitOptionsWithoutDecomposition.buildDecomposition = false;
+
+            [queryTimes, scoreTimes, scoreIndices] = GriddedStreamfunctionBootstrap.resolveBootstrapTimes( ...
+                trajectories, options.queryTimes, options.scoreTimes, options.scoreStride);
+
+            self = GriddedStreamfunctionBootstrap();
+            self.observedTrajectories = trajectories;
+            self.observedTrajectorySampleData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
+            observedTotalDisplacementWeights = GriddedStreamfunctionBootstrap.totalDisplacementWeightsForSampleTimes( ...
+                self.observedTrajectorySampleData.tCell);
+            self.nBootstraps = options.nBootstraps;
+            self.randomSeed = options.randomSeed;
+            self.queryTimes = queryTimes;
+            self.scoreTimes = scoreTimes;
+
+            fitOptions.sampleData = self.observedTrajectorySampleData;
+            fitArguments = namedargs2cell(fitOptions);
+            self.fullFit = GriddedStreamfunction.fromTrajectories(trajectories, fitArguments{:});
+            fullSummary = GriddedStreamfunctionBootstrap.extractSummaryFromFit(self.fullFit, queryTimes);
+            fullDiagnostics = GriddedStreamfunctionBootstrap.diagnosticsFromFit(self.fullFit, observedTotalDisplacementWeights);
+            self.fullSummaryUCenter = fullSummary.uCenter;
+            self.fullSummaryVCenter = fullSummary.vCenter;
+            self.fullSummarySigmaN = fullSummary.sigma_n;
+            self.fullSummarySigmaS = fullSummary.sigma_s;
+            self.fullSummaryZeta = fullSummary.zeta;
+            self.fullFitKappaValue = fullDiagnostics.kappa;
+            self.fullFitCoherenceValue = fullDiagnostics.coherence;
+            fullCoherenceSpectrumStorage = GriddedStreamfunctionBootstrap.coherenceSpectrumStorage( ...
+                fullDiagnostics.coherenceSpectrum);
+            self.fullFitCoherenceFrequency = fullCoherenceSpectrumStorage.frequency;
+            self.fullFitCoherenceValues = fullCoherenceSpectrumStorage.coherence;
+
+            nQuery = numel(queryTimes);
+            nTrajectories = numel(trajectories);
+            self.bootstrapIndices = zeros(self.nBootstraps, nTrajectories);
+            self.summaryUCenter = zeros(nQuery, self.nBootstraps);
+            self.summaryVCenter = zeros(nQuery, self.nBootstraps);
+            self.summarySigmaN = zeros(nQuery, self.nBootstraps);
+            self.summarySigmaS = zeros(nQuery, self.nBootstraps);
+            self.summaryZeta = zeros(nQuery, self.nBootstraps);
+            self.bootstrapFitMetadata = GriddedStreamfunctionBootstrapFitMetadata.empty(0, 1);
+            self.bootstrapKappaCache = zeros(1, 0);
+            self.bootstrapCoherenceCache = zeros(1, 0);
+
+            originalRng = rng;
+            cleanupRng = onCleanup(@() rng(originalRng));
+            rng(self.randomSeed);
+
+            for iBootstrap = 1:self.nBootstraps
+                sampledIndices = randi(nTrajectories, 1, nTrajectories);
+                sampledTrajectories = reshape(trajectories(sampledIndices), [], 1);
+                sampledData = GriddedStreamfunction.resampledTrajectorySampleData( ...
+                    self.observedTrajectorySampleData, sampledIndices);
+                fitOptionsWithoutDecomposition.sampleData = sampledData;
+                fitArgumentsWithoutDecomposition = namedargs2cell(fitOptionsWithoutDecomposition);
+                fit = GriddedStreamfunction.fromTrajectories(sampledTrajectories, fitArgumentsWithoutDecomposition{:});
+                summary = GriddedStreamfunctionBootstrap.extractSummaryFromFit(fit, queryTimes);
+
+                self.bootstrapIndices(iBootstrap, :) = sampledIndices;
+                self.summaryUCenter(:, iBootstrap) = summary.uCenter;
+                self.summaryVCenter(:, iBootstrap) = summary.vCenter;
+                self.summarySigmaN(:, iBootstrap) = summary.sigma_n;
+                self.summarySigmaS(:, iBootstrap) = summary.sigma_s;
+                self.summaryZeta(:, iBootstrap) = summary.zeta;
+                self.bootstrapFitMetadata(iBootstrap, 1) = GriddedStreamfunctionBootstrapFitMetadata.fromFit(fit);
+            end
+
+            scores = GriddedStreamfunctionBootstrap.computeConsensusScores(self.summary, scoreIndices, self.fullFit.mesoscaleConstraint);
+            self.scoreUv = scores.uv;
+            self.scoreStrain = scores.strain;
+            self.scoreZeta = scores.zeta;
+            self.scoreJoint = scores.joint;
+
+            iBest = self.bestBootstrapIndex();
+            bestFit = self.fitForBootstrap(iBest);
+            bestDiagnostics = GriddedStreamfunctionBootstrap.diagnosticsFromFit( ...
+                bestFit, observedTotalDisplacementWeights(self.bootstrapIndices(iBest, :)));
+            self.bestFitKappaValue = bestDiagnostics.kappa;
+            self.bestFitCoherenceValue = bestDiagnostics.coherence;
+            bestCoherenceSpectrumStorage = GriddedStreamfunctionBootstrap.coherenceSpectrumStorage( ...
+                bestDiagnostics.coherenceSpectrum);
+            self.bestFitCoherenceFrequency = bestCoherenceSpectrumStorage.frequency;
+            self.bestFitCoherenceValues = bestCoherenceSpectrumStorage.coherence;
+        end
+    end
+
+    methods (Static, Hidden)
+        function self = annotatedClassFromGroup(group)
+            vars = CAAnnotatedClass.propertyValuesFromGroup(group, { ...
+                'observedTrajectories', ...
+                'bootstrapIndices', ...
+                'queryTimes', ...
+                'scoreTimes', ...
+                'fullSummaryUCenter', ...
+                'fullSummaryVCenter', ...
+                'fullSummarySigmaN', ...
+                'fullSummarySigmaS', ...
+                'fullSummaryZeta', ...
+                'summaryUCenter', ...
+                'summaryVCenter', ...
+                'summarySigmaN', ...
+                'summarySigmaS', ...
+                'summaryZeta', ...
+                'fullFitKappaValue', ...
+                'fullFitCoherenceValue', ...
+                'fullFitCoherenceFrequency', ...
+                'fullFitCoherenceValues', ...
+                'bestFitKappaValue', ...
+                'bestFitCoherenceValue', ...
+                'bestFitCoherenceFrequency', ...
+                'bestFitCoherenceValues', ...
+                'scoreUv', ...
+                'scoreStrain', ...
+                'scoreZeta', ...
+                'scoreJoint', ...
+                'bootstrapFitMetadata', ...
+                'nBootstraps', ...
+                'randomSeed'});
+            vars.fullFit = GriddedStreamfunction.annotatedClassFromGroup(group.groupWithName('fullFit'));
+            GriddedStreamfunctionBootstrap.validateCanonicalState(vars);
+
+            self = GriddedStreamfunctionBootstrap();
+            self.fullFit = vars.fullFit;
+            self.observedTrajectories = reshape(vars.observedTrajectories, [], 1);
+            self.bootstrapIndices = vars.bootstrapIndices;
+            self.queryTimes = vars.queryTimes;
+            self.scoreTimes = vars.scoreTimes;
+            self.fullSummaryUCenter = vars.fullSummaryUCenter;
+            self.fullSummaryVCenter = vars.fullSummaryVCenter;
+            self.fullSummarySigmaN = vars.fullSummarySigmaN;
+            self.fullSummarySigmaS = vars.fullSummarySigmaS;
+            self.fullSummaryZeta = vars.fullSummaryZeta;
+            self.summaryUCenter = vars.summaryUCenter;
+            self.summaryVCenter = vars.summaryVCenter;
+            self.summarySigmaN = vars.summarySigmaN;
+            self.summarySigmaS = vars.summarySigmaS;
+            self.summaryZeta = vars.summaryZeta;
+            self.fullFitKappaValue = vars.fullFitKappaValue;
+            self.fullFitCoherenceValue = vars.fullFitCoherenceValue;
+            self.fullFitCoherenceFrequency = vars.fullFitCoherenceFrequency;
+            self.fullFitCoherenceValues = vars.fullFitCoherenceValues;
+            self.bestFitKappaValue = vars.bestFitKappaValue;
+            self.bestFitCoherenceValue = vars.bestFitCoherenceValue;
+            self.bestFitCoherenceFrequency = vars.bestFitCoherenceFrequency;
+            self.bestFitCoherenceValues = vars.bestFitCoherenceValues;
+            self.scoreUv = reshape(vars.scoreUv, 1, []);
+            self.scoreStrain = reshape(vars.scoreStrain, 1, []);
+            self.scoreZeta = reshape(vars.scoreZeta, 1, []);
+            self.scoreJoint = reshape(vars.scoreJoint, 1, []);
+            self.bootstrapFitMetadata = reshape(vars.bootstrapFitMetadata, [], 1);
+            self.nBootstraps = vars.nBootstraps;
+            self.randomSeed = vars.randomSeed;
+            self.refreshObservedTrajectorySampleData();
+            optionalVars = CAAnnotatedClass.propertyValuesFromGroup(group, ...
+                {'bootstrapKappaCache', 'bootstrapCoherenceCache'}, shouldIgnoreMissingProperties=true);
+            if isstruct(optionalVars)
+                if isfield(optionalVars, 'bootstrapKappaCache')
+                    self.bootstrapKappaCache = reshape(optionalVars.bootstrapKappaCache, 1, []);
+                end
+                if isfield(optionalVars, 'bootstrapCoherenceCache')
+                    self.bootstrapCoherenceCache = reshape(optionalVars.bootstrapCoherenceCache, 1, []);
+                end
+            end
+        end
+
+        function propertyAnnotations = classDefinedPropertyAnnotations()
+            propertyAnnotations = CAPropertyAnnotation.empty(0, 0);
+            propertyAnnotations(end+1) = CADimensionProperty('queryTimes', '', 'Times used to store COM-local bootstrap summaries.');
+            propertyAnnotations(end+1) = CADimensionProperty('scoreTimes', '', 'Times used to compute the consensus score.');
+            propertyAnnotations(end+1) = CADimensionProperty('bootstrapIndex', '', 'Index over bootstrap replicates.');
+            propertyAnnotations(end+1) = CADimensionProperty('trajectoryIndex', '', 'Index over observed drifter trajectories.');
+            propertyAnnotations(end+1) = CADimensionProperty('fullFitCoherenceFrequencyIndex', '', 'Index over the full-fit coherence-spectrum frequencies.');
+            propertyAnnotations(end+1) = CADimensionProperty('bestFitCoherenceFrequencyIndex', '', 'Index over the best-fit coherence-spectrum frequencies.');
+            propertyAnnotations(end+1) = CAObjectProperty('fullFit', 'Full-data gridded-streamfunction fit used as the reference solution.');
+            propertyAnnotations(end+1) = CAObjectProperty('observedTrajectories', 'Original drifter trajectories used to seed the bootstrap ensemble.');
+            propertyAnnotations(end+1) = CANumericProperty('bootstrapIndices', {'bootstrapIndex', 'trajectoryIndex'}, '', 'Whole-drifter resampling indices for each bootstrap replicate.');
+            propertyAnnotations(end+1) = CANumericProperty('fullSummaryUCenter', {'queryTimes'}, '', 'Persisted full-fit `uCenter` summary values.');
+            propertyAnnotations(end+1) = CANumericProperty('fullSummaryVCenter', {'queryTimes'}, '', 'Persisted full-fit `vCenter` summary values.');
+            propertyAnnotations(end+1) = CANumericProperty('fullSummarySigmaN', {'queryTimes'}, '', 'Persisted full-fit `sigma_n` summary values.');
+            propertyAnnotations(end+1) = CANumericProperty('fullSummarySigmaS', {'queryTimes'}, '', 'Persisted full-fit `sigma_s` summary values.');
+            propertyAnnotations(end+1) = CANumericProperty('fullSummaryZeta', {'queryTimes'}, '', 'Persisted full-fit `zeta` summary values.');
+            propertyAnnotations(end+1) = CANumericProperty('summaryUCenter', {'queryTimes', 'bootstrapIndex'}, '', 'Persisted bootstrap `uCenter` summary matrix.');
+            propertyAnnotations(end+1) = CANumericProperty('summaryVCenter', {'queryTimes', 'bootstrapIndex'}, '', 'Persisted bootstrap `vCenter` summary matrix.');
+            propertyAnnotations(end+1) = CANumericProperty('summarySigmaN', {'queryTimes', 'bootstrapIndex'}, '', 'Persisted bootstrap `sigma_n` summary matrix.');
+            propertyAnnotations(end+1) = CANumericProperty('summarySigmaS', {'queryTimes', 'bootstrapIndex'}, '', 'Persisted bootstrap `sigma_s` summary matrix.');
+            propertyAnnotations(end+1) = CANumericProperty('summaryZeta', {'queryTimes', 'bootstrapIndex'}, '', 'Persisted bootstrap `zeta` summary matrix.');
+            propertyAnnotations(end+1) = CANumericProperty('fullFitKappaValue', {}, '', 'Persisted full-fit scalar diffusivity diagnostic.');
+            propertyAnnotations(end+1) = CANumericProperty('fullFitCoherenceValue', {}, '', 'Persisted full-fit scalar mean coherence.');
+            propertyAnnotations(end+1) = CANumericProperty('fullFitCoherenceFrequency', {'fullFitCoherenceFrequencyIndex'}, '', 'Persisted full-fit coherence-spectrum frequencies.');
+            propertyAnnotations(end+1) = CANumericProperty('fullFitCoherenceValues', {'fullFitCoherenceFrequencyIndex'}, '', 'Persisted full-fit coherence-spectrum values.');
+            propertyAnnotations(end+1) = CANumericProperty('bestFitKappaValue', {}, '', 'Persisted best-fit scalar diffusivity diagnostic.');
+            propertyAnnotations(end+1) = CANumericProperty('bestFitCoherenceValue', {}, '', 'Persisted best-fit scalar mean coherence.');
+            propertyAnnotations(end+1) = CANumericProperty('bestFitCoherenceFrequency', {'bestFitCoherenceFrequencyIndex'}, '', 'Persisted best-fit coherence-spectrum frequencies.');
+            propertyAnnotations(end+1) = CANumericProperty('bestFitCoherenceValues', {'bestFitCoherenceFrequencyIndex'}, '', 'Persisted best-fit coherence-spectrum values.');
+            propertyAnnotations(end+1) = CANumericProperty('scoreUv', {'bootstrapIndex'}, '', 'Persisted bootstrap velocity consensus scores.');
+            propertyAnnotations(end+1) = CANumericProperty('scoreStrain', {'bootstrapIndex'}, '', 'Persisted bootstrap strain consensus scores.');
+            propertyAnnotations(end+1) = CANumericProperty('scoreZeta', {'bootstrapIndex'}, '', 'Persisted bootstrap vorticity consensus scores.');
+            propertyAnnotations(end+1) = CANumericProperty('scoreJoint', {'bootstrapIndex'}, '', 'Persisted bootstrap joint consensus scores.');
+            propertyAnnotations(end+1) = CAObjectProperty('bootstrapFitMetadata', 'Persisted exact reconstruction metadata for each bootstrap replicate.');
+            propertyAnnotations(end+1) = CANumericProperty('nBootstraps', {}, '', 'Number of bootstrap replicates in the ensemble.');
+            propertyAnnotations(end+1) = CANumericProperty('randomSeed', {}, '', 'Random-number seed used for whole-drifter resampling.');
+            propertyAnnotations(end+1) = CANumericProperty('bootstrapKappaCache', {'bootstrapIndex'}, '', 'Optional cached bootstrap scalar diffusivity diagnostics.');
+            propertyAnnotations(end+1) = CANumericProperty('bootstrapCoherenceCache', {'bootstrapIndex'}, '', 'Optional cached bootstrap scalar coherence diagnostics.');
+        end
+
+        function names = classRequiredPropertyNames()
+            names = { ...
+                'fullFit', ...
+                'observedTrajectories', ...
+                'bootstrapIndices', ...
+                'queryTimes', ...
+                'scoreTimes', ...
+                'fullSummaryUCenter', ...
+                'fullSummaryVCenter', ...
+                'fullSummarySigmaN', ...
+                'fullSummarySigmaS', ...
+                'fullSummaryZeta', ...
+                'summaryUCenter', ...
+                'summaryVCenter', ...
+                'summarySigmaN', ...
+                'summarySigmaS', ...
+                'summaryZeta', ...
+                'fullFitKappaValue', ...
+                'fullFitCoherenceValue', ...
+                'fullFitCoherenceFrequency', ...
+                'fullFitCoherenceValues', ...
+                'bestFitKappaValue', ...
+                'bestFitCoherenceValue', ...
+                'bestFitCoherenceFrequency', ...
+                'bestFitCoherenceValues', ...
+                'scoreUv', ...
+                'scoreStrain', ...
+                'scoreZeta', ...
+                'scoreJoint', ...
+                'bootstrapFitMetadata', ...
+                'nBootstraps', ...
+                'randomSeed'};
         end
     end
 
     methods (Static, Access = private)
+        function validateCanonicalState(options)
+            if isempty(options.fullFit) && isempty(options.observedTrajectories) && isempty(options.bootstrapIndices) && ...
+                    isempty(options.queryTimes) && isempty(options.scoreTimes) && ...
+                    isempty(options.fullSummaryUCenter) && isempty(options.fullSummaryVCenter) && ...
+                    isempty(options.fullSummarySigmaN) && isempty(options.fullSummarySigmaS) && ...
+                    isempty(options.fullSummaryZeta) && isempty(options.summaryUCenter) && ...
+                    isempty(options.summaryVCenter) && isempty(options.summarySigmaN) && ...
+                    isempty(options.summarySigmaS) && isempty(options.summaryZeta) && ...
+                    isnan(options.fullFitKappaValue) && isnan(options.fullFitCoherenceValue) && ...
+                    isempty(options.fullFitCoherenceFrequency) && isempty(options.fullFitCoherenceValues) && ...
+                    isnan(options.bestFitKappaValue) && isnan(options.bestFitCoherenceValue) && ...
+                    isempty(options.bestFitCoherenceFrequency) && isempty(options.bestFitCoherenceValues) && ...
+                    isempty(options.scoreUv) && isempty(options.scoreStrain) && ...
+                    isempty(options.scoreZeta) && isempty(options.scoreJoint) && ...
+                    isempty(options.bootstrapFitMetadata) && options.nBootstraps == 0 && options.randomSeed == 0
+                return
+            end
+
+            if ~(isa(options.fullFit, 'GriddedStreamfunction') && isscalar(options.fullFit))
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'fullFit must be a scalar GriddedStreamfunction.');
+            end
+            if ~(isa(options.observedTrajectories, 'TrajectorySpline') && isvector(options.observedTrajectories) && ~isempty(options.observedTrajectories))
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'observedTrajectories must be a nonempty vector of TrajectorySpline objects.');
+            end
+            if ~(isa(options.bootstrapFitMetadata, 'GriddedStreamfunctionBootstrapFitMetadata') && isvector(options.bootstrapFitMetadata))
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'bootstrapFitMetadata must be a vector of GriddedStreamfunctionBootstrapFitMetadata objects.');
+            end
+            if any(round(options.bootstrapIndices) ~= options.bootstrapIndices, 'all') || any(options.bootstrapIndices < 1, 'all')
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'bootstrapIndices must contain positive integer drifter indices.');
+            end
+
+            nBootstraps = options.nBootstraps;
+            nQuery = numel(options.queryTimes);
+            if size(options.bootstrapIndices, 1) ~= nBootstraps
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'bootstrapIndices must have one row per bootstrap replicate.');
+            end
+            if size(options.summaryUCenter, 1) ~= nQuery || size(options.summaryUCenter, 2) ~= nBootstraps
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'summaryUCenter must have size [numel(queryTimes) nBootstraps].');
+            end
+
+            summaryMatrices = {options.summaryVCenter, options.summarySigmaN, options.summarySigmaS, options.summaryZeta};
+            for iMatrix = 1:numel(summaryMatrices)
+                if ~isequal(size(summaryMatrices{iMatrix}), size(options.summaryUCenter))
+                    error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                        'All persisted bootstrap summary matrices must have the same size.');
+                end
+            end
+
+            fullSummaryVectors = { ...
+                options.fullSummaryUCenter, ...
+                options.fullSummaryVCenter, ...
+                options.fullSummarySigmaN, ...
+                options.fullSummarySigmaS, ...
+                options.fullSummaryZeta};
+            for iVector = 1:numel(fullSummaryVectors)
+                if numel(fullSummaryVectors{iVector}) ~= nQuery
+                    error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                        'Each persisted full-fit summary vector must align with queryTimes.');
+                end
+            end
+
+            if numel(options.fullFitCoherenceFrequency) ~= numel(options.fullFitCoherenceValues) || ...
+                    numel(options.bestFitCoherenceFrequency) ~= numel(options.bestFitCoherenceValues)
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'Persisted coherence frequency and coherence arrays must have matching lengths.');
+            end
+
+            if numel(options.scoreUv) ~= nBootstraps || numel(options.scoreStrain) ~= nBootstraps || ...
+                    numel(options.scoreZeta) ~= nBootstraps || numel(options.scoreJoint) ~= nBootstraps || ...
+                    numel(options.bootstrapFitMetadata) ~= nBootstraps
+                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
+                    'Persisted bootstrap scores and metadata must all have length nBootstraps.');
+            end
+        end
+
         [queryTimes, scoreTimes, scoreIndices] = resolveBootstrapTimes(trajectories, queryTimesOption, scoreTimesOption, scoreStride)
-        [summary, scalarSummary] = extractSummaryFromFit(fit, queryTimes, totalDisplacementWeightsByTrajectory)
+        summary = extractSummaryFromFit(fit, queryTimes)
+        diagnostics = diagnosticsFromFit(fit, totalDisplacementWeightsByTrajectory)
         kappaEstimate = kappaEstimateFromFit(fit, totalDisplacementWeightsByTrajectory)
+        spectrum = coherenceSpectrumFromStorage(frequency, coherence)
+        spectrum = coherenceSpectrumStorage(spectrum)
         totalDisplacementWeightsByTrajectory = totalDisplacementWeightsForSampleTimes(tCell)
         [xTotalByTrajectory, yTotalByTrajectory, durationByTrajectory] = submesoscaleTotalDisplacements(sampleData, totalDisplacementWeightsByTrajectory)
         scores = computeConsensusScores(summary, scoreIndices, mesoscaleConstraint)
     end
-end
 
-function summary = emptyTimeSummary(nQuery, nBootstraps)
-summary = struct( ...
-    "uCenter", zeros(nQuery, nBootstraps), ...
-    "vCenter", zeros(nQuery, nBootstraps), ...
-    "sigma_n", zeros(nQuery, nBootstraps), ...
-    "sigma_s", zeros(nQuery, nBootstraps), ...
-    "zeta", zeros(nQuery, nBootstraps));
-end
-
-function scalarSummary = emptyScalarSummary(nBootstraps)
-scalarSummary = struct("kappaEstimate", zeros(1, nBootstraps));
+    methods (Access = private)
+        ensureBootstrapDiagnostics(self)
+        function refreshObservedTrajectorySampleData(self)
+            if isempty(self.observedTrajectories)
+                self.observedTrajectorySampleData = struct([]);
+            else
+                self.observedTrajectorySampleData = GriddedStreamfunction.sampleTrajectoryData(self.observedTrajectories);
+            end
+        end
+    end
 end

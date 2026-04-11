@@ -1,25 +1,60 @@
 scriptDir = fileparts(mfilename("fullpath"));
-dataPath = fullfile(scriptDir, "..", "..", "..", "ExampleData", "LatMix2011", "smoothedGriddedRho2Drifters.mat");
-if ~isfile(dataPath)
-    error("GriddedStreamfunction:MissingExampleData", "Expected local example data at %s.", dataPath);
-end
-
+siteNumber = 2;
+siteLabel = "Site 2";
+dataFilename = "smoothedGriddedRho2Drifters.mat";
+nBootstraps = 1000;
+randomSeed = 0;
+scoreStride = 6;
+psiS = [2 2 4];
+fastS = 3;
+mesoscaleConstraint = "none";
 shouldSaveFigures = 0;
+dataPath = fullfile(scriptDir, "..", "..", "..", "ExampleData", "LatMix2011", dataFilename);
+
 siteData = load(dataPath);
 t = reshape(siteData.t, [], 1);
 x = siteData.x(:, 1:(end - 1));
 y = siteData.y(:, 1:(end - 1));
-nDrifters = size(x, 2);
 f0 = 2 * 7.2921e-5 * sin(siteData.lat0*pi/180);
+queryTimes = t;
 
-trajectoryCell = cell(nDrifters, 1);
-for iDrifter = 1:nDrifters
-    trajectoryCell{iDrifter} = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
+trajectories = TrajectorySpline.empty(0, 1);
+for iDrifter = 1:size(x, 2)
+    trajectories(end + 1, 1) = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3); %#ok<SAGROW>
 end
-trajectories = vertcat(trajectoryCell{:});
 
-bootstrap = loadOrBuildCaseStudyBootstrap( ...
-    2, trajectories, nBootstraps=1000, randomSeed=0, scoreStride=6, psiS=[2 2 4], mesoscaleConstraint="none");
+cacheDirectory = fullfile(scriptDir, "BootstrapData");
+if exist(cacheDirectory, "dir") == 0
+    mkdir(cacheDirectory);
+end
+
+psiSTag = join(string(psiS), "-");
+cacheFilename = "Rho" + siteNumber + ...
+    "GriddedStreamfunctionBootstrapFits" + nBootstraps + ...
+    "_seed" + randomSeed + ...
+    "_stride" + scoreStride + ...
+    "_fastS" + fastS + ...
+    "_psiS" + psiSTag + ...
+    "_mesoscaleConstraint-" + mesoscaleConstraint + ".nc";
+cachePath = fullfile(cacheDirectory, cacheFilename);
+
+if isfile(cachePath)
+    bootstrap = GriddedStreamfunctionBootstrap.fromFile(cachePath);
+else
+    bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
+        trajectories, ...
+        nBootstraps=nBootstraps, ...
+        randomSeed=randomSeed, ...
+        queryTimes=queryTimes, ...
+        scoreStride=scoreStride, ...
+        psiS=psiS, ...
+        fastS=fastS, ...
+        mesoscaleConstraint=mesoscaleConstraint);
+    bootstrap.writeToFile(cachePath, shouldOverwriteExisting=true);
+end
+
+trajectories = bootstrap.observedTrajectories;
+nDrifters = numel(trajectories);
 bestFit = bootstrap.bestFit();
 decomposition = bestFit.decomposeTrajectories(trajectories);
 
@@ -98,7 +133,7 @@ legend(ax4, [uLine, vLine], "u_c", "v_c", Location="southwest", FontSize=figureL
 set(ax4, FontSize=figureAxisTickSize, FontName=figureFont);
 box(ax4, "on");
 
-title(tl, "Site 2 bootstrap parameter time series", FontSize=figureTitleSize, FontName=figureFont);
+title(tl, siteLabel + " bootstrap parameter time series", FontSize=figureTitleSize, FontName=figureFont);
 
 if shouldSaveFigures == 1
     print(fullfile(scriptDir, "Site2BootstrapParameters.eps"), "-depsc2");
@@ -168,7 +203,7 @@ xlim(axSubmeso, paddedLimits(decompositionXLimits/1000));
 ylim(axBackground, paddedLimits(decompositionYLimits/1000));
 ylim(axSubmeso, paddedLimits(decompositionYLimits/1000));
 
-title(tlDecomp, "Site 2 fixed-frame decomposition", FontSize=figureTitleSize, FontName=figureFont);
+title(tlDecomp, siteLabel + " fixed-frame decomposition", FontSize=figureTitleSize, FontName=figureFont);
 
 if shouldSaveFigures == 1
     print(fullfile(scriptDir, "Site2BootstrapDecompFigB.eps"), "-depsc2");
@@ -227,7 +262,7 @@ legend(axRms, "Observed", "Mesoscale", "Background", "Submesoscale", Location="b
 set(axRms, FontSize=figureAxisTickSize, FontName=figureFont);
 box(axRms, "on");
 
-title(tlCom, "Site 2 COM-frame trajectories and RMS speeds", FontSize=figureTitleSize, FontName=figureFont);
+title(tlCom, siteLabel + " COM-frame trajectories and RMS speeds", FontSize=figureTitleSize, FontName=figureFont);
 
 if shouldSaveFigures == 1
     print(fullfile(scriptDir, "Site2BootstrapDecompFigC.eps"), "-depsc2");

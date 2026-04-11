@@ -71,7 +71,7 @@ for iModel = 1:nModels
         end
         trajectories = vertcat(trajectoryCell{:});
 
-        bootstrap = GriddedStreamfunctionBootstrap( ...
+        bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
             trajectories, nBootstraps=nBootstraps, randomSeed=100*iModel + iParameter);
 
         sigmaNMean = mean(bootstrap.summary.sigma_n, 1);
@@ -79,7 +79,7 @@ for iModel = 1:nModels
         uCenterMean = mean(bootstrap.summary.uCenter, 1);
         vCenterMean = mean(bootstrap.summary.vCenter, 1);
         zetaMean = mean(bootstrap.summary.zeta, 1);
-        kappaEstimate = bootstrap.scalarSummary.kappaEstimate;
+        kappaEstimate = bootstrap.bootstrapKappa;
 
         data = [sigmaNMean(:), sigmaSMean(:)];
         densityModel = KernelDensityEstimate.fromData(data);

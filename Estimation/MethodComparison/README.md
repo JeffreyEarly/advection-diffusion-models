@@ -18,7 +18,7 @@ reduced model family.
 Those settings are:
 
 - old method: `EstimateLinearVelocityFieldParameters(..., [u0v0, strain], dof=4)`
-- new method: `GriddedStreamfunction(..., psiS=[2 2 3], fastS=3, mesoscaleConstraint="zeroVorticity")`
+- new method: `GriddedStreamfunction.fromTrajectories(..., psiS=[2 2 3], fastS=3, mesoscaleConstraint="zeroVorticity")`
 - comparison variables: `uCenter`, `vCenter`, `sigma_n`, `sigma_s`, `sigma`,
   and a branch-aligned principal `theta`
 
