@@ -107,6 +107,7 @@ Mrel = [Hx - McomX; Hy - McomY];
 dcom = [mxDotAll; myDotAll];
 drel = [allXDot - mxDotAll; allYDot - myDotAll];
 Aeq = GriddedStreamfunction.mesoscaleConstraintMatrix(psiKnotPoints, psiS, G, mesoscaleConstraint);
+mesoscaleDegreesOfFreedom = size(G, 2) - size(Aeq, 1);
 X = [Mcom; Mrel];
 d = [dcom; drel];
 % d = [Mcom; Mrel] * alpha.
@@ -126,6 +127,7 @@ self.centerOfMassTrajectory = centerOfMassTrajectory;
 self.mesoscaleConstraint = mesoscaleConstraint;
 self.representativeTimes = representativeTimes;
 self.fitSupportTimes = fitSupportTimes;
+self.mesoscaleDegreesOfFreedom = mesoscaleDegreesOfFreedom;
 if buildDecomposition
     [backgroundTrajectory, decomposition] = decomposeTrajectorySet(self, trajectories);
     self.backgroundTrajectory = backgroundTrajectory;

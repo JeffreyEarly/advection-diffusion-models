@@ -23,6 +23,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(numel(fit.decomposition.centeredFrame.submesoscale), numel(trajectories))
             testCase.verifyEqual(fit.fastS, 3)
             testCase.verifyEqual(fit.mesoscaleConstraint, "none")
+            testCase.verifyGreaterThanOrEqual(fit.mesoscaleDegreesOfFreedom, 0)
             testCase.verifyLessThanOrEqual(max(abs(fit.centerOfMassTrajectory.x(t) - mean(x, 2))), 2e-1)
             testCase.verifyLessThanOrEqual(max(abs(fit.centerOfMassTrajectory.y(t) - mean(y, 2))), 2e-1)
 
@@ -67,6 +68,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(restored.psiS, fit.psiS, "AbsTol", 1e-12)
             testCase.verifyEqual(restored.representativeTimes, fit.representativeTimes, "AbsTol", 1e-12)
             testCase.verifyEqual(restored.fitSupportTimes, fit.fitSupportTimes, "AbsTol", 1e-12)
+            testCase.verifyEqual(restored.mesoscaleDegreesOfFreedom, fit.mesoscaleDegreesOfFreedom)
             for iDim = 1:3
                 testCase.verifyEqual(restored.psiKnotPoints{iDim}, fit.psiKnotPoints{iDim}, "AbsTol", 1e-12)
             end
@@ -136,6 +138,36 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(fitNone.backgroundTrajectory.y(t), fitDefault.backgroundTrajectory.y(t), "AbsTol", 1e-12)
             testCase.verifyEqual(fitNone.uMesoscale(tGrid, x, y), fitDefault.uMesoscale(tGrid, x, y), "AbsTol", 1e-12)
             testCase.verifyEqual(fitNone.vMesoscale(tGrid, x, y), fitDefault.vMesoscale(tGrid, x, y), "AbsTol", 1e-12)
+        end
+
+        function unconstrainedMesoscaleDegreesOfFreedomMatchesReducedBasisSize(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="none");
+            [expectedDof, G, Aeq] = GriddedStreamfunctionUnitTests.expectedMesoscaleDegreesOfFreedom(fit);
+
+            testCase.verifyEqual(size(Aeq, 1), 0)
+            testCase.verifyEqual(fit.mesoscaleDegreesOfFreedom, expectedDof)
+            testCase.verifyEqual(expectedDof, size(G, 2))
+        end
+
+        function zeroVorticityMesoscaleDegreesOfFreedomMatchesConstrainedCount(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroVorticity");
+            [expectedDof, G, Aeq] = GriddedStreamfunctionUnitTests.expectedMesoscaleDegreesOfFreedom(fit);
+
+            testCase.verifyGreaterThan(size(Aeq, 1), 0)
+            testCase.verifyEqual(fit.mesoscaleDegreesOfFreedom, expectedDof)
+            testCase.verifyEqual(expectedDof, size(G, 2) - size(Aeq, 1))
+        end
+
+        function zeroStrainMesoscaleDegreesOfFreedomMatchesConstrainedCount(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroStrain");
+            [expectedDof, G, Aeq] = GriddedStreamfunctionUnitTests.expectedMesoscaleDegreesOfFreedom(fit);
+
+            testCase.verifyGreaterThan(size(Aeq, 1), 0)
+            testCase.verifyEqual(fit.mesoscaleDegreesOfFreedom, expectedDof)
+            testCase.verifyEqual(expectedDof, size(G, 2) - size(Aeq, 1))
         end
 
         function visualPrincipalStrainAnglePreservesPrincipalValues(testCase)
@@ -804,6 +836,100 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             spatialBasisMatrix = TensorSpline.matrixForPointMatrix(spatialPointMatrix, knotPoints=psiKnotPoints(1:2), S=psiS(1:2));
             constantGaugeVector = spatialBasisMatrix \ ones(size(qGaugeGrid(:)));
             gaugeModeMatrix = reshape(constantGaugeVector, [], 1);
+        end
+
+        function [dof, G, Aeq] = expectedMesoscaleDegreesOfFreedom(fit)
+            basisSize = fit.streamfunctionSpline.basisSize;
+            numSpatialCoefficients = prod(basisSize(1:2));
+            if numSpatialCoefficients == 1
+                Gspatial = sparse(1, 0);
+            else
+                gaugeModeMatrix = GriddedStreamfunctionUnitTests.constantGaugeMode( ...
+                    fit.psiKnotPoints, fit.psiS, basisSize);
+                Gspatial = sparse(null(reshape(gaugeModeMatrix, [], 1).', "r"));
+            end
+
+            G = kron(speye(basisSize(3)), Gspatial);
+            Aeq = GriddedStreamfunctionUnitTests.constraintMatrixForFit( ...
+                fit.psiKnotPoints, fit.psiS, G, fit.mesoscaleConstraint);
+            dof = size(G, 2) - size(Aeq, 1);
+        end
+
+        function Aeq = constraintMatrixForFit(psiKnotPoints, psiS, G, mesoscaleConstraint)
+            numReducedCoefficients = size(G, 2);
+            if mesoscaleConstraint == "none" || numReducedCoefficients == 0
+                Aeq = sparse(0, numReducedCoefficients);
+                return
+            end
+
+            pointMatrix = GriddedStreamfunctionUnitTests.constraintPointMatrix(psiKnotPoints, psiS);
+            Bqq = TensorSpline.matrixForPointMatrix(pointMatrix, knotPoints=psiKnotPoints, S=psiS, D=[2 0 0]);
+            Brr = TensorSpline.matrixForPointMatrix(pointMatrix, knotPoints=psiKnotPoints, S=psiS, D=[0 2 0]);
+
+            switch mesoscaleConstraint
+                case "zeroVorticity"
+                    AeqFull = Bqq + Brr;
+                case "zeroStrain"
+                    Bqr = TensorSpline.matrixForPointMatrix(pointMatrix, knotPoints=psiKnotPoints, S=psiS, D=[1 1 0]);
+                    AeqFull = [Bqr; Bqq - Brr];
+                otherwise
+                    error("GriddedStreamfunctionUnitTests:UnknownMesoscaleConstraint", ...
+                        "Unknown mesoscale constraint '%s'.", mesoscaleConstraint);
+            end
+
+            Aeq = GriddedStreamfunctionUnitTests.independentRows(AeqFull * G);
+        end
+
+        function pointMatrix = constraintPointMatrix(psiKnotPoints, psiS)
+            qSupport = GriddedStreamfunctionUnitTests.supportPointsForDimension(psiKnotPoints{1}, psiS(1));
+            rSupport = GriddedStreamfunctionUnitTests.supportPointsForDimension(psiKnotPoints{2}, psiS(2));
+            tSupport = GriddedStreamfunctionUnitTests.supportPointsForDimension(psiKnotPoints{3}, psiS(3));
+            [qGrid, rGrid, tGrid] = ndgrid(qSupport, rSupport, tSupport);
+            pointMatrix = [qGrid(:), rGrid(:), tGrid(:)];
+        end
+
+        function supportPoints = supportPointsForDimension(knotVector, splineDegree)
+            uniqueKnots = unique(knotVector, "sorted");
+            intervalStarts = uniqueKnots(1:(end - 1));
+            intervalWidths = diff(uniqueKnots);
+            numInteriorPoints = splineDegree + 1;
+            interiorFractions = (1:numInteriorPoints).' / (numInteriorPoints + 1);
+            supportPoints = zeros(numInteriorPoints * nnz(intervalWidths > 0), 1);
+
+            nextIndex = 1;
+            for iInterval = 1:numel(intervalStarts)
+                if intervalWidths(iInterval) <= 0
+                    continue
+                end
+
+                intervalPoints = intervalStarts(iInterval) + interiorFractions * intervalWidths(iInterval);
+                supportPoints(nextIndex:(nextIndex + numInteriorPoints - 1)) = intervalPoints;
+                nextIndex = nextIndex + numInteriorPoints;
+            end
+        end
+
+        function Aeq = independentRows(Aeq)
+            numReducedCoefficients = size(Aeq, 2);
+            if isempty(Aeq) || numReducedCoefficients == 0
+                Aeq = sparse(0, numReducedCoefficients);
+                return
+            end
+
+            [~, R, permutation] = qr(full(Aeq.'), "vector");
+            diagonal = abs(diag(R));
+            if isempty(diagonal)
+                rankAeq = 0;
+            else
+                tolerance = max(size(R)) * eps(class(R)) * max(diagonal);
+                rankAeq = nnz(diagonal > tolerance);
+            end
+
+            if rankAeq == 0
+                Aeq = sparse(0, numReducedCoefficients);
+            else
+                rowIndices = sort(permutation(1:rankAeq));
+                Aeq = sparse(Aeq(rowIndices, :));
+            end
         end
 
         function verifyFiniteReconstruction(testCase, fit)

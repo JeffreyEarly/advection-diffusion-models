@@ -120,6 +120,15 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         %
         % - Topic: Inspect fitted components
         fitSupportTimes
+
+        % Identifiable mesoscale degrees of freedom after gauge and constraints.
+        %
+        % `mesoscaleDegreesOfFreedom` counts the solved mesoscale spline
+        % degrees of freedom after removing the additive streamfunction
+        % gauge and applying the selected hard mesoscale constraint.
+        %
+        % - Topic: Inspect fitted components
+        mesoscaleDegreesOfFreedom (1,1) double {mustBeInteger,mustBeNonnegative} = 0
     end
 
     properties (Dependent)
@@ -260,6 +269,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             % - Parameter options.mesoscaleConstraint: hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
             % - Parameter options.representativeTimes: pooled representative times from the stride-rule fast basis
             % - Parameter options.fitSupportTimes: sorted unique observation times used as trajectory support
+            % - Parameter options.mesoscaleDegreesOfFreedom: stored identifiable mesoscale degrees of freedom after gauge reduction and hard constraints
             % - Returns self: canonical `GriddedStreamfunction` instance
             arguments
                 options.streamfunctionSpline = TensorSpline.empty(0, 1)
@@ -274,6 +284,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
                 options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
                 options.representativeTimes (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
                 options.fitSupportTimes (:,1) double {mustBeReal,mustBeFinite} = zeros(0, 1)
+                options.mesoscaleDegreesOfFreedom (1,1) double {mustBeInteger,mustBeNonnegative} = 0
             end
 
             self@CAAnnotatedClass();
@@ -295,6 +306,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             self.mesoscaleConstraint = string(options.mesoscaleConstraint);
             self.representativeTimes = options.representativeTimes;
             self.fitSupportTimes = options.fitSupportTimes;
+            self.mesoscaleDegreesOfFreedom = options.mesoscaleDegreesOfFreedom;
             self.refreshObservedTrajectorySampleData();
         end
     end
@@ -659,7 +671,8 @@ classdef GriddedStreamfunction < CAAnnotatedClass
                 'centeredFrameSubmesoscaleTrajectories', ...
                 'mesoscaleConstraint', ...
                 'representativeTimes', ...
-                'fitSupportTimes'});
+                'fitSupportTimes', ...
+                'mesoscaleDegreesOfFreedom'});
             vars.streamfunctionSpline = TensorSpline.annotatedClassFromGroup(group.groupWithName('streamfunctionSpline'));
             vars.centerOfMassTrajectory = TrajectorySpline.annotatedClassFromGroup(group.groupWithName('centerOfMassTrajectory'));
             vars.backgroundTrajectory = TrajectorySpline.annotatedClassFromGroup(group.groupWithName('backgroundTrajectory'));
@@ -678,6 +691,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             self.mesoscaleConstraint = string(vars.mesoscaleConstraint);
             self.representativeTimes = vars.representativeTimes;
             self.fitSupportTimes = vars.fitSupportTimes;
+            self.mesoscaleDegreesOfFreedom = vars.mesoscaleDegreesOfFreedom;
             self.refreshObservedTrajectorySampleData();
         end
 
@@ -695,6 +709,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             propertyAnnotations(end+1) = CAPropertyAnnotation('mesoscaleConstraint', 'Hard mesoscale constraint applied to the fit.');
             propertyAnnotations(end+1) = CADimensionProperty('representativeTimes', '', 'Representative pooled times from the stride-rule fast basis.');
             propertyAnnotations(end+1) = CADimensionProperty('fitSupportTimes', '', 'Sorted unique observation times used as trajectory support.');
+            propertyAnnotations(end+1) = CANumericProperty('mesoscaleDegreesOfFreedom', {}, '', 'Stored identifiable mesoscale degrees of freedom after gauge reduction and hard constraints.');
         end
 
         function names = classRequiredPropertyNames()
@@ -710,7 +725,8 @@ classdef GriddedStreamfunction < CAAnnotatedClass
                 'centeredFrameSubmesoscaleTrajectories', ...
                 'mesoscaleConstraint', ...
                 'representativeTimes', ...
-                'fitSupportTimes'};
+                'fitSupportTimes', ...
+                'mesoscaleDegreesOfFreedom'};
         end
     end
 
@@ -721,7 +737,8 @@ classdef GriddedStreamfunction < CAAnnotatedClass
                     isempty(options.fixedFrameBackgroundTrajectories) && isempty(options.fixedFrameMesoscaleTrajectories) && ...
                     isempty(options.fixedFrameSubmesoscaleTrajectories) && isempty(options.centeredFrameMesoscaleTrajectories) && ...
                     isempty(options.centeredFrameSubmesoscaleTrajectories) && isempty(options.representativeTimes) && ...
-                    isempty(options.fitSupportTimes) && string(options.mesoscaleConstraint) == "none"
+                    isempty(options.fitSupportTimes) && string(options.mesoscaleConstraint) == "none" && ...
+                    options.mesoscaleDegreesOfFreedom == 0
                 return
             end
 
@@ -758,6 +775,11 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             if ~isempty(options.backgroundTrajectory) && ~isscalar(options.backgroundTrajectory)
                 error('GriddedStreamfunction:InvalidCanonicalState', ...
                     'backgroundTrajectory must be a scalar TrajectorySpline when it is present.');
+            end
+            if ~isscalar(options.mesoscaleDegreesOfFreedom) || ~isfinite(options.mesoscaleDegreesOfFreedom) || ...
+                    options.mesoscaleDegreesOfFreedom < 0 || round(options.mesoscaleDegreesOfFreedom) ~= options.mesoscaleDegreesOfFreedom
+                error('GriddedStreamfunction:InvalidCanonicalState', ...
+                    'mesoscaleDegreesOfFreedom must be a finite nonnegative integer scalar.');
             end
         end
 

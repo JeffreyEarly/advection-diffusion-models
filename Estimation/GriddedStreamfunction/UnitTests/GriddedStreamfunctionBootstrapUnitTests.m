@@ -19,12 +19,14 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifySize(bootstrapA.summary.sigma_n, [numel(t), 6])
             testCase.verifySize(bootstrapA.bootstrapKappa, [1 6])
             testCase.verifySize(bootstrapA.bootstrapCoherence, [1 6])
+            testCase.verifySize(bootstrapA.bootstrapMesoscaleDegreesOfFreedom, [1 6])
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.uv), "all"))
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.strain), "all"))
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.zeta), "all"))
             testCase.verifyTrue(all(isfinite(bootstrapA.scores.joint), "all"))
             testCase.verifyGreaterThanOrEqual(min(bootstrapA.bootstrapIndices, [], "all"), 1)
             testCase.verifyLessThanOrEqual(max(bootstrapA.bootstrapIndices, [], "all"), numel(trajectories))
+            testCase.verifyEqual(bootstrapA.fullFitMesoscaleDegreesOfFreedom, bootstrapA.fullFit.mesoscaleDegreesOfFreedom)
 
             testCase.verifyEqual(bootstrapA.bootstrapIndices, bootstrapB.bootstrapIndices)
             testCase.verifyEqual(bootstrapA.summary.uCenter, bootstrapB.summary.uCenter, "AbsTol", 1e-12)
@@ -34,8 +36,10 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(bootstrapA.summary.zeta, bootstrapB.summary.zeta, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.bootstrapKappa, bootstrapB.bootstrapKappa, "AbsTol", 1e-12)
             testCase.verifyTrue(isequaln(bootstrapA.bootstrapCoherence, bootstrapB.bootstrapCoherence))
+            testCase.verifyEqual(bootstrapA.bootstrapMesoscaleDegreesOfFreedom, bootstrapB.bootstrapMesoscaleDegreesOfFreedom)
             testCase.verifyEqual(bootstrapA.fullFitKappa, bootstrapB.fullFitKappa, "AbsTol", 1e-12)
             testCase.verifyTrue(isequaln(bootstrapA.fullFitCoherence, bootstrapB.fullFitCoherence))
+            testCase.verifyEqual(bootstrapA.fullFitMesoscaleDegreesOfFreedom, bootstrapB.fullFitMesoscaleDegreesOfFreedom)
             testCase.verifyEqual(bootstrapA.scores.uv, bootstrapB.scores.uv, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.scores.strain, bootstrapB.scores.strain, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapA.scores.zeta, bootstrapB.scores.zeta, "AbsTol", 1e-12)
@@ -81,8 +85,11 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(restored.fullSummary.uCenter, bootstrap.fullSummary.uCenter, "AbsTol", 1e-12)
             testCase.verifyEqual(restored.fullFitKappa, bootstrap.fullFitKappa, "AbsTol", 1e-12)
             testCase.verifyTrue(isequaln(restored.fullFitCoherence, bootstrap.fullFitCoherence))
+            testCase.verifyEqual(restored.fullFitMesoscaleDegreesOfFreedom, bootstrap.fullFitMesoscaleDegreesOfFreedom)
             testCase.verifyEqual(restored.bestFitKappa, bootstrap.bestFitKappa, "AbsTol", 1e-12)
             testCase.verifyTrue(isequaln(restored.bestFitCoherence, bootstrap.bestFitCoherence))
+            testCase.verifyEqual(restored.bestFitMesoscaleDegreesOfFreedom, bootstrap.bestFitMesoscaleDegreesOfFreedom)
+            testCase.verifyEqual(restored.bootstrapMesoscaleDegreesOfFreedom, bootstrap.bootstrapMesoscaleDegreesOfFreedom)
             testCase.verifyEqual(restored.scores.uv, bootstrap.scores.uv, "AbsTol", 1e-12)
             testCase.verifyEqual(restored.scores.strain, bootstrap.scores.strain, "AbsTol", 1e-12)
             testCase.verifyEqual(restored.scores.zeta, bootstrap.scores.zeta, "AbsTol", 1e-12)
@@ -173,6 +180,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(bootstrapB.scores.joint, bootstrapA.scores.joint, "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrapB.fullFitKappa, bootstrapA.fullFitKappa, "AbsTol", 1e-12)
             testCase.verifyTrue(isequaln(bootstrapB.fullFitCoherence, bootstrapA.fullFitCoherence))
+            testCase.verifyEqual(bootstrapB.fullFitMesoscaleDegreesOfFreedom, bootstrapA.fullFitMesoscaleDegreesOfFreedom)
         end
 
         function fullSummaryMatchesSynchronousLinearFieldTruth(testCase)
@@ -208,6 +216,18 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyEqual(diagnostics.kappa, bootstrap.bootstrapKappa(iBest), "AbsTol", 1e-12)
             testCase.verifyEqual(bootstrap.bestFitKappa, bootstrap.bootstrapKappa(iBest), "AbsTol", 1e-12)
             testCase.verifyTrue(isequaln(bootstrap.bestFitCoherence, bootstrap.bootstrapCoherence(iBest)))
+            testCase.verifyEqual(fit.mesoscaleDegreesOfFreedom, bootstrap.bootstrapMesoscaleDegreesOfFreedom(iBest))
+            testCase.verifyEqual(bootstrap.bestFitMesoscaleDegreesOfFreedom, bootstrap.bootstrapMesoscaleDegreesOfFreedom(iBest))
+        end
+
+        function bootstrapMesoscaleDegreesOfFreedomMatchReconstructedReplicate(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=5, randomSeed=13);
+            iBootstrap = 3;
+            fit = bootstrap.fitForBootstrap(iBootstrap);
+
+            testCase.verifyEqual(bootstrap.fullFitMesoscaleDegreesOfFreedom, bootstrap.fullFit.mesoscaleDegreesOfFreedom)
+            testCase.verifyEqual(bootstrap.bootstrapMesoscaleDegreesOfFreedom(iBootstrap), fit.mesoscaleDegreesOfFreedom)
         end
 
         function storedOutputsMatchFullyReconstructedFitsForAllReplicates(testCase)
@@ -231,6 +251,7 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 testCase.verifyEqual(summary.sigma_s, bootstrap.summary.sigma_s(:, iBootstrap), "AbsTol", 1e-12)
                 testCase.verifyEqual(summary.zeta, bootstrap.summary.zeta(:, iBootstrap), "AbsTol", 1e-12)
                 testCase.verifyEqual(diagnostics.kappa, bootstrap.bootstrapKappa(iBootstrap), "AbsTol", 1e-12)
+                testCase.verifyEqual(fit.mesoscaleDegreesOfFreedom, bootstrap.bootstrapMesoscaleDegreesOfFreedom(iBootstrap))
             end
         end
 
@@ -331,6 +352,30 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
                 referenceDiagnostics.coherenceSpectrum.coherence))
         end
 
+        function fullFitScalarCoherenceUsesOnlyLowerFrequencyHalf(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=7);
+
+            meanCoherence = bootstrap.fullFitCoherenceSpectrum.coherence;
+            lowerFrequencyHalf = meanCoherence(1:ceil(numel(meanCoherence) / 2));
+            finiteLowerFrequencyHalf = lowerFrequencyHalf(isfinite(lowerFrequencyHalf));
+            expectedCoherence = mean(finiteLowerFrequencyHalf);
+
+            testCase.verifyEqual(bootstrap.fullFitCoherence, expectedCoherence, "AbsTol", 1e-12)
+
+            if numel(meanCoherence) >= 4
+                upperFrequencyHalf = meanCoherence((ceil(numel(meanCoherence) / 2) + 1):end);
+                finiteUpperFrequencyHalf = upperFrequencyHalf(isfinite(upperFrequencyHalf));
+                if ~isempty(finiteUpperFrequencyHalf)
+                    modifiedSpectrum = meanCoherence;
+                    modifiedSpectrum((ceil(numel(modifiedSpectrum) / 2) + 1):end) = modifiedSpectrum((ceil(numel(modifiedSpectrum) / 2) + 1):end) + 1;
+                    modifiedLowerFrequencyHalf = modifiedSpectrum(1:ceil(numel(modifiedSpectrum) / 2));
+                    modifiedExpectedCoherence = mean(modifiedLowerFrequencyHalf(isfinite(modifiedLowerFrequencyHalf)));
+                    testCase.verifyEqual(modifiedExpectedCoherence, expectedCoherence, "AbsTol", 1e-12)
+                end
+            end
+        end
+
         function defaultKnotsStillReconstructExactly(testCase)
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
 
@@ -428,6 +473,21 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             testCase.verifyTrue(all(quantiles.sigma_n(:, 2) <= quantiles.sigma_n(:, 3)))
             testCase.verifyTrue(all(quantiles.kappa(1) <= quantiles.kappa(2)))
             testCase.verifyTrue(all(quantiles.kappa(2) <= quantiles.kappa(3)))
+        end
+
+        function lazyBootstrapCoherenceUsesLowerFrequencyHalf(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionBootstrapUnitTests.synchronousLinearFieldData();
+            bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=4, randomSeed=11);
+            iBootstrap = 3;
+
+            fit = bootstrap.fitForBootstrap(iBootstrap);
+            referenceDiagnostics = GriddedStreamfunctionBootstrapUnitTests.diagnosticsFromFit(fit);
+            meanCoherence = referenceDiagnostics.coherenceSpectrum.coherence;
+            lowerFrequencyHalf = meanCoherence(1:ceil(numel(meanCoherence) / 2));
+            expectedCoherence = mean(lowerFrequencyHalf(isfinite(lowerFrequencyHalf)));
+
+            testCase.verifyEqual(bootstrap.bootstrapCoherence(iBootstrap), expectedCoherence, "AbsTol", 1e-12)
+            testCase.verifyEqual(bootstrap.bootstrapCoherence(iBootstrap), referenceDiagnostics.coherence, "AbsTol", 1e-12)
         end
 
         function scalarDiffusivityDiagnosticIsFiniteAndIncreases(testCase)
@@ -636,12 +696,13 @@ classdef GriddedStreamfunctionBootstrapUnitTests < matlab.unittest.TestCase
             meanCoherence = GriddedStreamfunctionBootstrapUnitTests.meanOverFinite(gamma);
             frequency = reshape(frequency, [], 1);
             meanCoherence = reshape(meanCoherence, [], 1);
-            finiteCoherence = isfinite(meanCoherence);
+            lowerFrequencyHalf = meanCoherence(1:ceil(numel(meanCoherence) / 2));
+            finiteCoherence = isfinite(lowerFrequencyHalf);
             if ~any(finiteCoherence)
                 return
             end
 
-            diagnostics.coherence = mean(meanCoherence(finiteCoherence));
+            diagnostics.coherence = mean(lowerFrequencyHalf(finiteCoherence));
             diagnostics.coherenceSpectrum = struct( ...
                 "frequency", frequency, ...
                 "coherence", meanCoherence);

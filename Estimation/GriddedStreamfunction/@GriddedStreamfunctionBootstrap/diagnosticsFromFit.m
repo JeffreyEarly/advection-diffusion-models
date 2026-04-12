@@ -37,12 +37,13 @@ gamma = abs(sxy).^2 ./ (sxx .* syy);
 meanCoherence = meanOverFinite(gamma);
 frequency = reshape(frequency, [], 1);
 meanCoherence = reshape(meanCoherence, [], 1);
-finiteCoherence = isfinite(meanCoherence);
+lowerFrequencyHalf = meanCoherence(1:ceil(numel(meanCoherence) / 2));
+finiteCoherence = isfinite(lowerFrequencyHalf);
 if ~any(finiteCoherence)
     return
 end
 
-diagnostics.coherence = mean(meanCoherence(finiteCoherence));
+diagnostics.coherence = mean(lowerFrequencyHalf(finiteCoherence));
 diagnostics.coherenceSpectrum = struct( ...
     "frequency", frequency, ...
     "coherence", meanCoherence);

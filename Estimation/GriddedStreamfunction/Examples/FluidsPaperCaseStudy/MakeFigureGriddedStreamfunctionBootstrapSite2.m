@@ -2,12 +2,12 @@ scriptDir = fileparts(mfilename("fullpath"));
 siteNumber = 2;
 siteLabel = "Site 2";
 dataFilename = "smoothedGriddedRho2Drifters.mat";
-nBootstraps = 1000;
+nBootstraps = 100;
 randomSeed = 0;
 scoreStride = 6;
-psiS = [2 2 4];
+psiS = [3 3 4];
 fastS = 3;
-mesoscaleConstraint = "none";
+mesoscaleConstraint = "zeroVorticity";
 shouldSaveFigures = 0;
 dataPath = fullfile(scriptDir, "..", "..", "..", "ExampleData", "LatMix2011", dataFilename);
 
