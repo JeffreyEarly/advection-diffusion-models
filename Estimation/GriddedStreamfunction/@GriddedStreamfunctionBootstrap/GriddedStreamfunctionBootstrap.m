@@ -28,20 +28,25 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
     % same scalar `mesoscaleDegreesOfFreedom`.
     %
     % ```matlab
-    % bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=100);
-    % dof = bootstrap.mesoscaleDegreesOfFreedom;
+    % bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
+    %     trajectories, nBootstraps=100, randomSeed=7);
+    % fullFit = bootstrap.fullFit;
     % bestFit = bootstrap.bestFit();
     % quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
+    % plot(bootstrap.queryTimes, quantiles.zeta(:, 2))
     % ```
     %
     % - Topic: Create a bootstrap ensemble
-    % - Topic: Read from file
-    % - Topic: Write to file
-    % - Topic: Inspect bootstrap properties
-    % - Topic: Inspect full-fit diagnostics
-    % - Topic: Inspect best-fit diagnostics
+    % - Topic: Persist and restart ensembles
+    % - Topic: Inspect ensemble setup
+    % - Topic: Inspect primary outputs
+    % - Topic: Inspect primary outputs — Full-data fit
+    % - Topic: Inspect primary outputs — Best bootstrap replicate
     % - Topic: Reconstruct bootstrap fits
-    % - Topic: Summarize bootstrap uncertainty
+    % - Topic: Evaluate derived diagnostics
+    % - Topic: Evaluate derived diagnostics — Full-fit diagnostics
+    % - Topic: Evaluate derived diagnostics — Best-fit diagnostics
+    % - Topic: Evaluate derived diagnostics — Ensemble summaries
     % - Declaration: classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
 
     properties (SetAccess = private)
@@ -49,8 +54,19 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         %
         % `fullFit` is the deterministic `GriddedStreamfunction` fit on
         % the original input drifters before any resampling is applied.
+        % This is one of the ensemble's primary outputs.
         %
-        % - Topic: Inspect full-fit diagnostics
+        % ```matlab
+        % fullFit = bootstrap.fullFit;
+        % tFit = fullFit.fitSupportTimes;
+        % plot(fullFit.centerOfMassTrajectory.x(tFit), fullFit.centerOfMassTrajectory.y(tFit))
+        % axis equal
+        % xlabel("x (m)")
+        % ylabel("y (m)")
+        % ```
+        %
+        % - Topic: Inspect primary outputs — Full-data fit
+        % - nav_order: 1
         fullFit
 
         % Original drifter trajectories used to seed the bootstrap ensemble.
@@ -59,7 +75,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `TrajectorySpline` column vector in the user-supplied drifter
         % order.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 1
         observedTrajectories
 
         % Whole-drifter resampling indices for each bootstrap replicate.
@@ -67,7 +84,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `bootstrapIndices(i,:)` contains the drifter indices drawn with
         % replacement for bootstrap replicate `i`.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 2
         bootstrapIndices
 
         % Times used to store COM-local bootstrap summaries.
@@ -77,24 +95,28 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % restricted to the common overlap interval of the original
         % drifters.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 5
         queryTimes
 
         % Times used to compute the consensus score.
         %
         % `scoreTimes` is always an exact subset of `queryTimes`.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 6
         scoreTimes
 
         % Number of bootstrap replicates in the ensemble.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 3
         nBootstraps (1,1) double {mustBeInteger,mustBeNonnegative} = 0
 
         % Random-number seed used for whole-drifter resampling.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 4
         randomSeed (1,1) double {mustBeInteger,mustBeFinite} = 0
     end
 
@@ -103,12 +125,21 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         %
         % `fullSummary` contains the fields `uCenter`, `vCenter`,
         % `sigma_n`, `sigma_s`, and `zeta`, each stored as a column vector
-        % aligned with `queryTimes`. These are the center diagnostics of
-        % the deterministic `fullFit`, evaluated at the fitted
-        % center-of-mass trajectory
-        % `fullFit.centerOfMassTrajectory(queryTimes)`.
+        % aligned with `queryTimes`. These are the primary COM-local
+        % diagnostic outputs of the deterministic `fullFit`, evaluated at
+        % the fitted center-of-mass positions
+        % `(fullFit.centerOfMassTrajectory.x(queryTimes),`
+        % `fullFit.centerOfMassTrajectory.y(queryTimes))`.
         %
-        % - Topic: Inspect full-fit diagnostics
+        % ```matlab
+        % fullSummary = bootstrap.fullSummary;
+        % plot(bootstrap.queryTimes, fullSummary.zeta)
+        % xlabel("t (s)")
+        % ylabel("\zeta_c (s^{-1})")
+        % ```
+        %
+        % - Topic: Inspect primary outputs — Full-data fit
+        % - nav_order: 2
         fullSummary
 
         % Bootstrap COM-local mesoscale summaries evaluated on `queryTimes`.
@@ -117,15 +148,19 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `summary.sigma_s`, and `summary.zeta` are arrays of size
         % `[numel(queryTimes) nBootstraps]`. Row `i` corresponds to
         % `queryTimes(i)`, and column `j` corresponds to bootstrap
-        % replicate `j`.
+        % replicate `j`. These are derived ensemble summaries for
+        % uncertainty analysis; use `fitForBootstrap` or `bestFit` when
+        % you need a full reconstructed fit rather than the stored summary
+        % arrays.
         %
         % ```matlab
         % summary = bootstrap.summary;
         % medianUCenter = median(summary.uCenter, 2);
-        % oneTimeCloud = summary.sigma_n(10, :);
+        % plot(bootstrap.queryTimes, medianUCenter)
         % ```
         %
-        % - Topic: Summarize bootstrap uncertainty
+        % - Topic: Evaluate derived diagnostics — Ensemble summaries
+        % - nav_order: 1
         summary
 
         % Full-fit scalar submesoscale diffusivity diagnostic.
@@ -134,7 +169,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % submesoscale trajectories and is eager because it only requires
         % one fit-level diagnostic evaluation.
         %
-        % - Topic: Inspect full-fit diagnostics
+        % - Topic: Evaluate derived diagnostics — Full-fit diagnostics
+        % - nav_order: 1
         fullFitKappa
 
         % Full-fit scalar mean coherence between mesoscale and submesoscale velocities.
@@ -142,7 +178,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `fullFitCoherence` is the mean of the finite lower-frequency
         % half of `fullFitCoherenceSpectrum.coherence`.
         %
-        % - Topic: Inspect full-fit diagnostics
+        % - Topic: Evaluate derived diagnostics — Full-fit diagnostics
+        % - nav_order: 2
         fullFitCoherence
 
         % Full-fit mean coherence spectrum on the common overlap grid.
@@ -152,7 +189,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % the coherence backend is unavailable or no usable common uniform
         % overlap grid exists, both vectors are empty.
         %
-        % - Topic: Inspect full-fit diagnostics
+        % - Topic: Evaluate derived diagnostics — Full-fit diagnostics
+        % - nav_order: 3
         fullFitCoherenceSpectrum
 
         % Structural mesoscale degrees of freedom shared by the ensemble.
@@ -164,7 +202,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `bestFit().mesoscaleDegreesOfFreedom`, and every
         % `fitForBootstrap(iBootstrap).mesoscaleDegreesOfFreedom`.
         %
-        % - Topic: Inspect bootstrap properties
+        % - Topic: Inspect ensemble setup
+        % - nav_order: 7
         mesoscaleDegreesOfFreedom
 
         % Best-bootstrap scalar submesoscale diffusivity diagnostic.
@@ -172,7 +211,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `bestFitKappa` is eager and corresponds to the fit returned by
         % `bestFit()`.
         %
-        % - Topic: Inspect best-fit diagnostics
+        % - Topic: Evaluate derived diagnostics — Best-fit diagnostics
+        % - nav_order: 1
         bestFitKappa
 
         % Best-bootstrap scalar mean coherence.
@@ -180,19 +220,29 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % `bestFitCoherence` is the mean of the finite lower-frequency
         % half of `bestFitCoherenceSpectrum.coherence`.
         %
-        % - Topic: Inspect best-fit diagnostics
+        % - Topic: Evaluate derived diagnostics — Best-fit diagnostics
+        % - nav_order: 2
         bestFitCoherence
 
         % Best-bootstrap mean coherence spectrum on the common overlap grid.
         %
-        % - Topic: Inspect best-fit diagnostics
+        % - Topic: Evaluate derived diagnostics — Best-fit diagnostics
+        % - nav_order: 3
         bestFitCoherenceSpectrum
 
         % Lazy scalar diffusivity diagnostics for each bootstrap replicate.
         %
         % `bootstrapKappa` is a row vector of length `nBootstraps`.
         %
-        % - Topic: Summarize bootstrap uncertainty
+        % ```matlab
+        % kappa = bootstrap.bootstrapKappa;
+        % plot(kappa, ".")
+        % xlabel("bootstrap replicate")
+        % ylabel("\kappa")
+        % ```
+        %
+        % - Topic: Evaluate derived diagnostics — Ensemble summaries
+        % - nav_order: 3
         bootstrapKappa
 
         % Lazy scalar coherence diagnostics for each bootstrap replicate.
@@ -202,15 +252,34 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % mean coherence spectrum. When coherence is unavailable, the
         % vector is filled with `NaN`.
         %
-        % - Topic: Summarize bootstrap uncertainty
+        % ```matlab
+        % coherence = bootstrap.bootstrapCoherence;
+        % plot(coherence, ".")
+        % xlabel("bootstrap replicate")
+        % ylabel("coherence")
+        % ```
+        %
+        % - Topic: Evaluate derived diagnostics — Ensemble summaries
+        % - nav_order: 4
         bootstrapCoherence
 
         % Consensus-score components and joint score for each bootstrap fit.
         %
         % `scores.uv`, `scores.strain`, `scores.zeta`, and `scores.joint`
-        % are row vectors of length `nBootstraps`.
+        % are row vectors of length `nBootstraps`. These are derived
+        % KDE-based ranking diagnostics for the bootstrap ensemble rather
+        % than additional fitted state.
         %
-        % - Topic: Summarize bootstrap uncertainty
+        % ```matlab
+        % scores = bootstrap.scores;
+        % [~, iBest] = max(scores.joint);
+        % plot(scores.joint, ".")
+        % hold on
+        % plot(iBest, scores.joint(iBest), "o")
+        % ```
+        %
+        % - Topic: Evaluate derived diagnostics — Ensemble summaries
+        % - nav_order: 5
         scores
 
         % Exact reconstruction metadata for each bootstrap replicate.
@@ -221,6 +290,7 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % resolved mesoscale knot cell `{qKnot, rKnot, tKnot}`.
         %
         % - Topic: Reconstruct bootstrap fits
+        % - nav_order: 1
         bootstrapMetadata
     end
 
@@ -482,7 +552,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         function index = bestBootstrapIndex(self)
             % Return the bootstrap index with the highest joint consensus score.
             %
-            % - Topic: Inspect best-fit diagnostics
+            % - Topic: Inspect primary outputs — Best bootstrap replicate
+            % - nav_order: 1
             % - Declaration: index = bestBootstrapIndex(self)
             % - Returns index: 1-based bootstrap index of the top-ranked replicate
             arguments (Input)
@@ -502,7 +573,16 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             % object for a particular bootstrap replicate without storing
             % every replicate fit in memory.
             %
+            % ```matlab
+            % iBootstrap = bootstrap.bestBootstrapIndex();
+            % fit = bootstrap.fitForBootstrap(iBootstrap);
+            % tFit = fit.fitSupportTimes;
+            % plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+            % axis equal
+            % ```
+            %
             % - Topic: Reconstruct bootstrap fits
+            % - nav_order: 2
             % - Declaration: fit = fitForBootstrap(self,iBootstrap)
             % - Parameter iBootstrap: 1-based bootstrap replicate index
             % - Returns fit: reconstructed `GriddedStreamfunction` replicate
@@ -541,7 +621,15 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             % `self.mesoscaleDegreesOfFreedom`; only the fitted spline
             % coefficients and diagnostics vary across replicates.
             %
-            % - Topic: Inspect best-fit diagnostics
+            % ```matlab
+            % fit = bootstrap.bestFit();
+            % tFit = fit.fitSupportTimes;
+            % plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+            % axis equal
+            % ```
+            %
+            % - Topic: Inspect primary outputs — Best bootstrap replicate
+            % - nav_order: 2
             % - Declaration: fit = bestFit(self)
             % - Returns fit: reconstructed `GriddedStreamfunction` for the best bootstrap replicate
             arguments (Input)
@@ -567,11 +655,13 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             %
             % ```matlab
             % quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
-            % medianStrain = quantiles.sigma_n(:, 2);
-            % kappaBand = quantiles.kappa;
+            % plot(bootstrap.queryTimes, quantiles.zeta(:, 2))
+            % xlabel("t (s)")
+            % ylabel("\zeta_c (s^{-1})")
             % ```
             %
-            % - Topic: Summarize bootstrap uncertainty
+            % - Topic: Evaluate derived diagnostics — Ensemble summaries
+            % - nav_order: 2
             % - Declaration: quantiles = summaryQuantiles(self,probabilities)
             % - Parameter probabilities: vector of quantile probabilities on `[0,1]`
             % - Returns quantiles: struct of bootstrap quantiles for the stored summary fields
@@ -608,7 +698,15 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             % by `writeToFile` without rerunning the whole-drifter
             % resampling workflow.
             %
-            % - Topic: Read from file
+            % ```matlab
+            % bootstrap = GriddedStreamfunctionBootstrap.fromFile("gridded-bootstrap.nc");
+            % bestFit = bootstrap.bestFit();
+            % scores = bootstrap.scores;
+            % plot(scores.joint, ".")
+            % ```
+            %
+            % - Topic: Persist and restart ensembles
+            % - nav_order: 1
             % - Declaration: self = fromFile(path)
             % - Parameter path: path to the NetCDF restart file
             % - Returns self: reconstructed `GriddedStreamfunctionBootstrap` ensemble
@@ -636,7 +734,17 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             % stores the resolved spline knot vectors required to
             % reconstruct each replicate exactly later.
             %
+            % ```matlab
+            % bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
+            %     trajectories, nBootstraps=100, randomSeed=7);
+            % quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
+            % plot(bootstrap.queryTimes, quantiles.uCenter(:, 2))
+            % xlabel("t (s)")
+            % ylabel("u_c (m/s)")
+            % ```
+            %
             % - Topic: Create a bootstrap ensemble
+            % - nav_order: 1
             % - Declaration: self = fromTrajectories(trajectories,nBootstraps=...,randomSeed=...,queryTimes=...,scoreTimes=...,scoreStride=...,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
             % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
             % - Parameter nBootstraps: number of whole-drifter bootstrap replicates, default `100`

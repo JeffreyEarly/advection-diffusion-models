@@ -16,7 +16,8 @@ Per-drifter decomposition trajectories in fixed and centered frames.
 
 ## Discussion
 
-  Use `fit.decomposition` to inspect how the fitted estimator
+  This is one of the estimator's primary solved outputs. Use
+  `fit.decomposition` to inspect how the fitted estimator
   reconstructs the same drifters that were used in the fit. Each
   field is a `TrajectorySpline` column vector aligned one-for-one
   with `observedTrajectories`, so
@@ -68,11 +69,11 @@ Per-drifter decomposition trajectories in fixed and centered frames.
   background = fit.decomposition.fixedFrame.background(iDrifter);
   mesoscale = fit.decomposition.fixedFrame.mesoscale(iDrifter);
   submesoscale = fit.decomposition.fixedFrame.submesoscale(iDrifter);
-  xRecon = background.x(ti) + mesoscale.x(ti) + submesoscale.x(ti);
 
-  centeredMesoscale = fit.decomposition.centeredFrame.mesoscale(iDrifter);
-  centeredSubmesoscale = fit.decomposition.centeredFrame.submesoscale(iDrifter);
-  [~, qObs, rObs] = fit.centeredCoordinates(ti, trajectory.x(ti), trajectory.y(ti));
-  qRecon = centeredMesoscale.x(ti) + centeredSubmesoscale.x(ti);
-  rRecon = centeredMesoscale.y(ti) + centeredSubmesoscale.y(ti);
+  plot(trajectory.x(ti), trajectory.y(ti), "k")
+  hold on
+  plot(background.x(ti), background.y(ti))
+  plot(mesoscale.x(ti), mesoscale.y(ti))
+  plot(submesoscale.x(ti), submesoscale.y(ti))
+  axis equal
   ```

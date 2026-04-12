@@ -27,3 +27,18 @@ Evaluate the fitted mesoscale streamfunction.
 + `psiValue`  mesoscale streamfunction values with the same shape as `x`
 
 ## Discussion
+
+  `psiMesoscale` evaluates the solved centered-frame spline at
+  fixed-frame query points by subtracting
+  `centerOfMassTrajectory` first. It is a derived evaluation
+  of `streamfunctionSpline`, not additional solved state.
+
+  ```matlab
+  tFit = fit.fitSupportTimes;
+  xCom = fit.centerOfMassTrajectory.x(tFit);
+  yCom = fit.centerOfMassTrajectory.y(tFit);
+  psiCenter = fit.psiMesoscale(tFit, xCom, yCom);
+  plot(tFit, psiCenter)
+  xlabel("t (s)")
+  ylabel("\psi")
+  ```

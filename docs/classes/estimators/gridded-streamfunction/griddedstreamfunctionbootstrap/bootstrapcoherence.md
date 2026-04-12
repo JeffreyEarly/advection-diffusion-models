@@ -20,3 +20,10 @@ Lazy scalar coherence diagnostics for each bootstrap replicate.
   Each value uses the finite lower-frequency half of the stored
   mean coherence spectrum. When coherence is unavailable, the
   vector is filled with `NaN`.
+
+  ```matlab
+  coherence = bootstrap.bootstrapCoherence;
+  plot(coherence, ".")
+  xlabel("bootstrap replicate")
+  ylabel("coherence")
+  ```

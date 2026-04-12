@@ -18,4 +18,7 @@ Fitted COM-frame mesoscale streamfunction spline.
 
   This spline evaluates $$\psi(\tilde{x},\tilde{y},t)$$ in the
   centered coordinates
-  $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t).$$
+  $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t).$$ It is
+  the solved mesoscale basis state; methods such as
+  `psiMesoscale`, `uMesoscale`, and `vMesoscale` are derived
+  evaluations of this spline rather than separately fitted fields.

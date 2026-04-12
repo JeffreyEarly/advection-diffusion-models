@@ -27,3 +27,15 @@ Evaluate the relative-vorticity field $$\zeta = \psi_{\tilde{x}\tilde{x}} + \psi
 + `values`  relative vorticity in $$s^{-1}$$
 
 ## Discussion
+
+  This is a derived diagnostic computed from the solved
+  mesoscale spline.
+
+  ```matlab
+  tFit = fit.fitSupportTimes;
+  xCom = fit.centerOfMassTrajectory.x(tFit);
+  yCom = fit.centerOfMassTrajectory.y(tFit);
+  plot(tFit, fit.zeta(tFit, xCom, yCom))
+  xlabel("t (s)")
+  ylabel("\zeta (s^{-1})")
+  ```

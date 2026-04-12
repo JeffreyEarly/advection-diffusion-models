@@ -28,3 +28,11 @@ Read a fitted estimator from a NetCDF restart file.
 
   `fromFile` reconstructs the canonical solved state written by
   `writeToFile` without rerunning the trajectory fit.
+
+  ```matlab
+  fit = GriddedStreamfunction.fromFile("gridded-fit.nc");
+  decomposition = fit.decomposition;
+  tFit = fit.fitSupportTimes;
+  plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+  axis equal
+  ```

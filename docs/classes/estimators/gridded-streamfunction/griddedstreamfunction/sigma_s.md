@@ -27,3 +27,15 @@ Evaluate the shear strain field $$\sigma_s = \psi_{\tilde{x}\tilde{x}} - \psi_{\
 + `values`  shear strain in $$s^{-1}$$
 
 ## Discussion
+
+  This is a derived diagnostic computed from the solved
+  mesoscale spline.
+
+  ```matlab
+  tFit = fit.fitSupportTimes;
+  xCom = fit.centerOfMassTrajectory.x(tFit);
+  yCom = fit.centerOfMassTrajectory.y(tFit);
+  plot(tFit, fit.sigma_s(tFit, xCom, yCom))
+  xlabel("t (s)")
+  ylabel("\sigma_s (s^{-1})")
+  ```

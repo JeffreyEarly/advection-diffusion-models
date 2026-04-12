@@ -17,3 +17,10 @@ Lazy scalar diffusivity diagnostics for each bootstrap replicate.
 ## Discussion
 
   `bootstrapKappa` is a row vector of length `nBootstraps`.
+
+  ```matlab
+  kappa = bootstrap.bootstrapKappa;
+  plot(kappa, ".")
+  xlabel("bootstrap replicate")
+  ylabel("\kappa")
+  ```

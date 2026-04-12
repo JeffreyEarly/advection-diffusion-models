@@ -27,3 +27,15 @@ Evaluate the normal strain field $$\sigma_n = -2\psi_{\tilde{x}\tilde{y}}$$.
 + `values`  normal strain in $$s^{-1}$$
 
 ## Discussion
+
+  This is a derived diagnostic computed from the solved
+  mesoscale spline.
+
+  ```matlab
+  tFit = fit.fitSupportTimes;
+  xCom = fit.centerOfMassTrajectory.x(tFit);
+  yCom = fit.centerOfMassTrajectory.y(tFit);
+  plot(tFit, fit.sigma_n(tFit, xCom, yCom))
+  xlabel("t (s)")
+  ylabel("\sigma_n (s^{-1})")
+  ```

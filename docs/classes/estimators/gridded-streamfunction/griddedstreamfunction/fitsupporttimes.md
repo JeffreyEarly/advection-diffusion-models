@@ -15,3 +15,6 @@ Sorted unique observation times used as trajectory support.
 ---
 
 ## Discussion
+
+  `fitSupportTimes` is the canonical solved support grid shared by
+  the fitted COM and background trajectories.

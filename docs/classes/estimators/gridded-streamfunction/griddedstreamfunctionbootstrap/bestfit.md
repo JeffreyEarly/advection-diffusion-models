@@ -27,3 +27,10 @@ Reconstruct the top-ranked bootstrap replicate.
   `mesoscaleDegreesOfFreedom` as `self.fullFit` and
   `self.mesoscaleDegreesOfFreedom`; only the fitted spline
   coefficients and diagnostics vary across replicates.
+
+  ```matlab
+  fit = bootstrap.bestFit();
+  tFit = fit.fitSupportTimes;
+  plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+  axis equal
+  ```

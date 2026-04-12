@@ -43,3 +43,13 @@ Fit the estimator from drifter trajectory splines.
   with only the additive streamfunction gauge removed. Set
   `mesoscaleConstraint` to impose a hard zero-vorticity or
   zero-strain mesoscale fit.
+
+  ```matlab
+  fit = GriddedStreamfunction.fromTrajectories( ...
+      trajectories, mesoscaleConstraint="zeroVorticity");
+  tFit = fit.fitSupportTimes;
+  plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+  hold on
+  plot(fit.backgroundTrajectory.x(tFit), fit.backgroundTrajectory.y(tFit))
+  axis equal
+  ```

@@ -36,6 +36,7 @@ Return bootstrap quantiles for the stored summaries.
 
   ```matlab
   quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
-  medianStrain = quantiles.sigma_n(:, 2);
-  kappaBand = quantiles.kappa;
+  plot(bootstrap.queryTimes, quantiles.zeta(:, 2))
+  xlabel("t (s)")
+  ylabel("\zeta_c (s^{-1})")
   ```

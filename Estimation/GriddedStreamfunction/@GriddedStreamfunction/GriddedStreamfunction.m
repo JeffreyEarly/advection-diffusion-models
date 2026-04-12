@@ -45,20 +45,27 @@ classdef GriddedStreamfunction < CAAnnotatedClass
     %
     % ```matlab
     % fit = GriddedStreamfunction.fromTrajectories(trajectories);
-    % uMeso = fit.uMesoscale(tQuery, xQuery, yQuery);
-    % xMeso = fit.decomposition.fixedFrame.mesoscale(1).x(tQuery);
-    % decomposition = fit.decomposeTrajectories(otherTrajectories);
+    % tFit = fit.fitSupportTimes;
+    % com = fit.centerOfMassTrajectory;
+    % background = fit.backgroundTrajectory;
+    % decomposition = fit.decomposition;
+    % uMeso = fit.uMesoscale(tFit, com.x(tFit), com.y(tFit));
     % ```
     %
     % - Topic: Fit the estimator
-    % - Topic: Read from file
-    % - Topic: Write to file
-    % - Topic: Inspect fitted components
-    % - Topic: Inspect decomposition trajectories
+    % - Topic: Persist and restart fits
+    % - Topic: Inspect fit setup and structure
+    % - Topic: Inspect fit setup and structure — Input trajectories
+    % - Topic: Inspect fit setup and structure — Mesoscale basis
+    % - Topic: Inspect fit setup and structure — Fast temporal basis
+    % - Topic: Inspect primary outputs
     % - Topic: Apply fitted decomposition
-    % - Topic: Evaluate fitted mesoscale
-    % - Topic: Evaluate fitted diagnostics
-    % - Topic: Visualize strain angle
+    % - Topic: Evaluate derived fields
+    % - Topic: Evaluate derived fields — Coordinate transform
+    % - Topic: Evaluate derived fields — Mesoscale field evaluation
+    % - Topic: Evaluate derived fields — Background evaluation
+    % - Topic: Evaluate derived fields — Derived diagnostics
+    % - Topic: Evaluate derived fields — Visualization helper
     % - Declaration: classdef GriddedStreamfunction < CAAnnotatedClass
 
     properties (SetAccess = private)
@@ -66,9 +73,13 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         %
         % This spline evaluates $$\psi(\tilde{x},\tilde{y},t)$$ in the
         % centered coordinates
-        % $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t).$$
+        % $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t).$$ It is
+        % the solved mesoscale basis state; methods such as
+        % `psiMesoscale`, `uMesoscale`, and `vMesoscale` are derived
+        % evaluations of this spline rather than separately fitted fields.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Mesoscale basis
+        % - nav_order: 1
         streamfunctionSpline
 
         % Observed drifter trajectory splines used for the fit.
@@ -76,19 +87,33 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % `observedTrajectories` preserves the original
         % `TrajectorySpline` inputs in drifter order.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Input trajectories
+        % - nav_order: 1
         observedTrajectories
 
         % Fitted center-of-mass trajectory.
         %
+        % This is one of the estimator's primary solved outputs.
         % `centerOfMassTrajectory.x(t)` evaluates $$m_x(t)$$ and
-        % `centerOfMassTrajectory.y(t)` evaluates $$m_y(t)$$.
+        % `centerOfMassTrajectory.y(t)` evaluates $$m_y(t)$$ on the fit
+        % support interval.
         %
-        % - Topic: Inspect fitted components
+        % ```matlab
+        % tFit = fit.fitSupportTimes;
+        % plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+        % axis equal
+        % xlabel("x (m)")
+        % ylabel("y (m)")
+        % ```
+        %
+        % - Topic: Inspect primary outputs
+        % - nav_order: 1
         centerOfMassTrajectory
 
         % Fitted common background trajectory.
         %
+        % This is one of the estimator's primary solved outputs and stores
+        % the single common anchored background path recovered by the fit.
         % `backgroundTrajectory.x(t)` evaluates $$x^{\mathrm{bg}}(t)$$
         % and `backgroundTrajectory.y(t)` evaluates
         % $$y^{\mathrm{bg}}(t)$$, with
@@ -101,7 +126,16 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % re-anchored so it starts at zero at that drifter's first sample
         % time.
         %
-        % - Topic: Inspect fitted components
+        % ```matlab
+        % tFit = fit.fitSupportTimes;
+        % plot(fit.backgroundTrajectory.x(tFit), fit.backgroundTrajectory.y(tFit))
+        % axis equal
+        % xlabel("x^{bg} (m)")
+        % ylabel("y^{bg} (m)")
+        % ```
+        %
+        % - Topic: Inspect primary outputs
+        % - nav_order: 2
         backgroundTrajectory
 
         % Hard constraint applied to the fitted mesoscale streamfunction.
@@ -109,19 +143,25 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % `mesoscaleConstraint` is `"none"`, `"zeroVorticity"`, or
         % `"zeroStrain"`.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Mesoscale basis
+        % - nav_order: 4
         mesoscaleConstraint string = "none"
 
         % Representative pooled times from the stride-rule fast basis.
         %
         % This is empty when `fastKnotPoints` are supplied directly.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Fast temporal basis
+        % - nav_order: 4
         representativeTimes
 
         % Sorted unique observation times used as trajectory support.
         %
-        % - Topic: Inspect fitted components
+        % `fitSupportTimes` is the canonical solved support grid shared by
+        % the fitted COM and background trajectories.
+        %
+        % - Topic: Inspect fit setup and structure — Fast temporal basis
+        % - nav_order: 3
         fitSupportTimes
 
         % Identifiable mesoscale degrees of freedom after gauge and constraints.
@@ -133,14 +173,16 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % chosen structural constraint, not by the fitted coefficient
         % values themselves.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Mesoscale basis
+        % - nav_order: 5
         mesoscaleDegreesOfFreedom (1,1) double {mustBeInteger,mustBeNonnegative} = 0
     end
 
     properties (Dependent)
         % Per-drifter decomposition trajectories in fixed and centered frames.
         %
-        % Use `fit.decomposition` to inspect how the fitted estimator
+        % This is one of the estimator's primary solved outputs. Use
+        % `fit.decomposition` to inspect how the fitted estimator
         % reconstructs the same drifters that were used in the fit. Each
         % field is a `TrajectorySpline` column vector aligned one-for-one
         % with `observedTrajectories`, so
@@ -192,36 +234,41 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % background = fit.decomposition.fixedFrame.background(iDrifter);
         % mesoscale = fit.decomposition.fixedFrame.mesoscale(iDrifter);
         % submesoscale = fit.decomposition.fixedFrame.submesoscale(iDrifter);
-        % xRecon = background.x(ti) + mesoscale.x(ti) + submesoscale.x(ti);
         %
-        % centeredMesoscale = fit.decomposition.centeredFrame.mesoscale(iDrifter);
-        % centeredSubmesoscale = fit.decomposition.centeredFrame.submesoscale(iDrifter);
-        % [~, qObs, rObs] = fit.centeredCoordinates(ti, trajectory.x(ti), trajectory.y(ti));
-        % qRecon = centeredMesoscale.x(ti) + centeredSubmesoscale.x(ti);
-        % rRecon = centeredMesoscale.y(ti) + centeredSubmesoscale.y(ti);
+        % plot(trajectory.x(ti), trajectory.y(ti), "k")
+        % hold on
+        % plot(background.x(ti), background.y(ti))
+        % plot(mesoscale.x(ti), mesoscale.y(ti))
+        % plot(submesoscale.x(ti), submesoscale.y(ti))
+        % axis equal
         % ```
         %
-        % - Topic: Inspect decomposition trajectories
+        % - Topic: Inspect primary outputs
+        % - nav_order: 3
         decomposition
 
         % Fast temporal knot vector used for COM and background fits.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Fast temporal basis
+        % - nav_order: 1
         fastKnotPoints
 
         % Fast temporal spline degree for COM and background fits.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Fast temporal basis
+        % - nav_order: 2
         fastS
 
         % Mesoscale tensor-product knot vectors `{qKnot, rKnot, tKnot}`.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Mesoscale basis
+        % - nav_order: 2
         psiKnotPoints
 
         % Mesoscale spline degrees `[Sq Sr St]`.
         %
-        % - Topic: Inspect fitted components
+        % - Topic: Inspect fit setup and structure — Mesoscale basis
+        % - nav_order: 3
         psiS
     end
 
@@ -325,7 +372,16 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             % `fromFile` reconstructs the canonical solved state written by
             % `writeToFile` without rerunning the trajectory fit.
             %
-            % - Topic: Read from file
+            % ```matlab
+            % fit = GriddedStreamfunction.fromFile("gridded-fit.nc");
+            % decomposition = fit.decomposition;
+            % tFit = fit.fitSupportTimes;
+            % plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+            % axis equal
+            % ```
+            %
+            % - Topic: Persist and restart fits
+            % - nav_order: 1
             % - Declaration: self = fromFile(path)
             % - Parameter path: path to the NetCDF restart file
             % - Returns self: reconstructed `GriddedStreamfunction` estimator
@@ -352,7 +408,18 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             % `mesoscaleConstraint` to impose a hard zero-vorticity or
             % zero-strain mesoscale fit.
             %
+            % ```matlab
+            % fit = GriddedStreamfunction.fromTrajectories( ...
+            %     trajectories, mesoscaleConstraint="zeroVorticity");
+            % tFit = fit.fitSupportTimes;
+            % plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+            % hold on
+            % plot(fit.backgroundTrajectory.x(tFit), fit.backgroundTrajectory.y(tFit))
+            % axis equal
+            % ```
+            %
             % - Topic: Fit the estimator
+            % - nav_order: 1
             % - Declaration: self = fromTrajectories(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
             % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
             % - Parameter psiKnotPoints: optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
@@ -497,7 +564,19 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function values = uBackground(self, t)
             % Evaluate the fitted background x-velocity.
             %
-            % - Topic: Evaluate fitted diagnostics
+            % `uBackground` is a derived evaluation of the solved
+            % `backgroundTrajectory`, not an additional fitted state
+            % variable.
+            %
+            % ```matlab
+            % tFit = fit.fitSupportTimes;
+            % plot(tFit, fit.uBackground(tFit))
+            % xlabel("t (s)")
+            % ylabel("u^{bg} (m/s)")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Background evaluation
+            % - nav_order: 1
             % - Declaration: values = uBackground(self,t)
             % - Parameter t: evaluation times in seconds
             % - Returns values: background x-velocity in $$m s^{-1}$$
@@ -512,7 +591,19 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function values = vBackground(self, t)
             % Evaluate the fitted background y-velocity.
             %
-            % - Topic: Evaluate fitted diagnostics
+            % `vBackground` is a derived evaluation of the solved
+            % `backgroundTrajectory`, not an additional fitted state
+            % variable.
+            %
+            % ```matlab
+            % tFit = fit.fitSupportTimes;
+            % plot(tFit, fit.vBackground(tFit))
+            % xlabel("t (s)")
+            % ylabel("v^{bg} (m/s)")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Background evaluation
+            % - nav_order: 2
             % - Declaration: values = vBackground(self,t)
             % - Parameter t: evaluation times in seconds
             % - Returns values: background y-velocity in $$m s^{-1}$$
@@ -527,7 +618,23 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function psiValue = psiMesoscale(self, t, x, y)
             % Evaluate the fitted mesoscale streamfunction.
             %
-            % - Topic: Evaluate fitted mesoscale
+            % `psiMesoscale` evaluates the solved centered-frame spline at
+            % fixed-frame query points by subtracting
+            % `centerOfMassTrajectory` first. It is a derived evaluation
+            % of `streamfunctionSpline`, not additional solved state.
+            %
+            % ```matlab
+            % tFit = fit.fitSupportTimes;
+            % xCom = fit.centerOfMassTrajectory.x(tFit);
+            % yCom = fit.centerOfMassTrajectory.y(tFit);
+            % psiCenter = fit.psiMesoscale(tFit, xCom, yCom);
+            % plot(tFit, psiCenter)
+            % xlabel("t (s)")
+            % ylabel("\psi")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Mesoscale field evaluation
+            % - nav_order: 1
             % - Declaration: psiValue = psiMesoscale(self,t,x,y)
             % - Parameter t: scalar time or array matching `x` and `y`
             % - Parameter x: x-coordinate array in meters
@@ -547,7 +654,20 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function uValue = uMesoscale(self, t, x, y)
             % Evaluate the mesoscale x-velocity $$-\psi_{\tilde{y}}$$.
             %
-            % - Topic: Evaluate fitted mesoscale
+            % This is a derived velocity evaluation of the solved
+            % mesoscale spline in centered coordinates.
+            %
+            % ```matlab
+            % trajectory = fit.observedTrajectories(1);
+            % ti = trajectory.t;
+            % uMeso = fit.uMesoscale(ti, trajectory.x(ti), trajectory.y(ti));
+            % plot(ti, uMeso)
+            % xlabel("t (s)")
+            % ylabel("u^{meso} (m/s)")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Mesoscale field evaluation
+            % - nav_order: 2
             % - Declaration: uValue = uMesoscale(self,t,x,y)
             % - Parameter t: scalar time or array matching `x` and `y`
             % - Parameter x: x-coordinate array in meters
@@ -567,7 +687,20 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function vValue = vMesoscale(self, t, x, y)
             % Evaluate the mesoscale y-velocity $$\psi_{\tilde{x}}$$.
             %
-            % - Topic: Evaluate fitted mesoscale
+            % This is a derived velocity evaluation of the solved
+            % mesoscale spline in centered coordinates.
+            %
+            % ```matlab
+            % trajectory = fit.observedTrajectories(1);
+            % ti = trajectory.t;
+            % vMeso = fit.vMesoscale(ti, trajectory.x(ti), trajectory.y(ti));
+            % plot(ti, vMeso)
+            % xlabel("t (s)")
+            % ylabel("v^{meso} (m/s)")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Mesoscale field evaluation
+            % - nav_order: 3
             % - Declaration: vValue = vMesoscale(self,t,x,y)
             % - Parameter t: scalar time or array matching `x` and `y`
             % - Parameter x: x-coordinate array in meters
@@ -587,7 +720,20 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function values = sigma_n(self, t, x, y)
             % Evaluate the normal strain field $$\sigma_n = -2\psi_{\tilde{x}\tilde{y}}$$.
             %
-            % - Topic: Evaluate fitted diagnostics
+            % This is a derived diagnostic computed from the solved
+            % mesoscale spline.
+            %
+            % ```matlab
+            % tFit = fit.fitSupportTimes;
+            % xCom = fit.centerOfMassTrajectory.x(tFit);
+            % yCom = fit.centerOfMassTrajectory.y(tFit);
+            % plot(tFit, fit.sigma_n(tFit, xCom, yCom))
+            % xlabel("t (s)")
+            % ylabel("\sigma_n (s^{-1})")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Derived diagnostics
+            % - nav_order: 1
             % - Declaration: values = sigma_n(self,t,x,y)
             % - Parameter t: scalar time or array matching `x` and `y`
             % - Parameter x: x-coordinate array in meters
@@ -607,7 +753,20 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function values = sigma_s(self, t, x, y)
             % Evaluate the shear strain field $$\sigma_s = \psi_{\tilde{x}\tilde{x}} - \psi_{\tilde{y}\tilde{y}}$$.
             %
-            % - Topic: Evaluate fitted diagnostics
+            % This is a derived diagnostic computed from the solved
+            % mesoscale spline.
+            %
+            % ```matlab
+            % tFit = fit.fitSupportTimes;
+            % xCom = fit.centerOfMassTrajectory.x(tFit);
+            % yCom = fit.centerOfMassTrajectory.y(tFit);
+            % plot(tFit, fit.sigma_s(tFit, xCom, yCom))
+            % xlabel("t (s)")
+            % ylabel("\sigma_s (s^{-1})")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Derived diagnostics
+            % - nav_order: 2
             % - Declaration: values = sigma_s(self,t,x,y)
             % - Parameter t: scalar time or array matching `x` and `y`
             % - Parameter x: x-coordinate array in meters
@@ -629,7 +788,20 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         function values = zeta(self, t, x, y)
             % Evaluate the relative-vorticity field $$\zeta = \psi_{\tilde{x}\tilde{x}} + \psi_{\tilde{y}\tilde{y}}$$.
             %
-            % - Topic: Evaluate fitted diagnostics
+            % This is a derived diagnostic computed from the solved
+            % mesoscale spline.
+            %
+            % ```matlab
+            % tFit = fit.fitSupportTimes;
+            % xCom = fit.centerOfMassTrajectory.x(tFit);
+            % yCom = fit.centerOfMassTrajectory.y(tFit);
+            % plot(tFit, fit.zeta(tFit, xCom, yCom))
+            % xlabel("t (s)")
+            % ylabel("\zeta (s^{-1})")
+            % ```
+            %
+            % - Topic: Evaluate derived fields — Derived diagnostics
+            % - nav_order: 3
             % - Declaration: values = zeta(self,t,x,y)
             % - Parameter t: scalar time or array matching `x` and `y`
             % - Parameter x: x-coordinate array in meters

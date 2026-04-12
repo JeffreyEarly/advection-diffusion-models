@@ -18,3 +18,13 @@ Full-data gridded-streamfunction fit used as the reference solution.
 
   `fullFit` is the deterministic `GriddedStreamfunction` fit on
   the original input drifters before any resampling is applied.
+  This is one of the ensemble's primary outputs.
+
+  ```matlab
+  fullFit = bootstrap.fullFit;
+  tFit = fullFit.fitSupportTimes;
+  plot(fullFit.centerOfMassTrajectory.x(tFit), fullFit.centerOfMassTrajectory.y(tFit))
+  axis equal
+  xlabel("x (m)")
+  ylabel("y (m)")
+  ```

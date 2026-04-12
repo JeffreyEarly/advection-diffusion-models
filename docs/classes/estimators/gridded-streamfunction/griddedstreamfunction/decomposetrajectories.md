@@ -33,6 +33,10 @@ Apply the fitted decomposition to a supplied drifter ensemble.
   but all trajectory vectors are aligned with the supplied
   `trajectories` instead of `observedTrajectories`.
 
+  This method applies the solved COM trajectory, mesoscale field, and
+  common anchored background path to a new drifter ensemble; it does not
+  change the fitted state stored on `self`.
+
   The returned decomposition keeps the fitted
   $$m_x(t), m_y(t), u^{\mathrm{meso}}, v^{\mathrm{meso}}$$ fixed and
   recomputes the common background and submesoscale residuals on the
@@ -69,6 +73,11 @@ Apply the fitted decomposition to a supplied drifter ensemble.
   background = decomposition.fixedFrame.background(iDrifter);
   mesoscale = decomposition.fixedFrame.mesoscale(iDrifter);
   submesoscale = decomposition.fixedFrame.submesoscale(iDrifter);
-  uRecon = background.u(ti) + mesoscale.u(ti) + submesoscale.u(ti);
-  vRecon = background.v(ti) + mesoscale.v(ti) + submesoscale.v(ti);
+
+  plot(trajectory.x(ti), trajectory.y(ti), "k")
+  hold on
+  plot(background.x(ti), background.y(ti))
+  plot(mesoscale.x(ti), mesoscale.y(ti))
+  plot(submesoscale.x(ti), submesoscale.y(ti))
+  axis equal
   ```

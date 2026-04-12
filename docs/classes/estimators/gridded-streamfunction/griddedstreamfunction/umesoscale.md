@@ -27,3 +27,15 @@ Evaluate the mesoscale x-velocity $$-\psi_{\tilde{y}}$$.
 + `uValue`  mesoscale x-velocity in $$m s^{-1}$$
 
 ## Discussion
+
+  This is a derived velocity evaluation of the solved
+  mesoscale spline in centered coordinates.
+
+  ```matlab
+  trajectory = fit.observedTrajectories(1);
+  ti = trajectory.t;
+  uMeso = fit.uMesoscale(ti, trajectory.x(ti), trajectory.y(ti));
+  plot(ti, uMeso)
+  xlabel("t (s)")
+  ylabel("u^{meso} (m/s)")
+  ```

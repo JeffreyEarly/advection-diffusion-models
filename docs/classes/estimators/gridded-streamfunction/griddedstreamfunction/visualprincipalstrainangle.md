@@ -40,3 +40,17 @@ Evaluate a jump-free principal strain angle for visualization.
   Vectors are treated as one time series and preserve their input
   orientation. Matrices and higher-dimensional arrays are processed
   independently down the first dimension.
+
+  Use this helper after evaluating the derived strain diagnostics when you
+  want a smoothly plotted angle rather than the wrapped principal value.
+
+  ```matlab
+  tFit = fit.fitSupportTimes;
+  xCom = fit.centerOfMassTrajectory.x(tFit);
+  yCom = fit.centerOfMassTrajectory.y(tFit);
+  theta = GriddedStreamfunction.visualPrincipalStrainAngle( ...
+      fit.sigma_n(tFit, xCom, yCom), fit.sigma_s(tFit, xCom, yCom));
+  plot(tFit, theta)
+  xlabel("t (s)")
+  ylabel("\theta_p (deg)")
+  ```

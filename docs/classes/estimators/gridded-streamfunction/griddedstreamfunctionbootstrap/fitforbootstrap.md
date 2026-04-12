@@ -29,3 +29,11 @@ Reconstruct one bootstrap replicate exactly from saved metadata.
   Use this method to recover a full `GriddedStreamfunction`
   object for a particular bootstrap replicate without storing
   every replicate fit in memory.
+
+  ```matlab
+  iBootstrap = bootstrap.bestBootstrapIndex();
+  fit = bootstrap.fitForBootstrap(iBootstrap);
+  tFit = fit.fitSupportTimes;
+  plot(fit.centerOfMassTrajectory.x(tFit), fit.centerOfMassTrajectory.y(tFit))
+  axis equal
+  ```

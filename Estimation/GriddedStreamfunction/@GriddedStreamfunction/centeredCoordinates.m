@@ -6,7 +6,22 @@ function [tEval, q, r] = centeredCoordinates(self, t, x, y)
 % $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t)$$ with the same
 % shape rules used by the mesoscale evaluators.
 %
-% - Topic: Evaluate fitted diagnostics
+% `centeredCoordinates` is a derived coordinate transform built from the
+% solved `centerOfMassTrajectory`; it does not refit the estimator or
+% introduce additional state beyond the stored COM trajectory.
+%
+% ```matlab
+% trajectory = fit.observedTrajectories(1);
+% ti = trajectory.t;
+% [tEval, q, r] = fit.centeredCoordinates(ti, trajectory.x(ti), trajectory.y(ti));
+% plot(q, r)
+% axis equal
+% xlabel("\tilde{x} (m)")
+% ylabel("\tilde{y} (m)")
+% ```
+%
+% - Topic: Evaluate derived fields — Coordinate transform
+% - nav_order: 1
 % - Declaration: [tEval,q,r] = centeredCoordinates(self,t,x,y)
 % - Parameter t: scalar time, vector matching the first dimension of `x` and `y`, or array matching `x` and `y`
 % - Parameter x: x-coordinate array in meters

@@ -14,7 +14,22 @@ function theta = visualPrincipalStrainAngle(sigma_n, sigma_s, options)
 % orientation. Matrices and higher-dimensional arrays are processed
 % independently down the first dimension.
 %
-% - Topic: Visualize strain angle
+% Use this helper after evaluating the derived strain diagnostics when you
+% want a smoothly plotted angle rather than the wrapped principal value.
+%
+% ```matlab
+% tFit = fit.fitSupportTimes;
+% xCom = fit.centerOfMassTrajectory.x(tFit);
+% yCom = fit.centerOfMassTrajectory.y(tFit);
+% theta = GriddedStreamfunction.visualPrincipalStrainAngle( ...
+%     fit.sigma_n(tFit, xCom, yCom), fit.sigma_s(tFit, xCom, yCom));
+% plot(tFit, theta)
+% xlabel("t (s)")
+% ylabel("\theta_p (deg)")
+% ```
+%
+% - Topic: Evaluate derived fields — Visualization helper
+% - nav_order: 1
 % - Declaration: theta = visualPrincipalStrainAngle(sigma_n,sigma_s,units=...)
 % - Parameter sigma_n: normal strain array
 % - Parameter sigma_s: shear strain array with the same size as `sigma_n`

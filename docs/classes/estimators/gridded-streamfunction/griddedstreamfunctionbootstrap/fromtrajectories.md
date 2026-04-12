@@ -49,3 +49,12 @@ Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
   diagnostics are computed lazily on demand. The class also
   stores the resolved spline knot vectors required to
   reconstruct each replicate exactly later.
+
+  ```matlab
+  bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
+      trajectories, nBootstraps=100, randomSeed=7);
+  quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
+  plot(bootstrap.queryTimes, quantiles.uCenter(:, 2))
+  xlabel("t (s)")
+  ylabel("u_c (m/s)")
+  ```

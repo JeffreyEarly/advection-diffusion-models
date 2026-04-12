@@ -25,3 +25,14 @@ Evaluate the fitted background y-velocity.
 + `values`  background y-velocity in $$m s^{-1}$$
 
 ## Discussion
+
+  `vBackground` is a derived evaluation of the solved
+  `backgroundTrajectory`, not an additional fitted state
+  variable.
+
+  ```matlab
+  tFit = fit.fitSupportTimes;
+  plot(tFit, fit.vBackground(tFit))
+  xlabel("t (s)")
+  ylabel("v^{bg} (m/s)")
+  ```

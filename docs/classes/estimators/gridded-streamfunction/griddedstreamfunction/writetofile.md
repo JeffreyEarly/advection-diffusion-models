@@ -9,7 +9,7 @@ mathjax: true
 
 #  writeToFile
 
-Write this instance to a NetCDF restart file.
+Write this fit to a NetCDF restart file.
 
 
 ---
@@ -29,6 +29,12 @@ ncfile = writeToFile(self,path,properties=...,shouldOverwriteExisting=...,should
 + `ncfile` NetCDF file handle for the written restart file
 
 ## Discussion
-  Writes the canonical restart state for `GriddedStreamfunction` to a NetCDF file so `fromFile` can reconstruct the saved object later without rerunning the expensive fitting or bootstrap workflow.
+  Writes the canonical solved state for this fitted estimator to a NetCDF restart file so `fromFile` can reconstruct the fit later without rerunning the trajectory fit.
+
+```matlab
+fit = GriddedStreamfunction.fromTrajectories(trajectories);
+ncfile = fit.writeToFile("gridded-fit.nc", shouldOverwriteExisting=true);
+fitRestart = GriddedStreamfunction.fromFile("gridded-fit.nc");
+```
 
   Pass additional property names when you want to persist optional state beyond the required restart payload.

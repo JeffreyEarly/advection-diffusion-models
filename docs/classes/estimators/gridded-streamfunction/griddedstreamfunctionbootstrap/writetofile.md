@@ -9,7 +9,7 @@ mathjax: true
 
 #  writeToFile
 
-Write this instance to a NetCDF restart file.
+Write this ensemble to a NetCDF restart file.
 
 
 ---
@@ -29,6 +29,13 @@ ncfile = writeToFile(self,path,properties=...,shouldOverwriteExisting=...,should
 + `ncfile` NetCDF file handle for the written restart file
 
 ## Discussion
-  Writes the canonical restart state for `GriddedStreamfunctionBootstrap` to a NetCDF file so `fromFile` can reconstruct the saved object later without rerunning the expensive fitting or bootstrap workflow.
+  Writes the canonical bootstrap state to a NetCDF restart file so `fromFile` can reconstruct the saved ensemble later without rerunning the whole-drifter bootstrap workflow.
+
+```matlab
+bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories( ...
+    trajectories, nBootstraps=100);
+ncfile = bootstrap.writeToFile("gridded-bootstrap.nc", shouldOverwriteExisting=true);
+bootstrapRestart = GriddedStreamfunctionBootstrap.fromFile("gridded-bootstrap.nc");
+```
 
   Pass additional property names when you want to persist optional state beyond the required restart payload.
