@@ -29,5 +29,3 @@ Convert rectangular limits to polygon vertices.
 
   Use this helper when a rectangular plotting or integration
   region should be represented as a closed polygon.
-
-

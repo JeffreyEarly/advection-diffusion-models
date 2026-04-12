@@ -14,6 +14,9 @@ Lower coordinate bounds `ymin`.
 
 ---
 
+## Type
++ Class: `double`
+
 ## Declaration
 ```matlab
  self.ymin
@@ -25,5 +28,3 @@ Lower coordinate bounds `ymin`.
 
   `ymin` stores the lower bound for each coordinate. Use `-Inf` to
   indicate an unbounded lower side.
-
-

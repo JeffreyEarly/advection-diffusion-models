@@ -14,9 +14,11 @@ Underlying deterministic velocity model.
 
 ---
 
+## Type
++ Class: `KinematicModel`
++ Size: `(1,1)`
+
 ## Discussion
 
   `kinematicModel` supplies the advecting velocity field through
   `u(t,x,y)` and `v(t,x,y)`.
-
-

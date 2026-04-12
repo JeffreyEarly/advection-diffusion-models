@@ -30,5 +30,3 @@ Convert strain magnitude and orientation to strain components.
 
   This helper evaluates $$\sigma_n = \sigma \cos(2\theta)$$ and
   $$\sigma_s = \sigma \sin(2\theta)$$.
-
-

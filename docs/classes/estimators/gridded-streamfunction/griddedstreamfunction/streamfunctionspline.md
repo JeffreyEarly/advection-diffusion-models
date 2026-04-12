@@ -14,6 +14,10 @@ Fitted COM-frame mesoscale streamfunction spline.
 
 ---
 
+## Type
++ Class: `TensorSpline`
++ Size: `(1,1)`
+
 ## Discussion
 
   This spline evaluates $$\psi(\tilde{x},\tilde{y},t)$$ in the

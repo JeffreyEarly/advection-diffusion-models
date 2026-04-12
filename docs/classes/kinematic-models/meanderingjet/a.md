@@ -15,5 +15,3 @@ Meander amplitude in meters.
 ---
 
 ## Discussion
-
-

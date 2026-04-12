@@ -31,5 +31,3 @@ Remove initial particles outside the valid domain.
   Particles are removed when they lie outside `xlim` and `ylim` or inside
   any polygonal obstacle. Periodic directions are wrapped before obstacle
   intersection tests.
-
-

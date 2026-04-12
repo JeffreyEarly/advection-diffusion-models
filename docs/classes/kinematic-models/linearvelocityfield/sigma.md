@@ -14,9 +14,11 @@ Strain magnitude in $$s^{-1}$$.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Discussion
 
   Together with `theta`, this parameter determines `sigma_n` and
   `sigma_s`.
-
-

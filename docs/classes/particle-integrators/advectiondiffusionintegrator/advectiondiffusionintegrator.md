@@ -29,5 +29,3 @@ Create an advection-diffusion integrator.
 
   `kinematicModel` supplies the deterministic velocity field,
   and `kappa` sets the scalar tracer diffusivity.
-
-

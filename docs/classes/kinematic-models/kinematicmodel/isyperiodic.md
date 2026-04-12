@@ -14,6 +14,8 @@ Indicates whether the y-direction wraps periodically across `ylim`.
 
 ---
 
+## Type
++ Class: `logical`
++ Size: `(1,1)`
+
 ## Discussion
-
-

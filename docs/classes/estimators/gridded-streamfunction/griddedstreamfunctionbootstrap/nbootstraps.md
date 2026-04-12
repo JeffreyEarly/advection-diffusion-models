@@ -14,6 +14,10 @@ Number of bootstrap replicates in the ensemble.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Description
 Real valued property with no dimensions and no units.
 

@@ -30,5 +30,3 @@ Evaluate the Gaussian streamfunction.
 
   The eddy center translates at the constant speed
   `[(cx) (cy)]`.
-
-

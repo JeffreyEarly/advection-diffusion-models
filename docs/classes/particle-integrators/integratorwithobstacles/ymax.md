@@ -14,6 +14,9 @@ Upper coordinate bounds `ymax`.
 
 ---
 
+## Type
++ Class: `double`
+
 ## Declaration
 ```matlab
  self.ymax
@@ -25,5 +28,3 @@ Upper coordinate bounds `ymax`.
 
   `ymax` stores the upper bound for each coordinate. Use `Inf` to
   indicate an unbounded upper side.
-
-

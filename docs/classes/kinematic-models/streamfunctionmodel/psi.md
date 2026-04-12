@@ -29,5 +29,3 @@ Evaluate the streamfunction.
 ## Discussion
 
   Output shape matches the input `x` and `y` arrays.
-
-

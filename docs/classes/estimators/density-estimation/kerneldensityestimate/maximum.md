@@ -14,6 +14,10 @@ Upper bound of the default evaluation box.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,:)`
+
 ## Discussion
 
   `maximum` stores the upper endpoint used by `densityOnGrid(...)`

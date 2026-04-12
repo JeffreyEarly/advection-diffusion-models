@@ -29,5 +29,3 @@ Plot streamfunction contours on the current axes.
 
   The contour grid spans `xVisualLimits` and `yVisualLimits` and excludes
   obstacle interiors when polygonal obstacles are present.
-
-

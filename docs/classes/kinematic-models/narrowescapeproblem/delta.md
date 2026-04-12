@@ -15,5 +15,3 @@ Wall thickness in meters.
 ---
 
 ## Discussion
-
-

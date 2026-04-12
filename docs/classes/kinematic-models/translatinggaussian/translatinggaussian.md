@@ -22,5 +22,3 @@ Create the default translating Gaussian model.
 + `self`  `TranslatingGaussian` instance
 
 ## Discussion
-
-

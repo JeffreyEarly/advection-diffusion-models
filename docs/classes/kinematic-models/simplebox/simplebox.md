@@ -22,5 +22,3 @@ Create the default box model.
 + `self`  `SimpleBox` instance
 
 ## Discussion
-
-

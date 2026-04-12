@@ -27,5 +27,3 @@ Evaluate the along-jet velocity component.
 + `uValue`  x-velocity in $$m s^{-1}$$ with the same shape as `x`
 
 ## Discussion
-
-

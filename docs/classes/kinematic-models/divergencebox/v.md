@@ -30,5 +30,3 @@ Evaluate the y-velocity component.
 
   Neighboring Gaussian cells alternate sign along the
   x-direction.
-
-

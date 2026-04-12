@@ -15,5 +15,3 @@ Chamber length in meters.
 ---
 
 ## Discussion
-
-

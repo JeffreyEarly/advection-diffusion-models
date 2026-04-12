@@ -22,5 +22,3 @@ Create the default narrow-escape geometry.
 + `self`  `NarrowEscapeProblem` instance
 
 ## Discussion
-
-

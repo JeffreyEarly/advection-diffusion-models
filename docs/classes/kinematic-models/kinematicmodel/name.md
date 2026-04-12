@@ -15,5 +15,3 @@ Descriptive model name used in figures and generated docs.
 ---
 
 ## Discussion
-
-

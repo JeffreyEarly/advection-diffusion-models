@@ -14,6 +14,10 @@ Lower bound of the default evaluation box.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,:)`
+
 ## Discussion
 
   `minimum` stores the lower endpoint used by `densityOnGrid(...)`

@@ -14,6 +14,10 @@ Full-data gridded-streamfunction fit used as the reference solution.
 
 ---
 
+## Type
++ Class: `GriddedStreamfunction`
++ Size: `(1,1)`
+
 ## Discussion
 
   `fullFit` is the deterministic `GriddedStreamfunction` fit on

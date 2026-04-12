@@ -34,5 +34,3 @@ Integrate particles from initial positions.
   This method removes any initial positions that lie outside the model
   domain or inside model obstacles before integrating. The trajectories are
   sampled on the uniform output grid `0:dt:T`.
-
-

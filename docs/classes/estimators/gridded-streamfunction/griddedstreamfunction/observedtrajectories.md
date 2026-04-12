@@ -14,6 +14,10 @@ Observed drifter trajectory splines used for the fit.
 
 ---
 
+## Type
++ Class: `TrajectorySpline`
++ Size: nonempty vector
+
 ## Discussion
 
   `observedTrajectories` preserves the original

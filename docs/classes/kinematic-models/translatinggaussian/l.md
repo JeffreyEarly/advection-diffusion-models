@@ -15,5 +15,3 @@ Eddy length scale in meters.
 ---
 
 ## Discussion
-
-

@@ -14,6 +14,9 @@ Polygonal obstacles used for reflecting boundaries.
 
 ---
 
+## Type
++ Class: `polyshape`
+
 ## Declaration
 ```matlab
  self.obstacles
@@ -25,5 +28,3 @@ Polygonal obstacles used for reflecting boundaries.
 
   `obstacles` stores the original non-overlapping `polyshape`
   objects supplied to the constructor.
-
-

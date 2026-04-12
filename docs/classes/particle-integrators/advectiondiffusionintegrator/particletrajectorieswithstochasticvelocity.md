@@ -39,5 +39,3 @@ Integrate particles with extra stochastic velocity terms.
 
   where `u(t)` and `v(t)` return column vectors with one value per active
   particle at the current output time.
-
-

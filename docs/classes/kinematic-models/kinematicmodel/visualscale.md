@@ -14,8 +14,10 @@ Plotting scale factor.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Discussion
 
   A value of `1e3` renders meters as km in the plotting helpers.
-
-

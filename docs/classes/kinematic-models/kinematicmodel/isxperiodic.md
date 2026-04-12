@@ -14,6 +14,8 @@ Indicates whether the x-direction wraps periodically across `xlim`.
 
 ---
 
+## Type
++ Class: `logical`
++ Size: `(1,1)`
+
 ## Discussion
-
-

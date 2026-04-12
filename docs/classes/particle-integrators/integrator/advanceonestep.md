@@ -25,5 +25,3 @@ Advance the ODE by one fixed timestep `dt`.
 
   This method applies one accepted RK4 update and then returns
   the new state `y`.
-
-

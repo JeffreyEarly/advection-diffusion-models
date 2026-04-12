@@ -18,5 +18,3 @@ Polygonal obstacle geometry as a `polyshape` array.
 
   Particles inside these polygons are removed before trajectory
   integration.
-
-

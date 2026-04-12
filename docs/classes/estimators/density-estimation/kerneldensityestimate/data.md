@@ -14,6 +14,10 @@ Sample locations used to define the fitted kernel density estimate.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(:,:)`
+
 ## Discussion
 
   `data` is stored as an `N-by-1` column vector for one-dimensional

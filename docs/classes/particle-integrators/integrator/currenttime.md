@@ -14,6 +14,10 @@ Current integration time `t`.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Declaration
 ```matlab
  self.currentTime
@@ -26,5 +30,3 @@ Current integration time `t`.
   `currentTime` is updated after every accepted step and has the
   same physical units as the `t` inputs passed to the public
   stepping methods.
-
-

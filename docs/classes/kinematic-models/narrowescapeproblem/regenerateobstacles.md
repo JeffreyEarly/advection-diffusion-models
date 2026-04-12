@@ -22,5 +22,3 @@ Rebuild the chamber walls and escape opening.
 
   The geometry consists of five rectangular wall sections whose union
   leaves an opening of width `W` in the left wall.
-
-

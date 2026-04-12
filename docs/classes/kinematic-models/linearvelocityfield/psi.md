@@ -31,5 +31,3 @@ Evaluate the quadratic streamfunction.
   The implemented streamfunction is
 
   $$ \psi = -u_0 y + v_0 x + \frac{1}{4}(\sigma_s + \zeta)x^2 - \frac{1}{2}\sigma_n xy - \frac{1}{4}(\sigma_s - \zeta)y^2. $$
-
-

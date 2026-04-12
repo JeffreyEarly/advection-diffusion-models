@@ -15,5 +15,3 @@ Far-field speed in $$m s^{-1}$$.
 ---
 
 ## Discussion
-
-

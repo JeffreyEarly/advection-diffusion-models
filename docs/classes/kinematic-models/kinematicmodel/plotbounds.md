@@ -25,5 +25,3 @@ Plot domain boundaries on the current axes.
 
   Finite rectangular domains are drawn as a closed box. Semi-infinite
   domains with finite `ylim` are drawn as vertical boundary lines.
-
-

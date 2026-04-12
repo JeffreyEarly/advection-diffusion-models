@@ -31,5 +31,3 @@ Plot the model velocity field with quivers.
 
   The plotting grid uses `2*numPoints` points in x and `numPoints` points
   in y to preserve the typical wide aspect ratio.
-
-

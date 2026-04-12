@@ -15,5 +15,3 @@ Translation speed in x in $$m s^{-1}$$.
 ---
 
 ## Discussion
-
-

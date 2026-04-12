@@ -27,5 +27,3 @@ Plot particle trajectories on the current axes.
 
   When `isXPeriodic` is true, trajectories are redrawn in wrapped copies
   so the visible path remains continuous across the plotting window.
-
-

@@ -15,5 +15,3 @@ Velocity scale in $$m s^{-1}$$.
 ---
 
 ## Discussion
-
-

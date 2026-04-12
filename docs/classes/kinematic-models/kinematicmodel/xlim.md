@@ -14,9 +14,11 @@ Finite or infinite x-domain limits in meters.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,2)`
+
 ## Discussion
 
   If both limits are finite and `isXPeriodic` is true, particles
   wrap across this interval.
-
-

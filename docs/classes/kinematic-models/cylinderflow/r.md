@@ -15,5 +15,3 @@ Cylinder radius in meters.
 ---
 
 ## Discussion
-
-

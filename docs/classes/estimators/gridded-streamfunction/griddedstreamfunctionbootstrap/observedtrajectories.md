@@ -14,6 +14,10 @@ Original drifter trajectories used to seed the bootstrap ensemble.
 
 ---
 
+## Type
++ Class: `TrajectorySpline`
++ Size: nonempty vector
+
 ## Discussion
 
   `observedTrajectories` preserves the original

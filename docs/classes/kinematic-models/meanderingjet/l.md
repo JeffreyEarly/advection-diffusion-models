@@ -15,5 +15,3 @@ Jet half-width in meters.
 ---
 
 ## Discussion
-
-

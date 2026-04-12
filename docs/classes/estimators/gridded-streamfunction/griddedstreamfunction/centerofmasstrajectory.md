@@ -14,6 +14,10 @@ Fitted center-of-mass trajectory.
 
 ---
 
+## Type
++ Class: `TrajectorySpline`
++ Size: `(1,1)`
+
 ## Discussion
 
   This is one of the estimator's primary solved outputs.

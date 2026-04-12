@@ -29,5 +29,3 @@ Evaluate the zero y-velocity field.
 ## Discussion
 
   This model sets $$v(t,x,y) = 0$$ everywhere in the box.
-
-

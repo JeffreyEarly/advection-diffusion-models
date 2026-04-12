@@ -22,5 +22,3 @@ Create the default meandering jet model.
 + `self`  `MeanderingJet` instance
 
 ## Discussion
-
-

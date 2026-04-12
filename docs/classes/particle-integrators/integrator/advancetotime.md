@@ -31,5 +31,3 @@ Advance the integrator until the accepted time reaches `t`.
   deterministic RK4 integrator there is no substep
   interpolation; the returned state is the most recent
   accepted state `y`.
-
-

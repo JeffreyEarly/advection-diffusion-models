@@ -22,5 +22,3 @@ Create the default divergence-box model.
 + `self`  `DivergenceBox` instance
 
 ## Discussion
-
-

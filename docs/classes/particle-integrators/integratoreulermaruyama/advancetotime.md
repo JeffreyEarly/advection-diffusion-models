@@ -30,5 +30,3 @@ Advance the SDE until the requested output time `t`.
   `currentTime >= t`. When `t` lies between the two most recent
   accepted stochastic states, the returned value is the current
   first-order linear interpolation between them.
-
-

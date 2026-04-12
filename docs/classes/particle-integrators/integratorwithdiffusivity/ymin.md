@@ -14,6 +14,9 @@ Lower box bounds `ymin`.
 
 ---
 
+## Type
++ Class: `double`
+
 ## Declaration
 ```matlab
  self.ymin
@@ -25,5 +28,3 @@ Lower box bounds `ymin`.
 
   `ymin` stores the lower coordinate bound for each state
   dimension. Use `-Inf` for an unbounded lower side.
-
-

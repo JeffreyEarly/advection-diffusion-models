@@ -14,6 +14,10 @@ Number of accepted timesteps taken so far.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Declaration
 ```matlab
  self.totalIterations
@@ -25,5 +29,3 @@ Number of accepted timesteps taken so far.
 
   `totalIterations` counts accepted fixed-size updates. It does not
   count interpolated output points requested by `integrateToTime`.
-
-

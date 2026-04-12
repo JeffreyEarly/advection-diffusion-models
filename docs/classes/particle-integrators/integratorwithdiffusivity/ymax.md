@@ -14,6 +14,9 @@ Upper box bounds `ymax`.
 
 ---
 
+## Type
++ Class: `double`
+
 ## Declaration
 ```matlab
  self.ymax
@@ -25,5 +28,3 @@ Upper box bounds `ymax`.
 
   `ymax` stores the upper coordinate bound for each state
   dimension. Use `Inf` for an unbounded upper side.
-
-

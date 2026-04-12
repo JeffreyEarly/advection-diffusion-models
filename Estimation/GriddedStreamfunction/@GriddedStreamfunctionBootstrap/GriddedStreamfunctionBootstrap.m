@@ -953,8 +953,8 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             propertyAnnotations(end+1) = CADimensionProperty('trajectoryIndex', '', 'Index over observed drifter trajectories.');
             propertyAnnotations(end+1) = CADimensionProperty('fullFitCoherenceFrequencyIndex', '', 'Index over the full-fit coherence-spectrum frequencies.');
             propertyAnnotations(end+1) = CADimensionProperty('bestFitCoherenceFrequencyIndex', '', 'Index over the best-fit coherence-spectrum frequencies.');
-            propertyAnnotations(end+1) = CAObjectProperty('fullFit', 'Full-data gridded-streamfunction fit used as the reference solution.');
-            propertyAnnotations(end+1) = CAObjectProperty('observedTrajectories', 'Original drifter trajectories used to seed the bootstrap ensemble.');
+            propertyAnnotations(end+1) = CAObjectProperty('fullFit', 'Full-data gridded-streamfunction fit used as the reference solution.', className='GriddedStreamfunction', sizeText='(1,1)');
+            propertyAnnotations(end+1) = CAObjectProperty('observedTrajectories', 'Original drifter trajectories used to seed the bootstrap ensemble.', className='TrajectorySpline', sizeText='nonempty vector');
             propertyAnnotations(end+1) = CANumericProperty('bootstrapIndices', {'bootstrapIndex', 'trajectoryIndex'}, '', 'Whole-drifter resampling indices for each bootstrap replicate.');
             propertyAnnotations(end+1) = CANumericProperty('fullSummaryUCenter', {'queryTimes'}, '', 'Persisted full-fit `uCenter` summary values.');
             propertyAnnotations(end+1) = CANumericProperty('fullSummaryVCenter', {'queryTimes'}, '', 'Persisted full-fit `vCenter` summary values.');

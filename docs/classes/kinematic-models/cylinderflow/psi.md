@@ -30,5 +30,3 @@ Evaluate the potential-flow streamfunction.
 
   The implemented streamfunction is
   $$\psi(t,x,y) = U y \left(1 - \frac{R^2}{x^2 + y^2}\right)$$.
-
-

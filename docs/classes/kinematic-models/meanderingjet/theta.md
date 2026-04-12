@@ -28,5 +28,3 @@ Evaluate the meander phase.
 ## Discussion
 
   The phase is $$\theta = k(x - c_x t)$$.
-
-

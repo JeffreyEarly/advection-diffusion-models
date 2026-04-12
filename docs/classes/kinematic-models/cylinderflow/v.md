@@ -27,5 +27,3 @@ Evaluate the y-velocity component.
 + `vValue`  y-velocity in $$m s^{-1}$$ with the same shape as `x`
 
 ## Discussion
-
-

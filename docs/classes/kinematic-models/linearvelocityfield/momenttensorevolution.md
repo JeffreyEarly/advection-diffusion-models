@@ -35,5 +35,3 @@ Evolve the second-moment tensor for the linear model.
   The returned moments satisfy the matrix equation
   $$\dot{M} = AM + MA^{\top} + 2\kappa I$$ for the affine velocity gradient
   `A` defined by the model parameters.
-
-

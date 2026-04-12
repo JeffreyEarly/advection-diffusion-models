@@ -34,5 +34,3 @@ Create a 2D obstacle-aware stochastic integrator.
   scalar-valued `kappa`, `ymin`, `ymax`, and `isPeriodic`,
   stores the domain bounds, and precomputes polygon and
   bounding-box geometry used by the reflection algorithm.
-
-

@@ -15,5 +15,3 @@ Gaussian length scale in meters.
 ---
 
 ## Discussion
-
-

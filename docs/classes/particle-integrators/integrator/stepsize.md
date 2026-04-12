@@ -14,6 +14,10 @@ Fixed timestep `dt` used by every accepted step.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Declaration
 ```matlab
  self.stepSize
@@ -25,5 +29,3 @@ Fixed timestep `dt` used by every accepted step.
 
   This property stores the scalar timestep that appears in the RK4
   update formulas documented for `Integrator`.
-
-

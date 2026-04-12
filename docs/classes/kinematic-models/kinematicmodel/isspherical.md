@@ -14,9 +14,11 @@ Indicates that the x-coordinate represents longitude on a sphere.
 
 ---
 
+## Type
++ Class: `logical`
++ Size: `(1,1)`
+
 ## Discussion
 
   When this flag is true, `AdvectionDiffusionIntegrator` applies
   the spherical x-scaling expected by the model.
-
-

@@ -30,5 +30,3 @@ Create an RK4 integrator for $$\frac{dy}{dt} = f(t,y)$$.
   state array `y0` is used without reshaping, so its
   `nParticles x nDims` layout becomes the integration contract
   for all later calls to `f`.
-
-

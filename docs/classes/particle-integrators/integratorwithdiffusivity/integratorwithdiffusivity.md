@@ -31,5 +31,3 @@ Create an additive-diffusion integrator on a box domain.
   The constructor keeps the legacy scalar-expansion behavior
   for `kappa`, `ymin`, and `ymax`, with defaults corresponding
   to zero diffusivity on an unbounded domain.
-
-

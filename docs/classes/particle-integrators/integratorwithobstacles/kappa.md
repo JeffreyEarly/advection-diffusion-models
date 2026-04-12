@@ -14,6 +14,9 @@ Componentwise diffusivity `kappa`.
 
 ---
 
+## Type
++ Class: `double`
+
 ## Declaration
 ```matlab
  self.kappa
@@ -25,5 +28,3 @@ Componentwise diffusivity `kappa`.
 
   `kappa` stores either the scalar diffusivity expanded across both
   state dimensions or the supplied `1 x 2` diffusivity vector.
-
-

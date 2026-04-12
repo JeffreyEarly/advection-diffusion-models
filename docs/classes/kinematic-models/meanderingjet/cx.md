@@ -15,5 +15,3 @@ Meander phase speed in $$m s^{-1}$$.
 ---
 
 ## Discussion
-
-

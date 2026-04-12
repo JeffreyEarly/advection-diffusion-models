@@ -27,5 +27,3 @@ Evaluate the meandering-jet streamfunction.
 + `psiValue`  streamfunction values with the same shape as `x` and `y`
 
 ## Discussion
-
-

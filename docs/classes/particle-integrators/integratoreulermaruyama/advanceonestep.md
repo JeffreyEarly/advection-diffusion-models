@@ -26,5 +26,3 @@ Advance the SDE by one fixed timestep `dt`.
   This method stores the previous accepted state so that a later
   call to `advanceToTime` can apply the same linear
   interpolation used by the legacy implementation.
-
-

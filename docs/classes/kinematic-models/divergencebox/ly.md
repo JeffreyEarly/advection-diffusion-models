@@ -15,5 +15,3 @@ Domain height in meters.
 ---
 
 ## Discussion
-
-

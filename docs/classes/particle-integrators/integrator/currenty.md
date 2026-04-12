@@ -14,6 +14,9 @@ Current state `y`.
 
 ---
 
+## Type
++ Class: `double`
+
 ## Declaration
 ```matlab
  self.currentY
@@ -25,5 +28,3 @@ Current state `y`.
 
   `currentY` stores the most recent accepted state array with shape
   `nParticles x nDims`.
-
-

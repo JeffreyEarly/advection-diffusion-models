@@ -35,5 +35,3 @@ Evaluate the analytical particle trajectory solution.
   Initial particle positions are normalized to row vectors, and the output
   time vector is normalized to a column vector before the analytical
   update is applied.
-
-

@@ -15,5 +15,3 @@ Domain width in meters.
 ---
 
 ## Discussion
-
-

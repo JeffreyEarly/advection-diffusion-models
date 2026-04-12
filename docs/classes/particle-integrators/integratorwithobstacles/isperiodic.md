@@ -14,6 +14,10 @@ Periodicity flags for each coordinate direction.
 
 ---
 
+## Type
++ Class: `logical`
++ Size: `(1,2)`
+
 ## Declaration
 ```matlab
  self.isPeriodic
@@ -26,5 +30,3 @@ Periodicity flags for each coordinate direction.
   `isPeriodic` is normalized to a logical `1 x 2` row vector. A
   true entry means the corresponding coordinate is wrapped into the
   interval `[ymin(i), ymax(i))` before obstacle checks.
-
-

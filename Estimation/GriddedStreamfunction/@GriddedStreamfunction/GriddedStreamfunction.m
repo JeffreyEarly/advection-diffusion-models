@@ -876,10 +876,10 @@ classdef GriddedStreamfunction < CAAnnotatedClass
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
             propertyAnnotations = CAPropertyAnnotation.empty(0, 0);
-            propertyAnnotations(end+1) = CAObjectProperty('streamfunctionSpline', 'Fitted centered-frame mesoscale streamfunction spline.');
-            propertyAnnotations(end+1) = CAObjectProperty('observedTrajectories', 'Observed drifter trajectory splines used for the fit.');
-            propertyAnnotations(end+1) = CAObjectProperty('centerOfMassTrajectory', 'Fitted center-of-mass trajectory.');
-            propertyAnnotations(end+1) = CAObjectProperty('backgroundTrajectory', 'Fitted common background trajectory.');
+            propertyAnnotations(end+1) = CAObjectProperty('streamfunctionSpline', 'Fitted centered-frame mesoscale streamfunction spline.', className='TensorSpline', sizeText='(1,1)');
+            propertyAnnotations(end+1) = CAObjectProperty('observedTrajectories', 'Observed drifter trajectory splines used for the fit.', className='TrajectorySpline', sizeText='nonempty vector');
+            propertyAnnotations(end+1) = CAObjectProperty('centerOfMassTrajectory', 'Fitted center-of-mass trajectory.', className='TrajectorySpline', sizeText='(1,1)');
+            propertyAnnotations(end+1) = CAObjectProperty('backgroundTrajectory', 'Fitted common background trajectory.', className='TrajectorySpline', sizeText='vector or empty array');
             propertyAnnotations(end+1) = CAObjectProperty('fixedFrameBackgroundTrajectories', 'Stored fixed-frame background decomposition trajectories.');
             propertyAnnotations(end+1) = CAObjectProperty('fixedFrameMesoscaleTrajectories', 'Stored fixed-frame mesoscale decomposition trajectories.');
             propertyAnnotations(end+1) = CAObjectProperty('fixedFrameSubmesoscaleTrajectories', 'Stored fixed-frame submesoscale decomposition trajectories.');

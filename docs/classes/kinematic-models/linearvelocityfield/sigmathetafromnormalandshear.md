@@ -31,5 +31,3 @@ Convert normal and shear strain to magnitude and orientation.
   This helper inverts the relations
   $$\sigma_n = \sigma \cos(2\theta)$$ and
   $$\sigma_s = \sigma \sin(2\theta)$$.
-
-

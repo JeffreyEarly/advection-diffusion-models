@@ -22,5 +22,3 @@ Create the default cylinder-flow model.
 + `self`  `CylinderFlow` instance
 
 ## Discussion
-
-

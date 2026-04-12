@@ -31,5 +31,3 @@ Integrate the ODE to each requested output time.
   and stores the accepted state associated with each requested
   time entry. The returned vector `t` records the integrator
   time after each request.
-
-

@@ -15,5 +15,3 @@ Opening width in meters.
 ---
 
 ## Discussion
-
-

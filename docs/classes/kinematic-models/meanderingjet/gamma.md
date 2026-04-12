@@ -30,5 +30,3 @@ Evaluate the nondimensional cross-jet coordinate.
 
   `gamma` is the transformed cross-jet coordinate that appears
   inside the Bower streamfunction.
-
-

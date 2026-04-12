@@ -15,5 +15,3 @@ Number of cells along y.
 ---
 
 ## Discussion
-
-

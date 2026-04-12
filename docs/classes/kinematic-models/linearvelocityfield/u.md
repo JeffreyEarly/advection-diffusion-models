@@ -31,5 +31,3 @@ Evaluate the x-velocity.
   The implemented velocity component is
 
   $$ u = u_0 + \frac{1}{2}\left(\sigma_n x + (\sigma_s - \zeta)y\right). $$
-
-

@@ -14,6 +14,10 @@ Identifiable mesoscale degrees of freedom after gauge and constraints.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Description
 Real valued property with no dimensions and no units.
 

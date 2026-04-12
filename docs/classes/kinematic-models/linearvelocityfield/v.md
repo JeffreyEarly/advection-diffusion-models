@@ -31,5 +31,3 @@ Evaluate the y-velocity.
   The implemented velocity component is
 
   $$ v = v_0 + \frac{1}{2}\left((\sigma_s + \zeta)x - \sigma_n y\right). $$
-
-

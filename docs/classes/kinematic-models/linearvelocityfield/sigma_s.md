@@ -15,5 +15,3 @@ Shear strain component $$\sigma_s = \sigma \sin(2\theta)$$.
 ---
 
 ## Discussion
-
-

@@ -15,5 +15,3 @@ Meander wavelength in meters.
 ---
 
 ## Discussion
-
-

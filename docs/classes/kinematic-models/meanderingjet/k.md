@@ -15,5 +15,3 @@ Meander wavenumber in $$m^{-1}$$.
 ---
 
 ## Discussion
-
-

@@ -29,5 +29,3 @@ Evaluate the x-velocity component.
 ## Discussion
 
   Output shape matches the input `x` and `y` arrays.
-
-

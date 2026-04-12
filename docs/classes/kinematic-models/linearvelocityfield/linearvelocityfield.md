@@ -32,5 +32,3 @@ Create a linear velocity field.
 
   Pass any subset of the model parameters by name. Omitted
   parameters default to zero.
-
-

@@ -15,5 +15,3 @@ Normal strain component $$\sigma_n = \sigma \cos(2\theta)$$.
 ---
 
 ## Discussion
-
-

@@ -14,6 +14,9 @@ Hard constraint applied to the fitted mesoscale streamfunction.
 
 ---
 
+## Type
++ Class: `string`
+
 ## Discussion
 
   `mesoscaleConstraint` is `"none"`, `"zeroVorticity"`, or

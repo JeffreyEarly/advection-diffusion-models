@@ -14,9 +14,11 @@ Relative vorticity in $$s^{-1}$$.
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Discussion
 
   `zeta` controls the antisymmetric part of the velocity
   gradient.
-
-

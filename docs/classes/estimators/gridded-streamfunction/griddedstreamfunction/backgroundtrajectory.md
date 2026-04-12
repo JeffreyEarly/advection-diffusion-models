@@ -14,6 +14,10 @@ Fitted common background trajectory.
 
 ---
 
+## Type
++ Class: `TrajectorySpline`
++ Size: vector or empty array
+
 ## Discussion
 
   This is one of the estimator's primary solved outputs and stores
