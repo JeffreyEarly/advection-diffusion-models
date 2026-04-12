@@ -45,6 +45,8 @@ data = [sigma_n(:), sigma_s(:)];
 model = KernelDensityEstimate.fromData(data);
 [density, gridVectors] = model.densityOnGrid(gridSize=[192 320]);
 contourf(gridVectors{1}, gridVectors{2}, density.')
+stats = KernelDensityEstimate.planarStatisticsFromData(data);
+polar = KernelDensityEstimate.polarSummaryFromPlanarStatistics(stats);
 ```
 
 
@@ -64,6 +66,12 @@ contourf(gridVectors{1}, gridVectors{2}, density.')
   + [`cdfOnGrid`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/cdfongrid.html) Evaluate the fitted one-dimensional CDF on a regular query grid.
   + [`densityAt`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/densityat.html) Evaluate the fitted density at arbitrary query points.
   + [`densityOnGrid`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/densityongrid.html) Evaluate the fitted density on a regular query grid.
+  + Planar summary
+    + [`planarStatisticsFromData`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/planarstatisticsfromdata.html) Summarize a planar kernel density estimate from sampled data.
+  + Planar rendering
+    + [`plotPlanarStatistics`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/plotplanarstatistics.html) Plot a planar KDE summary from precomputed statistics.
+  + Polar reduction
+    + [`polarSummaryFromPlanarStatistics`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/polarsummaryfromplanarstatistics.html) Reduce planar KDE statistics to radius-angle uncertainty summaries.
 
 
 ---

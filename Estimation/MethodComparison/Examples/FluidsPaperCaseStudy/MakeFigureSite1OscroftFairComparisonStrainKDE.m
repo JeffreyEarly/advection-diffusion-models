@@ -1,5 +1,4 @@
 scriptDir = locateExampleScriptDirectory();
-timeDays = [0.5 2.5 5.0];
 timeDays = [3 4 5];
 nBootstraps = 1000;
 randomSeed = 0;
@@ -26,6 +25,8 @@ disp(table( ...
 
 methodColors = [0.8500 0.3250 0.0980; 0 0.4470 0.7410];
 figureHeight = max(360, 170 * numel(kdeComparison.requestedTimeDays)) * scaleFactor;
+ringRadii = (2:2:10) * 1e-6;
+ringColor = 0.75 * [1 1 1];
 
 figure(Color="w", Units="points", Position=[50 50 figureWidthMedium figureHeight]);
 tl = tiledlayout(numel(kdeComparison.requestedTimeDays), 2, TileSpacing="compact", Padding="compact");
@@ -37,7 +38,12 @@ for iTime = 1:numel(kdeComparison.requestedTimeDays)
     for iMethod = 1:numel(kdeComparison.methodLabels)
         ax = nexttile(tl);
         panel = kdeComparison.panels(iTime, iMethod);
-        plotStrainKdePanel(ax, panel, kdeComparison.bounds, methodColors(iMethod, :));
+        KernelDensityEstimate.plotPlanarStatistics(ax, panel.statistics, ...
+            samples=panel.samples, ...
+            contourMasses=kdeComparison.pctTarget, ...
+            scatterColor=methodColors(iMethod, :), ...
+            ringRadii=ringRadii, ...
+            ringColor=ringColor);
 
         xlabel(ax, "\sigma_n (s^{-1})", FontSize=figureAxisLabelSize, FontName=figureFont);
         ylabel(ax, "\sigma_s (s^{-1})", FontSize=figureAxisLabelSize, FontName=figureFont);
@@ -57,26 +63,6 @@ title(tl, "Site 1 fair-comparison bootstrap strain KDE", FontSize=figureTitleSiz
 
 if shouldSaveFigures == 1
     print(fullfile(scriptDir, "Site1OscroftFairComparisonStrainKDE.eps"), "-depsc2");
-end
-
-function plotStrainKdePanel(ax, panel, bounds, panelColor)
-hold(ax, "on");
-drawReferenceRings(ax);
-contourf(ax, panel.gridVectors{1}, panel.gridVectors{2}, panel.density.', panel.contourLevels, LineStyle="none");
-scatter(ax, panel.samples(:, 1), panel.samples(:, 2), 12, panelColor, "filled", ...
-    MarkerEdgeColor="none", MarkerFaceAlpha=0.18);
-scatter(ax, panel.fullPoint(1), panel.fullPoint(2), 42, "w", "filled", MarkerEdgeColor="k", LineWidth=1.1);
-axis(ax, "equal");
-xlim(ax, bounds.minimum(1) + [0, 1] * (bounds.maximum(1) - bounds.minimum(1)));
-ylim(ax, bounds.minimum(2) + [0, 1] * (bounds.maximum(2) - bounds.minimum(2)));
-box(ax, "on");
-end
-
-function drawReferenceRings(ax)
-for radius = (2:2:10) * 1e-6
-    rectangle(ax, Position=[-radius -radius 2 * radius 2 * radius], Curvature=[1 1], ...
-        EdgeColor=0.75 * [1 1 1], LineStyle=":", LineWidth=0.8);
-end
 end
 
 function scriptDir = locateExampleScriptDirectory()

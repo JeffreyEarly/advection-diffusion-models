@@ -195,16 +195,258 @@ classdef KernelDensityEstimateUnitTests < matlab.unittest.TestCase
             testCase.verifyError(@() KernelDensityEstimate.fromData(data, minimum=[-1 -1], maximum=[1 1]), "KernelDensityEstimate:InvalidBounds")
         end
 
-        function densityLevelForCdfMatchesLegacyContourHelper(testCase)
+        function densityLevelForCdfReturnsTargetMassThresholds(testCase)
             data = KernelDensityEstimateUnitTests.twoDimensionalData();
             model = KernelDensityEstimate.fromData(data);
             [density, gridVectors] = model.densityOnGrid(gridSize=[64 64]);
             pctTarget = [0.1; 0.5; 0.8];
 
-            expected = KernelDensityEstimateUnitTests.legacyDensityLevelForCDF(gridVectors, density, pctTarget);
-            actual = DensityLevelForCDF(gridVectors, density, pctTarget);
+            levels = DensityLevelForCDF(gridVectors, density, pctTarget);
+            enclosedMass = KernelDensityEstimateUnitTests.enclosedMassForDensityLevel(gridVectors, density, levels);
 
-            testCase.verifyEqual(actual, expected, "AbsTol", 1e-12)
+            testCase.verifySize(levels, size(pctTarget))
+            testCase.verifyTrue(all(isfinite(levels)))
+            testCase.verifyTrue(all(diff(levels) <= 0))
+            testCase.verifyLessThanOrEqual(max(abs(enclosedMass - pctTarget)), 0.08)
+        end
+
+        function densityLevelForCdfHandlesDuplicateEnclosedMassSamples(testCase)
+            xVector = reshape(linspace(-5, 5, 128), [], 1);
+            yVector = reshape(linspace(-4, 4, 128), [], 1);
+            [X, Y] = ndgrid(xVector, yVector);
+            density = exp(-((X - 1.5).^2 + Y.^2)) + exp(-((X + 1.5).^2 + Y.^2));
+            density = density / trapz(yVector, trapz(xVector, density, 1), 2);
+            pctTarget = [0.05; 0.1; 0.15];
+
+            actual = DensityLevelForCDF({xVector, yVector}, density, pctTarget);
+
+            testCase.verifySize(actual, size(pctTarget))
+            testCase.verifyTrue(all(isfinite(actual)))
+            testCase.verifyTrue(all(diff(actual) <= 0))
+        end
+
+        function planarStatisticsFromDataBuildsPlanarSummary(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(data, referencePoint=[0.5 -0.25], gridSize=[96 112], summaryMass=0.5);
+
+            testCase.verifyEqual(size(statistics.modePoint), [1 2])
+            testCase.verifyEqual(size(statistics.referencePoint), [1 2])
+            testCase.verifyEqual(size(statistics.density), [96 112])
+            testCase.verifyEqual(statistics.referencePoint, [0.5 -0.25], "AbsTol", 1e-12)
+            testCase.verifyTrue(all(isfinite(statistics.modePoint)))
+            testCase.verifyTrue(all(isfinite(statistics.radiusBounds)))
+            testCase.verifyTrue(all(isfinite(statistics.angleBounds)))
+            testCase.verifyTrue(all(statistics.bounds.maximum > statistics.bounds.minimum))
+            testCase.verifyNotEmpty(statistics.summaryContourVertices)
+            testCase.verifyTrue(inpolygon( ...
+                statistics.modePoint(1), ...
+                statistics.modePoint(2), ...
+                statistics.summaryContourVertices(:, 1), ...
+                statistics.summaryContourVertices(:, 2)))
+        end
+
+        function planarStatisticsFromDataSelectsDisconnectedSummaryContour(testCase)
+            datasets = KernelDensityEstimateUnitTests.twoDimensionalDatasets();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(datasets(2).data, gridSize=[128 128], summaryMass=0.15);
+
+            testCase.verifyNotEmpty(statistics.summaryContourVertices)
+            testCase.verifyTrue(inpolygon( ...
+                statistics.modePoint(1), ...
+                statistics.modePoint(2), ...
+                statistics.summaryContourVertices(:, 1), ...
+                statistics.summaryContourVertices(:, 2)))
+            testCase.verifyLessThan(range(statistics.summaryContourVertices(:, 1)), 4)
+        end
+
+        function planarStatisticsFromDataHandlesMissingSummaryContour(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(data, summaryMass=0);
+
+            testCase.verifyTrue(isnan(statistics.summaryLevel))
+            testCase.verifyEmpty(statistics.summaryContourVertices)
+            testCase.verifyTrue(all(isnan(statistics.radiusBounds)))
+            testCase.verifyTrue(all(isnan(statistics.angleBounds)))
+            testCase.verifyTrue(all(isfinite(statistics.modePoint)))
+        end
+
+        function planarStatisticsFromDataValidatesPlanarOptionShapes(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+
+            testCase.verifyError( ...
+                @() KernelDensityEstimate.planarStatisticsFromData(data, referencePoint=[1 2 3]), ...
+                "KernelDensityEstimate:InvalidPoint")
+            testCase.verifyError( ...
+                @() KernelDensityEstimate.planarStatisticsFromData(data, minimum=[-1 -1 -1], maximum=[1 1 1]), ...
+                "KernelDensityEstimate:InvalidBounds")
+        end
+
+        function polarSummaryFromPlanarStatisticsSupportsAngleReference(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(data, referencePoint=[0.5 -0.25], summaryMass=0.5);
+
+            defaultPolar = KernelDensityEstimate.polarSummaryFromPlanarStatistics(statistics);
+            shiftedPolar = KernelDensityEstimate.polarSummaryFromPlanarStatistics(statistics, angleReference=defaultPolar.modeAngle + 2*pi);
+
+            testCase.verifyClass(defaultPolar.containsOrigin, "logical")
+            testCase.verifySize(defaultPolar.containsOrigin, [1 1])
+            testCase.verifyEqual(shiftedPolar.modeRadius, defaultPolar.modeRadius, "AbsTol", 1e-12)
+            testCase.verifyEqual(shiftedPolar.modeAngle, defaultPolar.modeAngle + 2*pi, "AbsTol", 1e-12)
+            testCase.verifyEqual(shiftedPolar.radiusBounds, defaultPolar.radiusBounds, "AbsTol", 1e-12)
+            if all(isfinite(defaultPolar.angleBounds))
+                testCase.verifyEqual(shiftedPolar.angleBounds, defaultPolar.angleBounds + 2*pi, "AbsTol", 1e-12)
+            end
+        end
+
+        function polarSummaryFromPlanarStatisticsMarksOriginInclusiveContours(testCase)
+            statistics = KernelDensityEstimateUnitTests.manualPlanarStatistics( ...
+                [1 1], ...
+                KernelDensityEstimateUnitTests.circleVertices([0 0], 2, 48), ...
+                referencePoint=[0.5 -0.25], ...
+                radiusBounds=[0.5 2.0], ...
+                angleBounds=[0 1]);
+
+            polarSummary = KernelDensityEstimate.polarSummaryFromPlanarStatistics(statistics);
+
+            testCase.verifyTrue(polarSummary.containsOrigin)
+            testCase.verifyEqual(polarSummary.modeRadius, sqrt(2), "AbsTol", 1e-12)
+            testCase.verifyEqual(polarSummary.radiusBounds, [0 2], "AbsTol", 1e-12)
+            testCase.verifyEqual(polarSummary.radiusErrors, [sqrt(2), 2 - sqrt(2)], "AbsTol", 1e-12)
+            testCase.verifyTrue(all(isnan(polarSummary.angleBounds)))
+            testCase.verifyTrue(all(isnan(polarSummary.angleErrors)))
+        end
+
+        function strainSummaryFromPlanarStatisticsRecoversSigmaThetaOnTightCloud(testCase)
+            sigma = 4;
+            theta = pi/6;
+            center = [sigma * cos(2 * theta), sigma * sin(2 * theta)];
+            data = center + [ ...
+                0.00 0.00; ...
+                0.08 -0.04; ...
+                -0.06 0.05; ...
+                0.04 0.03; ...
+                -0.05 -0.06; ...
+                0.03 0.02];
+            statistics = KernelDensityEstimate.planarStatisticsFromData( ...
+                data, ...
+                minimum=center - [0.75 0.75], ...
+                maximum=center + [0.75 0.75], ...
+                gridSize=[128 128], ...
+                summaryMass=0.5);
+
+            strainSummary = KernelDensityEstimate.strainSummaryFromPlanarStatistics(statistics);
+
+            testCase.verifyFalse(strainSummary.containsZero)
+            testCase.verifyLessThanOrEqual(abs(strainSummary.modeSigma - sigma), 0.2)
+            testCase.verifyLessThanOrEqual(abs(strainSummary.modeTheta - theta), 0.08)
+            testCase.verifyTrue(all(isfinite(strainSummary.sigmaBounds)))
+            testCase.verifyTrue(all(isfinite(strainSummary.thetaBounds)))
+        end
+
+        function strainSummaryFromPlanarStatisticsSupportsThetaReference(testCase)
+            statistics = KernelDensityEstimateUnitTests.manualPlanarStatistics( ...
+                [2 * cos(pi/3), 2 * sin(pi/3)], ...
+                KernelDensityEstimateUnitTests.circleVertices([1 0], 0.5, 48), ...
+                radiusBounds=[1.5 2.5], ...
+                angleBounds=[pi/6 pi/2]);
+
+            defaultSummary = KernelDensityEstimate.strainSummaryFromPlanarStatistics(statistics);
+            shiftedSummary = KernelDensityEstimate.strainSummaryFromPlanarStatistics( ...
+                statistics, ...
+                thetaReference=defaultSummary.modeTheta + pi);
+
+            testCase.verifyEqual(shiftedSummary.modeSigma, defaultSummary.modeSigma, "AbsTol", 1e-12)
+            testCase.verifyEqual(shiftedSummary.modeTheta, defaultSummary.modeTheta + pi, "AbsTol", 1e-12)
+            testCase.verifyEqual(shiftedSummary.sigmaBounds, defaultSummary.sigmaBounds, "AbsTol", 1e-12)
+            testCase.verifyEqual(shiftedSummary.thetaBounds, defaultSummary.thetaBounds + pi, "AbsTol", 1e-12)
+        end
+
+        function strainSummaryFromPlanarStatisticsKeepsOppositeModesDistinct(testCase)
+            statisticsA = KernelDensityEstimateUnitTests.manualPlanarStatistics( ...
+                [2 0], ...
+                KernelDensityEstimateUnitTests.circleVertices([2 0], 0.4, 48), ...
+                radiusBounds=[1.6 2.4], ...
+                angleBounds=[-0.2 0.2]);
+            statisticsB = KernelDensityEstimateUnitTests.manualPlanarStatistics( ...
+                [-2 0], ...
+                KernelDensityEstimateUnitTests.circleVertices([-2 0], 0.4, 48), ...
+                radiusBounds=[1.6 2.4], ...
+                angleBounds=[pi - 0.2 pi + 0.2]);
+
+            summaryA = KernelDensityEstimate.strainSummaryFromPlanarStatistics(statisticsA);
+            summaryB = KernelDensityEstimate.strainSummaryFromPlanarStatistics(statisticsB);
+
+            testCase.verifyEqual(summaryB.modeTheta - summaryA.modeTheta, pi/2, "AbsTol", 1e-12)
+        end
+
+        function strainSummaryFromPlanarStatisticsPreservesModeWhenContourContainsOrigin(testCase)
+            statistics = KernelDensityEstimateUnitTests.manualPlanarStatistics( ...
+                [1 1], ...
+                KernelDensityEstimateUnitTests.circleVertices([0 0], 2, 48), ...
+                radiusBounds=[0.5 2.0], ...
+                angleBounds=[0 1]);
+
+            strainSummary = KernelDensityEstimate.strainSummaryFromPlanarStatistics(statistics);
+
+            testCase.verifyTrue(strainSummary.containsZero)
+            testCase.verifyEqual(strainSummary.modeSigma, sqrt(2), "AbsTol", 1e-12)
+            testCase.verifyEqual(strainSummary.sigmaBounds, [0 2], "AbsTol", 1e-12)
+            testCase.verifyEqual(strainSummary.modeTheta, pi/8, "AbsTol", 1e-12)
+            testCase.verifyTrue(all(isnan(strainSummary.thetaBounds)))
+            testCase.verifyTrue(all(isnan(strainSummary.thetaErrors)))
+        end
+
+        function planarHelpersValidateStatisticsShapesAtThePublicBoundary(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(data, summaryMass=0.5);
+            invalidPlotStatistics = statistics;
+            invalidPolarStatistics = statistics;
+            invalidPlotStatistics.angleBounds = [statistics.angleBounds, statistics.angleBounds(end)];
+            invalidPolarStatistics.radiusBounds = [statistics.radiusBounds, statistics.radiusBounds(end)];
+
+            figureHandle = figure(Visible="off");
+            testCase.addTeardown(@close, figureHandle);
+            ax = axes(figureHandle);
+
+            testCase.verifyError(@() KernelDensityEstimate.plotPlanarStatistics(ax, invalidPlotStatistics), ...
+                "KernelDensityEstimate:InvalidPlanarStatistics")
+            testCase.verifyError(@() KernelDensityEstimate.polarSummaryFromPlanarStatistics(invalidPolarStatistics), ...
+                "KernelDensityEstimate:InvalidPlanarStatistics")
+        end
+
+        function plotPlanarStatisticsDrawsPlanarSummary(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(data, referencePoint=[0.5 -0.25], gridSize=[64 64], summaryMass=0.5);
+
+            figureHandle = figure(Visible="off");
+            testCase.addTeardown(@close, figureHandle);
+            ax = axes(figureHandle);
+
+            KernelDensityEstimate.plotPlanarStatistics(ax, statistics, ...
+                samples=data, ...
+                contourMasses=[0.2; 0.5; 0.8], ...
+                showWedge=true, ...
+                ringRadii=[0.5; 1.0]);
+
+            testCase.verifyEqual(ax.XLim, [statistics.bounds.minimum(1), statistics.bounds.maximum(1)], "AbsTol", 1e-12)
+            testCase.verifyEqual(ax.YLim, [statistics.bounds.minimum(2), statistics.bounds.maximum(2)], "AbsTol", 1e-12)
+            testCase.verifyGreaterThan(numel(ax.Children), 0)
+        end
+
+        function plotPlanarStatisticsSkipsWedgeWhenAngleBoundsAreUndefined(testCase)
+            data = KernelDensityEstimateUnitTests.twoDimensionalData();
+            statistics = KernelDensityEstimate.planarStatisticsFromData(data, referencePoint=[0.5 -0.25], gridSize=[64 64], summaryMass=0.5);
+            statistics.angleBounds = [NaN NaN];
+
+            figureHandle = figure(Visible="off");
+            testCase.addTeardown(@close, figureHandle);
+            ax = axes(figureHandle);
+
+            KernelDensityEstimate.plotPlanarStatistics(ax, statistics, ...
+                samples=data, ...
+                contourMasses=[0.2; 0.5; 0.8], ...
+                showWedge=true);
+
+            testCase.verifyGreaterThan(numel(ax.Children), 0)
         end
     end
 
@@ -258,56 +500,45 @@ classdef KernelDensityEstimateUnitTests < matlab.unittest.TestCase
             cdfValues = mean(0.5 * erfc(-(queryPoints - data.')/(bandwidth * sqrt(2))), 2);
         end
 
-        function dLevels = legacyDensityLevelForCDF(gridVectors, density, pctTarget)
-            [X, Y] = meshgrid(gridVectors{1}, gridVectors{2});
-            densityMesh = density.';
-            nLevels = 25;
-            level = zeros(nLevels, 1);
-            pctEnclosed = zeros(nLevels, 1);
-            sigmaNAxis = X(1, :).';
-            sigmaSAxis = Y(:, 1);
-            contours = contourc(sigmaNAxis, sigmaSAxis, densityMesh, nLevels);
-            iContour = 1;
-            iLevel = 1;
+        function enclosedMass = enclosedMassForDensityLevel(gridVectors, density, levels)
+            xVector = reshape(gridVectors{1}, [], 1);
+            yVector = reshape(gridVectors{2}, [], 1);
+            enclosedMass = NaN(size(levels));
 
-            while iContour < size(contours, 2)
-                level(iLevel) = contours(1, iContour);
-                nVertices = contours(2, iContour);
-                polygon.Vertices = [contours(1, (iContour + 1):(iContour + nVertices - 1)).', ...
-                    contours(2, (iContour + 1):(iContour + nVertices - 1)).'];
-                polygon.dx = polygon.Vertices(2:end, 1) - polygon.Vertices(1:end - 1, 1);
-                polygon.dy = polygon.Vertices(2:end, 2) - polygon.Vertices(1:end - 1, 2);
-                mask = reshape(KernelDensityEstimateUnitTests.isInteriorLegacy(polygon, X(:), Y(:)), size(X));
-                pctEnclosed(iLevel) = trapz(sigmaSAxis, trapz(sigmaNAxis, densityMesh .* mask));
-                iContour = iContour + nVertices + 1;
-                iLevel = iLevel + 1;
-            end
-
-            dLevels = interp1(pctEnclosed(1:iLevel - 1), level(1:iLevel - 1), pctTarget);
-        end
-
-        function inside = isInteriorLegacy(polygon, x, y)
-            windingNumber = zeros(size(x));
-            for iVertex = 1:(length(polygon.Vertices) - 1)
-                isBelow = polygon.Vertices(iVertex, 2) <= y;
-                upwardCrossing = isBelow & polygon.Vertices(iVertex + 1, 2) > y;
-                if any(upwardCrossing)
-                    windingNumber(upwardCrossing) = windingNumber(upwardCrossing) + ...
-                        (KernelDensityEstimateUnitTests.isLeftLegacy(polygon, iVertex, x(upwardCrossing), y(upwardCrossing)) > 0);
+            for iLevel = 1:numel(levels)
+                if ~isfinite(levels(iLevel))
+                    continue
                 end
 
-                downwardCrossing = ~isBelow & polygon.Vertices(iVertex + 1, 2) <= y;
-                if any(downwardCrossing)
-                    windingNumber(downwardCrossing) = windingNumber(downwardCrossing) - ...
-                        (KernelDensityEstimateUnitTests.isLeftLegacy(polygon, iVertex, x(downwardCrossing), y(downwardCrossing)) < 0);
-                end
+                mask = density >= levels(iLevel);
+                enclosedMass(iLevel) = trapz(yVector, trapz(xVector, density .* mask, 1), 2);
             end
-
-            inside = abs(windingNumber) > 0;
         end
 
-        function isLeftValue = isLeftLegacy(polygon, iVertex, x, y)
-            isLeftValue = polygon.dx(iVertex) .* (y - polygon.Vertices(iVertex, 2)) - (x - polygon.Vertices(iVertex, 1)) .* polygon.dy(iVertex);
+        function statistics = manualPlanarStatistics(modePoint, summaryContourVertices, options)
+            arguments
+                modePoint (1,2) double {mustBeReal, mustBeFinite}
+                summaryContourVertices (:,2) double {mustBeReal, mustBeFinite}
+                options.referencePoint (1,2) double {mustBeReal} = [NaN NaN]
+                options.originPoint (1,2) double {mustBeReal, mustBeFinite} = [0 0]
+                options.radiusBounds (1,2) double {mustBeReal}
+                options.angleBounds (1,2) double {mustBeReal}
+            end
+
+            modeOffset = modePoint - options.originPoint;
+            statistics = struct( ...
+                "modeRadius", hypot(modeOffset(1), modeOffset(2)), ...
+                "modeAngle", atan2(modeOffset(2), modeOffset(1)), ...
+                "radiusBounds", options.radiusBounds, ...
+                "angleBounds", options.angleBounds, ...
+                "referencePoint", options.referencePoint, ...
+                "originPoint", options.originPoint, ...
+                "summaryContourVertices", summaryContourVertices);
+        end
+
+        function vertices = circleVertices(center, radius, nVertices)
+            angles = linspace(0, 2*pi, nVertices + 1).';
+            vertices = center + radius * [cos(angles), sin(angles)];
         end
     end
 end

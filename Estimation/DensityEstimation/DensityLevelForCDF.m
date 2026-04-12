@@ -23,49 +23,54 @@ if ~isequal(size(density), [numel(xVector) numel(yVector)])
         "density must have size [numel(gridVectors{1}) numel(gridVectors{2})].");
 end
 
-nLevels = 25;
-level = zeros(nLevels, 1);
-pctEnclosed = zeros(nLevels, 1);
-[X, Y] = ndgrid(xVector, yVector);
-contours = contourc(xVector, yVector, density.', nLevels);
-iContour = 1;
-iLevel = 1;
-
-while iContour < size(contours, 2)
-    level(iLevel) = contours(1, iContour);
-    nVertices = contours(2, iContour);
-    polygon.Vertices = [contours(1, (iContour + 1):(iContour + nVertices - 1)).', ...
-        contours(2, (iContour + 1):(iContour + nVertices - 1)).'];
-    polygon.dx = polygon.Vertices(2:end, 1) - polygon.Vertices(1:end - 1, 1);
-    polygon.dy = polygon.Vertices(2:end, 2) - polygon.Vertices(1:end - 1, 2);
-    mask = reshape(isInterior(polygon, X(:), Y(:)), size(X));
-    pctEnclosed(iLevel) = trapz(yVector, trapz(xVector, density .* mask, 1), 2);
-
-    iContour = iContour + nVertices + 1;
-    iLevel = iLevel + 1;
+nX = numel(xVector);
+nY = numel(yVector);
+if nX < 2 || nY < 2
+    error("DensityLevelForCDF:InsufficientGrid", ...
+        "gridVectors must each contain at least two points.");
+end
+if any(diff(xVector) <= 0) || any(diff(yVector) <= 0)
+    error("DensityLevelForCDF:InvalidGridVectors", ...
+        "gridVectors must be strictly increasing.");
 end
 
-dLevels = interp1(pctEnclosed(1:iLevel - 1), level(1:iLevel - 1), pctTarget);
+xWeights = trapezoidalWeights(xVector);
+yWeights = trapezoidalWeights(yVector);
+pointMass = density .* (xWeights * yWeights.');
+totalMass = sum(pointMass, "all");
+if ~isfinite(totalMass) || totalMass <= 0
+    dLevels = NaN(size(pctTarget));
+    return
 end
 
-function isLeftValue = isLeft(polygon, iVertex, x, y)
-isLeftValue = polygon.dx(iVertex) .* (y - polygon.Vertices(iVertex, 2)) - (x - polygon.Vertices(iVertex, 1)) .* polygon.dy(iVertex);
+[sortedDensity, sortIndices] = sort(density(:), "descend");
+sortedMass = pointMass(sortIndices);
+cumulativeMass = cumsum(sortedMass) / totalMass;
+
+[cumulativeMass, uniqueIndices] = unique(cumulativeMass, "stable");
+sortedDensity = sortedDensity(uniqueIndices);
+
+dLevels = NaN(size(pctTarget));
+positiveTargets = pctTarget > 0;
+if ~any(positiveTargets)
+    return
 end
 
-function inside = isInterior(polygon, x, y)
-windingNumber = zeros(size(x));
-for iVertex = 1:(length(polygon.Vertices) - 1)
-    isBelow = polygon.Vertices(iVertex, 2) <= y;
-    upwardCrossing = isBelow & polygon.Vertices(iVertex + 1, 2) > y;
-    if any(upwardCrossing)
-        windingNumber(upwardCrossing) = windingNumber(upwardCrossing) + (isLeft(polygon, iVertex, x(upwardCrossing), y(upwardCrossing)) > 0);
-    end
-
-    downwardCrossing = ~isBelow & polygon.Vertices(iVertex + 1, 2) <= y;
-    if any(downwardCrossing)
-        windingNumber(downwardCrossing) = windingNumber(downwardCrossing) - (isLeft(polygon, iVertex, x(downwardCrossing), y(downwardCrossing)) < 0);
-    end
+positiveTargetValues = pctTarget(positiveTargets);
+positiveTargetValues = min(positiveTargetValues, 1);
+if numel(cumulativeMass) == 1
+    dLevels(positiveTargets) = sortedDensity;
+    return
 end
 
-inside = abs(windingNumber) > 0;
+dLevels(positiveTargets) = interp1(cumulativeMass, sortedDensity, positiveTargetValues, "linear", "extrap");
+dLevels(pctTarget >= 1) = sortedDensity(end);
+end
+
+function weights = trapezoidalWeights(coordinates)
+spacing = diff(coordinates);
+weights = zeros(size(coordinates));
+weights(1) = spacing(1)/2;
+weights(end) = spacing(end)/2;
+weights(2:end - 1) = (spacing(1:end - 1) + spacing(2:end))/2;
 end

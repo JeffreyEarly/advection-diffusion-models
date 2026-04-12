@@ -24,11 +24,18 @@ classdef KernelDensityEstimate
     % model = KernelDensityEstimate.fromData(data);
     % [density, gridVectors] = model.densityOnGrid(gridSize=[192 320]);
     % contourf(gridVectors{1}, gridVectors{2}, density.')
+    % stats = KernelDensityEstimate.planarStatisticsFromData(data);
+    % polar = KernelDensityEstimate.polarSummaryFromPlanarStatistics(stats);
+    % strain = KernelDensityEstimate.strainSummaryFromPlanarStatistics(stats);
     % ```
     %
     % - Topic: Create a density estimate
     % - Topic: Inspect density-estimate properties
     % - Topic: Evaluate the density estimate
+    % - Topic: Evaluate the density estimate — Planar summary
+    % - Topic: Evaluate the density estimate — Planar rendering
+    % - Topic: Evaluate the density estimate — Polar reduction
+    % - Topic: Evaluate the density estimate — Strain reduction
     % - Declaration: classdef KernelDensityEstimate
 
     properties (SetAccess = private)
@@ -235,6 +242,11 @@ classdef KernelDensityEstimate
 
             self = KernelDensityEstimate(data=data, bandwidth=bandwidth, minimum=minimum, maximum=maximum);
         end
+
+        statistics = planarStatisticsFromData(data, options)
+        polarSummary = polarSummaryFromPlanarStatistics(statistics, options)
+        strainSummary = strainSummaryFromPlanarStatistics(statistics, options)
+        plotPlanarStatistics(ax, statistics, options)
     end
 end
 
