@@ -18,5 +18,3 @@ Number of coordinates per sample.
 
   `numDimensions` is `1` for vector-valued sample data and `2` for
   planar sample clouds.
-
-

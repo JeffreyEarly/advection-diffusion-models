@@ -32,5 +32,3 @@ Create a kernel density estimate from solved state.
   Use this cheap canonical constructor when the sample data,
   bandwidth, and default evaluation box are already known.
   Ordinary fitting workflows should prefer `fromData(...)`.
-
-

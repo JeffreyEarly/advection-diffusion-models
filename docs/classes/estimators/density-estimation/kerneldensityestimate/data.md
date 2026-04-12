@@ -18,5 +18,3 @@ Sample locations used to define the fitted kernel density estimate.
 
   `data` is stored as an `N-by-1` column vector for one-dimensional
   fits and as an `N-by-2` matrix for two-dimensional fits.
-
-

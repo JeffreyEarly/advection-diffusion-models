@@ -3,7 +3,7 @@ layout: default
 title: vMesoscale
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 29
+nav_order: 24
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ Evaluate the mesoscale y-velocity $$\psi_{\tilde{x}}$$.
 + `vValue`  mesoscale y-velocity in $$m s^{-1}$$
 
 ## Discussion
-
-

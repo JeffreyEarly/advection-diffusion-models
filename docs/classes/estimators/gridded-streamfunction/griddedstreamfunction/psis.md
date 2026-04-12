@@ -3,7 +3,7 @@ layout: default
 title: psiS
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 21
+nav_order: 16
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ Mesoscale spline degrees `[Sq Sr St]`.
 ---
 
 ## Discussion
-
-

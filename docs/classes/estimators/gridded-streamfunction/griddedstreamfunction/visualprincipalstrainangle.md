@@ -3,7 +3,7 @@ layout: default
 title: visualPrincipalStrainAngle
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 30
+nav_order: 25
 mathjax: true
 ---
 
@@ -40,5 +40,3 @@ Evaluate a jump-free principal strain angle for visualization.
   Vectors are treated as one time series and preserve their input
   orientation. Matrices and higher-dimensional arrays are processed
   independently down the first dimension.
-
-

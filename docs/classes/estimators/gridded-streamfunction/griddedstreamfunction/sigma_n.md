@@ -3,7 +3,7 @@ layout: default
 title: sigma_n
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 23
+nav_order: 18
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ Evaluate the normal strain field $$\sigma_n = -2\psi_{\tilde{x}\tilde{y}}$$.
 + `values`  normal strain in $$s^{-1}$$
 
 ## Discussion
-
-

@@ -33,5 +33,3 @@ Fit a kernel density estimate from sampled data.
   using the diffusion estimator of Botev, Grotowski, and
   Kroese, then stores the fitted data cloud together with the
   resulting bandwidth and default evaluation box.
-
-

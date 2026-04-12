@@ -3,7 +3,7 @@ layout: default
 title: zeta
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 32
+nav_order: 27
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ Evaluate the relative-vorticity field $$\zeta = \psi_{\tilde{x}\tilde{x}} + \psi
 + `values`  relative vorticity in $$s^{-1}$$
 
 ## Discussion
-
-

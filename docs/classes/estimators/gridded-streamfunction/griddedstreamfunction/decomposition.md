@@ -3,7 +3,7 @@ layout: default
 title: decomposition
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 8
+nav_order: 5
 mathjax: true
 ---
 
@@ -36,8 +36,9 @@ Per-drifter decomposition trajectories in fixed and centered frames.
   y_k = y_k^{\mathrm{bg}} + y_k^{\mathrm{meso}} + y_k^{\mathrm{sm}}.
   $$
 
-  The background path is the common fitted background trajectory
-  re-anchored so that
+  The canonical shared background path itself is stored in
+  `backgroundTrajectory`. The fixed-frame background component is
+  that same path re-anchored so that
   $$x_k^{\mathrm{bg}}(t_{k,0}) = y_k^{\mathrm{bg}}(t_{k,0}) = 0$$
   at the first sample time $$t_{k,0}$$ of drifter $$k$$. The
   fixed-frame mesoscale trajectory carries the observed initial
@@ -75,5 +76,3 @@ Per-drifter decomposition trajectories in fixed and centered frames.
   qRecon = centeredMesoscale.x(ti) + centeredSubmesoscale.x(ti);
   rRecon = centeredMesoscale.y(ti) + centeredSubmesoscale.y(ti);
   ```
-
-

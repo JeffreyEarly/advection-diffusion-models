@@ -3,7 +3,7 @@ layout: default
 title: decomposeTrajectories
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 7
+nav_order: 4
 mathjax: true
 ---
 
@@ -72,5 +72,3 @@ Apply the fitted decomposition to a supplied drifter ensemble.
   uRecon = background.u(ti) + mesoscale.u(ti) + submesoscale.u(ti);
   vRecon = background.v(ti) + mesoscale.v(ti) + submesoscale.v(ti);
   ```
-
-

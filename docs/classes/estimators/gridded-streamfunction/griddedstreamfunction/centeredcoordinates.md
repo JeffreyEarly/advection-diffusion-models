@@ -3,7 +3,7 @@ layout: default
 title: centeredCoordinates
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 4
+nav_order: 3
 mathjax: true
 ---
 
@@ -34,5 +34,3 @@ Convert fixed-frame coordinates to COM-frame coordinates.
   the centered coordinates
   $$\tilde{x} = x - m_x(t)$$ and $$\tilde{y} = y - m_y(t)$$ with the same
   shape rules used by the mesoscale evaluators.
-
-

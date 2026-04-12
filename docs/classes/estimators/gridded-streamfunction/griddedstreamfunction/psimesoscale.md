@@ -3,7 +3,7 @@ layout: default
 title: psiMesoscale
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 20
+nav_order: 15
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ Evaluate the fitted mesoscale streamfunction.
 + `psiValue`  mesoscale streamfunction values with the same shape as `x`
 
 ## Discussion
-
-

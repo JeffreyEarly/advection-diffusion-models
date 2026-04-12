@@ -3,7 +3,7 @@ layout: default
 title: uBackground
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 26
+nav_order: 21
 mathjax: true
 ---
 
@@ -25,5 +25,3 @@ Evaluate the fitted background x-velocity.
 + `values`  background x-velocity in $$m s^{-1}$$
 
 ## Discussion
-
-

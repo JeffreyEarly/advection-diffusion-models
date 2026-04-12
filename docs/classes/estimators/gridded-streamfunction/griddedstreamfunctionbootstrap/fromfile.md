@@ -3,7 +3,7 @@ layout: default
 title: fromFile
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 21
+nav_order: 11
 mathjax: true
 ---
 
@@ -29,5 +29,3 @@ Read a bootstrap ensemble from a NetCDF restart file.
   `fromFile` reconstructs the canonical bootstrap state written
   by `writeToFile` without rerunning the whole-drifter
   resampling workflow.
-
-

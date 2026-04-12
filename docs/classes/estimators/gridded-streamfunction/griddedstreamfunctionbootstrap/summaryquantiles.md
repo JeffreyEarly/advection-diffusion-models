@@ -3,7 +3,7 @@ layout: default
 title: summaryQuantiles
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 49
+nav_order: 26
 mathjax: true
 ---
 
@@ -30,6 +30,12 @@ Return bootstrap quantiles for the stored summaries.
   `uCenter`, `vCenter`, `sigma_n`, `sigma_s`, and `zeta` with
   size `[numel(queryTimes) numel(probabilities)]`, together
   with the scalar fields `kappa` and `coherence` of size
-  `[1 numel(probabilities)]`.
+  `[1 numel(probabilities)]`. The scalar coherence values use
+  the lower-frequency half of each bootstrap replicate's mean
+  coherence spectrum.
 
-
+  ```matlab
+  quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
+  medianStrain = quantiles.sigma_n(:, 2);
+  kappaBand = quantiles.kappa;
+  ```

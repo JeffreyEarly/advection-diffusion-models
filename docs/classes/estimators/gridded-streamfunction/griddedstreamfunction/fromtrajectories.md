@@ -3,7 +3,7 @@ layout: default
 title: fromTrajectories
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 16
+nav_order: 10
 mathjax: true
 ---
 
@@ -43,5 +43,3 @@ Fit the estimator from drifter trajectory splines.
   with only the additive streamfunction gauge removed. Set
   `mesoscaleConstraint` to impose a hard zero-vorticity or
   zero-strain mesoscale fit.
-
-

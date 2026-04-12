@@ -3,7 +3,7 @@ layout: default
 title: fromTrajectories
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 22
+nav_order: 12
 mathjax: true
 ---
 
@@ -49,5 +49,3 @@ Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
   diagnostics are computed lazily on demand. The class also
   stores the resolved spline knot vectors required to
   reconstruct each replicate exactly later.
-
-

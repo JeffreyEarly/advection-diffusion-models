@@ -30,5 +30,3 @@ Evaluate the fitted density at arbitrary query points.
   the returned `density` matches its shape. In two dimensions
   `queryPoints` must be an `Nq-by-2` array and the returned
   `density` is an `Nq-by-1` column vector.
-
-

@@ -72,7 +72,7 @@ for iConstraint = 1:numel(mesoscaleConstraints)
 
         psiSColumn(iModel) = psiSLabel;
         mesoscaleConstraintColumn(iModel) = mesoscaleConstraint;
-        mesoscaleDegreesOfFreedomColumn(iModel) = bootstrap.fullFitMesoscaleDegreesOfFreedom;
+        mesoscaleDegreesOfFreedomColumn(iModel) = bootstrap.mesoscaleDegreesOfFreedom;
         fullFitKappaColumn(iModel) = bootstrap.fullFitKappa;
         fullFitCoherenceColumn(iModel) = bootstrap.fullFitCoherence;
         bestFitKappaColumn(iModel) = bootstrap.bestFitKappa;

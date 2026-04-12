@@ -6,4 +6,4 @@ has_children: true
 permalink: /classes
 ---
 
-This section is the API reference for the particle-integrator, kinematic-model, and estimator classes published with the package.
+This section is the API reference for the particle-integrator, kinematic-model, and estimator classes published with the package, including the gridded-streamfunction and density-estimation tools.

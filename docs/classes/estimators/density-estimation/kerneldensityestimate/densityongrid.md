@@ -30,5 +30,3 @@ Evaluate the fitted density on a regular query grid.
   `densityOnGrid(...)` uses the stored default bounds together
   with an arbitrary positive evaluation grid size. The public
   evaluation grid does not need to be a power of two.
-
-

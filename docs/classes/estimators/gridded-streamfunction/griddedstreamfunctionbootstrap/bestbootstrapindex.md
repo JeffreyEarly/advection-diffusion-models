@@ -3,7 +3,7 @@ layout: default
 title: bestBootstrapIndex
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 2
+nav_order: 1
 mathjax: true
 ---
 
@@ -22,5 +22,3 @@ Return the bootstrap index with the highest joint consensus score.
 + `index`  1-based bootstrap index of the top-ranked replicate
 
 ## Discussion
-
-

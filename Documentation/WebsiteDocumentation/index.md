@@ -11,7 +11,7 @@ permalink: /
 `Advection-Diffusion Models` provides MATLAB tools for integrating and estimating advection-diffusion models.
 
 This website restores the standard OceanKit package structure and
-publishes the core class reference for particle integrators, kinematic models, and estimator workflows.
+publishes the core class reference for particle integrators, kinematic models, and estimators, including the gridded-streamfunction workflow.
 
 ## Start here
 

@@ -18,5 +18,3 @@ Gaussian kernel bandwidth.
 
   `bandwidth` is scalar in one dimension and a `1-by-2` row vector
   `[hx hy]` in two dimensions.
-
-

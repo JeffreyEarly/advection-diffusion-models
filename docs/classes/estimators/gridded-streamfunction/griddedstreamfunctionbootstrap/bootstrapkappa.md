@@ -3,7 +3,7 @@ layout: default
 title: bootstrapKappa
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 17
+nav_order: 8
 mathjax: true
 ---
 
@@ -17,5 +17,3 @@ Lazy scalar diffusivity diagnostics for each bootstrap replicate.
 ## Discussion
 
   `bootstrapKappa` is a row vector of length `nBootstraps`.
-
-

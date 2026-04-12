@@ -3,7 +3,7 @@ layout: default
 title: sigma_s
 parent: GriddedStreamfunction
 grand_parent: Classes
-nav_order: 24
+nav_order: 19
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ Evaluate the shear strain field $$\sigma_s = \psi_{\tilde{x}\tilde{x}} - \psi_{\
 + `values`  shear strain in $$s^{-1}$$
 
 ## Discussion
-
-

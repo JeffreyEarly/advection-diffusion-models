@@ -18,5 +18,3 @@ Upper bound of the default evaluation box.
 
   `maximum` stores the upper endpoint used by `densityOnGrid(...)`
   and `cdfOnGrid(...)`.
-
-

@@ -64,7 +64,7 @@ for iGroup = 1:numel(classGroups)
         className = group.classes{iName};
         excludedMethodNames = string.empty(0, 1);
         switch className
-            case {"KinematicModel", "StreamfunctionModel"}
+            case {"KinematicModel", "StreamfunctionModel", "GriddedStreamfunction", "GriddedStreamfunctionBootstrap"}
                 excludedMethodNames = string(className);
         end
 
@@ -77,7 +77,6 @@ for iGroup = 1:numel(classGroups)
             parent=group.parent, ...
             grandparent=group.grandparent, ...
             excludedMethodNames=excludedMethodNames);
-        normalizeAnnotatedObjectPropertyDocumentation(classDocumentation(iName));
 
         if ismember(className, ["GriddedStreamfunction", "GriddedStreamfunctionBootstrap"])
             classDocumentation(iName).addMethodDocumentation( ...
@@ -87,7 +86,7 @@ for iGroup = 1:numel(classGroups)
     arrayfun(@(a) a.writeToFile(), classDocumentation)
 end
 
-trimTrailingWhitespaceInMarkdown(buildFolder)
+trimTrailingWhitespaceInMarkdown(fullfile(buildFolder, "classes", "estimators"))
 end
 
 function trimTrailingWhitespaceInMarkdown(rootFolder)
@@ -96,6 +95,7 @@ for iFile = 1:numel(markdownFiles)
     filePath = fullfile(markdownFiles(iFile).folder, markdownFiles(iFile).name);
     fileText = fileread(filePath);
     trimmedText = regexprep(fileText, "[ \t]+(\r?\n)", "$1");
+    trimmedText = regexprep(trimmedText, "(\r?\n){2,}$", newline);
     if ~strcmp(fileText, trimmedText)
         fid = fopen(filePath, "w");
         assert(fid ~= -1, "Could not open markdown file for writing");
@@ -118,22 +118,11 @@ if isfile(metadataPath)
 end
 end
 
-function normalizeAnnotatedObjectPropertyDocumentation(classDocumentation)
-classMetadata = meta.class.fromName(classDocumentation.name);
-propertyNames = string({classMetadata.PropertyList.Name});
-for iDoc = 1:numel(classDocumentation.allMethodDocumentation)
-    metadata = classDocumentation.allMethodDocumentation(iDoc);
-    if isempty(metadata.functionType) && ismember(metadata.name, propertyNames)
-        metadata.functionType = FunctionType.instanceProperty;
-        classDocumentation.allMethodDocumentation(iDoc) = metadata;
-    end
-end
-end
-
 function metadata = annotatedWriteToFileDocumentation(className)
 metadata = MethodDocumentation("writeToFile");
 metadata.shortDescription = "Write this instance to a NetCDF restart file.";
-metadata.declaration = "ncfile = writeToFile(path,properties,options)";
+metadata.topic = "Write to file";
+metadata.declaration = "ncfile = writeToFile(self,path,properties=...,shouldOverwriteExisting=...,shouldAddRequiredProperties=...,attributes=...)";
 metadata.parameters = [ ...
     struct("name", "path", "description", "path to the NetCDF restart file to write"), ...
     struct("name", "properties", "description", "optional property names to include in addition to the required restart state"), ...

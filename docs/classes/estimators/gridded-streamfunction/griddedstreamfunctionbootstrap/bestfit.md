@@ -3,7 +3,7 @@ layout: default
 title: bestFit
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 3
+nav_order: 2
 mathjax: true
 ---
 
@@ -23,4 +23,7 @@ Reconstruct the top-ranked bootstrap replicate.
 
 ## Discussion
 
-
+  The returned fit has the same structural
+  `mesoscaleDegreesOfFreedom` as `self.fullFit` and
+  `self.mesoscaleDegreesOfFreedom`; only the fitted spline
+  coefficients and diagnostics vary across replicates.

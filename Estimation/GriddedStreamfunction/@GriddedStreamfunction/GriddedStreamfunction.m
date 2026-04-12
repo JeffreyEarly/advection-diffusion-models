@@ -5,18 +5,17 @@ classdef GriddedStreamfunction < CAAnnotatedClass
     % $$\psi(\tilde{x},\tilde{y},t)$$, a center-of-mass trajectory
     % $$m_x(t), m_y(t)$$, and an anchored background trajectory
     % $$x^{\mathrm{bg}}(t), y^{\mathrm{bg}}(t)$$ from asynchronous drifter
-    % trajectory splines using the rev3 mesoscale-only formulation
-    % described in `asynchronous-com-fit-rev3.tex`, with optional hard
-    % mesoscale constraints described in `asynchronous-com-fit-rev4.tex`.
+    % trajectory splines using the coupled estimator described in
+    % `asynchronous-com-fit-rev6.tex`.
     %
-    % The estimator first fits the COM position in a fast temporal basis,
-    % then solves one least-squares problem for the mesoscale
-    % streamfunction coefficients. The background velocity is recovered
-    % afterward as the COM residual projected back onto the same fast
-    % basis, then integrated to obtain the common anchored background
-    % path. When requested, the mesoscale fit imposes a hard
-    % `zeroVorticity` or `zeroStrain` constraint on the gauge-reduced
-    % streamfunction coefficients.
+    % The estimator uses the fast temporal spline basis both to define
+    % the COM smoothing operator and to represent the common background
+    % velocity. It first fits the COM trajectory, then solves one
+    % least-squares problem for the gauge-reduced mesoscale
+    % streamfunction coefficients in the COM frame, and finally recovers
+    % the background velocity from the COM-space residual in that same
+    % fast basis. Optional hard `zeroVorticity` and `zeroStrain`
+    % constraints are applied directly to the mesoscale coefficients.
     %
     % The fitted decomposition follows
     %
@@ -96,7 +95,11 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % $$x^{\mathrm{bg}}(t_0)=0$$ and $$y^{\mathrm{bg}}(t_0)=0$$ at
         % the global fit start time. The recovered background velocity is
         % obtained from `backgroundTrajectory.u(t)` and
-        % `backgroundTrajectory.v(t)`.
+        % `backgroundTrajectory.v(t)`. This is the single shared
+        % background path for the fitted estimator; for drifter `k`,
+        % `decomposition.fixedFrame.background(k)` is the same path
+        % re-anchored so it starts at zero at that drifter's first sample
+        % time.
         %
         % - Topic: Inspect fitted components
         backgroundTrajectory
@@ -125,7 +128,10 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         %
         % `mesoscaleDegreesOfFreedom` counts the solved mesoscale spline
         % degrees of freedom after removing the additive streamfunction
-        % gauge and applying the selected hard mesoscale constraint.
+        % gauge and applying the selected hard mesoscale constraint. This
+        % scalar is determined by the resolved mesoscale basis and the
+        % chosen structural constraint, not by the fitted coefficient
+        % values themselves.
         %
         % - Topic: Inspect fitted components
         mesoscaleDegreesOfFreedom (1,1) double {mustBeInteger,mustBeNonnegative} = 0
@@ -154,8 +160,9 @@ classdef GriddedStreamfunction < CAAnnotatedClass
         % y_k = y_k^{\mathrm{bg}} + y_k^{\mathrm{meso}} + y_k^{\mathrm{sm}}.
         % $$
         %
-        % The background path is the common fitted background trajectory
-        % re-anchored so that
+        % The canonical shared background path itself is stored in
+        % `backgroundTrajectory`. The fixed-frame background component is
+        % that same path re-anchored so that
         % $$x_k^{\mathrm{bg}}(t_{k,0}) = y_k^{\mathrm{bg}}(t_{k,0}) = 0$$
         % at the first sample time $$t_{k,0}$$ of drifter $$k$$. The
         % fixed-frame mesoscale trajectory carries the observed initial

@@ -26,18 +26,17 @@ Fit a COM-frame streamfunction estimator and trajectory decomposition.
 $$\psi(\tilde{x},\tilde{y},t)$$, a center-of-mass trajectory
 $$m_x(t), m_y(t)$$, and an anchored background trajectory
 $$x^{\mathrm{bg}}(t), y^{\mathrm{bg}}(t)$$ from asynchronous drifter
-trajectory splines using the rev3 mesoscale-only formulation
-described in `asynchronous-com-fit-rev3.tex`, with optional hard
-mesoscale constraints described in `asynchronous-com-fit-rev4.tex`.
+trajectory splines using the coupled estimator described in
+`asynchronous-com-fit-rev6.tex`.
 
-The estimator first fits the COM position in a fast temporal basis,
-then solves one least-squares problem for the mesoscale
-streamfunction coefficients. The background velocity is recovered
-afterward as the COM residual projected back onto the same fast
-basis, then integrated to obtain the common anchored background
-path. When requested, the mesoscale fit imposes a hard
-`zeroVorticity` or `zeroStrain` constraint on the gauge-reduced
-streamfunction coefficients.
+The estimator uses the fast temporal spline basis both to define
+the COM smoothing operator and to represent the common background
+velocity. It first fits the COM trajectory, then solves one
+least-squares problem for the gauge-reduced mesoscale
+streamfunction coefficients in the COM frame, and finally recovers
+the background velocity from the COM-space residual in that same
+fast basis. Optional hard `zeroVorticity` and `zeroStrain`
+constraints are applied directly to the mesoscale coefficients.
 
 The fitted decomposition follows
 
@@ -77,15 +76,24 @@ decomposition = fit.decomposeTrajectories(otherTrajectories);
 
 ## Topics
 + Fit the estimator
-  + [`GriddedStreamfunction`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/griddedstreamfunction.html) Create a fit from canonical solved-state properties.
   + [`fromTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fromtrajectories.html) Fit the estimator from drifter trajectory splines.
 + Read from file
   + [`fromFile`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fromfile.html) Read a fitted estimator from a NetCDF restart file.
++ Write to file
+  + [`writeToFile`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/writetofile.html) Write this instance to a NetCDF restart file.
 + Inspect fitted components
+  + [`backgroundTrajectory`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/backgroundtrajectory.html) Fitted common background trajectory.
+  + [`centerOfMassTrajectory`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/centerofmasstrajectory.html) Fitted center-of-mass trajectory.
   + [`fastKnotPoints`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fastknotpoints.html) Fast temporal knot vector used for COM and background fits.
   + [`fastS`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fasts.html) Fast temporal spline degree for COM and background fits.
+  + [`fitSupportTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fitsupporttimes.html) Sorted unique observation times used as trajectory support.
+  + [`mesoscaleConstraint`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/mesoscaleconstraint.html) Hard constraint applied to the fitted mesoscale streamfunction.
+  + [`mesoscaleDegreesOfFreedom`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/mesoscaledegreesoffreedom.html) Identifiable mesoscale degrees of freedom after gauge and constraints.
+  + [`observedTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/observedtrajectories.html) Observed drifter trajectory splines used for the fit.
   + [`psiKnotPoints`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/psiknotpoints.html) Mesoscale tensor-product knot vectors `{qKnot, rKnot, tKnot}`.
   + [`psiS`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/psis.html) Mesoscale spline degrees `[Sq Sr St]`.
+  + [`representativeTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/representativetimes.html) Representative pooled times from the stride-rule fast basis.
+  + [`streamfunctionSpline`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/streamfunctionspline.html) Fitted COM-frame mesoscale streamfunction spline.
 + Inspect decomposition trajectories
   + [`decomposition`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/decomposition.html) Per-drifter decomposition trajectories in fixed and centered frames.
 + Apply fitted decomposition
@@ -103,20 +111,6 @@ decomposition = fit.decomposeTrajectories(otherTrajectories);
   + [`zeta`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/zeta.html) Evaluate the relative-vorticity field $$\zeta = \psi_{\tilde{x}\tilde{x}} + \psi_{\tilde{y}\tilde{y}}$$.
 + Visualize strain angle
   + [`visualPrincipalStrainAngle`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/visualprincipalstrainangle.html) Evaluate a jump-free principal strain angle for visualization.
-+ Other
-  + [`backgroundTrajectory`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/backgroundtrajectory.html) Fitted common background trajectory.
-  + [`centerOfMassTrajectory`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/centerofmasstrajectory.html) Fitted center-of-mass trajectory.
-  + [`centeredFrameMesoscaleTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/centeredframemesoscaletrajectories.html) Stored centered-frame mesoscale decomposition trajectories.
-  + [`centeredFrameSubmesoscaleTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/centeredframesubmesoscaletrajectories.html) Stored centered-frame submesoscale decomposition trajectories.
-  + [`fitSupportTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fitsupporttimes.html) Sorted unique observation times used as trajectory support.
-  + [`fixedFrameBackgroundTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fixedframebackgroundtrajectories.html) Stored fixed-frame background decomposition trajectories.
-  + [`fixedFrameMesoscaleTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fixedframemesoscaletrajectories.html) Stored fixed-frame mesoscale decomposition trajectories.
-  + [`fixedFrameSubmesoscaleTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/fixedframesubmesoscaletrajectories.html) Stored fixed-frame submesoscale decomposition trajectories.
-  + [`mesoscaleConstraint`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/mesoscaleconstraint.html) Hard mesoscale constraint applied to the fit.
-  + [`observedTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/observedtrajectories.html) Observed drifter trajectory splines used for the fit.
-  + [`representativeTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/representativetimes.html) Representative pooled times from the stride-rule fast basis.
-  + [`streamfunctionSpline`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/streamfunctionspline.html) Fitted centered-frame mesoscale streamfunction spline.
-  + [`writeToFile`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunction/writetofile.html) Write this instance to a NetCDF restart file.
 
 
 ---

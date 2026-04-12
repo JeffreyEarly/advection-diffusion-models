@@ -3,7 +3,7 @@ layout: default
 title: writeToFile
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 56
+nav_order: 27
 mathjax: true
 ---
 
@@ -16,7 +16,7 @@ Write this instance to a NetCDF restart file.
 
 ## Declaration
 ```matlab
-ncfile = writeToFile(path,properties,options)
+ncfile = writeToFile(self,path,properties=...,shouldOverwriteExisting=...,shouldAddRequiredProperties=...,attributes=...)
 ```
 ## Parameters
 + `path` path to the NetCDF restart file to write

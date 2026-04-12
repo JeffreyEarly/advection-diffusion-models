@@ -18,5 +18,3 @@ Lower bound of the default evaluation box.
 
   `minimum` stores the lower endpoint used by `densityOnGrid(...)`
   and `cdfOnGrid(...)`.
-
-

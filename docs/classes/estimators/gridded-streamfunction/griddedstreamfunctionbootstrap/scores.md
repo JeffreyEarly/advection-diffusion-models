@@ -3,7 +3,7 @@ layout: default
 title: scores
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 47
+nav_order: 24
 mathjax: true
 ---
 
@@ -18,5 +18,3 @@ Consensus-score components and joint score for each bootstrap fit.
 
   `scores.uv`, `scores.strain`, `scores.zeta`, and `scores.joint`
   are row vectors of length `nBootstraps`.
-
-

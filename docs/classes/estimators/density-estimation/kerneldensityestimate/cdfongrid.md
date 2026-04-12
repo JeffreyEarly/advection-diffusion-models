@@ -30,5 +30,3 @@ Evaluate the fitted one-dimensional CDF on a regular query grid.
   The returned CDF is the exact Gaussian-mixture cumulative
   distribution associated with the stored sample locations and
   bandwidth.
-
-

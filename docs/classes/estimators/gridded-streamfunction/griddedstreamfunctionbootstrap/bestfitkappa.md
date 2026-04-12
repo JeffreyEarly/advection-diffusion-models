@@ -3,7 +3,7 @@ layout: default
 title: bestFitKappa
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 10
+nav_order: 5
 mathjax: true
 ---
 
@@ -18,5 +18,3 @@ Best-bootstrap scalar submesoscale diffusivity diagnostic.
 
   `bestFitKappa` is eager and corresponds to the fit returned by
   `bestFit()`.
-
-

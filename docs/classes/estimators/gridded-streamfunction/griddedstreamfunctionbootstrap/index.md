@@ -31,7 +31,8 @@ $$u_c(t), v_c(t), \sigma_n(t), \sigma_s(t), \zeta(t)$$ evaluated at
 the fitted center-of-mass trajectory. The class also reports the
 scalar diffusivity diagnostic
 $$\kappa = \langle (x_{\mathrm{sm}}^2 + y_{\mathrm{sm}}^2)/(4\Delta t)\rangle,$$
-together with a scalar mean coherence and mean coherence spectrum
+together with a scalar mean coherence over the lower-frequency half
+of the mean coherence spectrum and the full mean coherence spectrum
 between the fitted centered-frame mesoscale and submesoscale
 velocities when the jLab coherence tools are available.
 
@@ -42,8 +43,14 @@ density fit for `(sigma_n, sigma_s)`, and a 1-D density fit for
 `zeta`, omitting constrained blocks when `mesoscaleConstraint`
 forces them to vanish.
 
+The structural mesoscale degrees of freedom are determined only by
+the resolved mesoscale basis and the selected hard constraint, so
+the full fit and every reconstructed bootstrap replicate share the
+same scalar `mesoscaleDegreesOfFreedom`.
+
 ```matlab
 bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=100);
+dof = bootstrap.mesoscaleDegreesOfFreedom;
 bestFit = bootstrap.bestFit();
 quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
 ```
@@ -53,11 +60,21 @@ quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
 
 ## Topics
 + Create a bootstrap ensemble
-  + [`GriddedStreamfunctionBootstrap`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/griddedstreamfunctionbootstrap.html) Create a bootstrap from canonical restart-state properties.
   + [`fromTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fromtrajectories.html) Create a whole-drifter bootstrap ensemble for `GriddedStreamfunction`.
 + Read from file
   + [`fromFile`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fromfile.html) Read a bootstrap ensemble from a NetCDF restart file.
++ Write to file
+  + [`writeToFile`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/writetofile.html) Write this instance to a NetCDF restart file.
++ Inspect bootstrap properties
+  + [`bootstrapIndices`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bootstrapindices.html) Whole-drifter resampling indices for each bootstrap replicate.
+  + [`mesoscaleDegreesOfFreedom`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/mesoscaledegreesoffreedom.html) Structural mesoscale degrees of freedom shared by the ensemble.
+  + [`nBootstraps`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/nbootstraps.html) Number of bootstrap replicates in the ensemble.
+  + [`observedTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/observedtrajectories.html) Original drifter trajectories used to seed the bootstrap ensemble.
+  + [`queryTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/querytimes.html) Times used to store COM-local bootstrap summaries.
+  + [`randomSeed`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/randomseed.html) Random-number seed used for whole-drifter resampling.
+  + [`scoreTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scoretimes.html) Times used to compute the consensus score.
 + Inspect full-fit diagnostics
+  + [`fullFit`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfit.html) Full-data gridded-streamfunction fit used as the reference solution.
   + [`fullFitCoherence`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitcoherence.html) Full-fit scalar mean coherence between mesoscale and submesoscale velocities.
   + [`fullFitCoherenceSpectrum`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitcoherencespectrum.html) Full-fit mean coherence spectrum on the common overlap grid.
   + [`fullFitKappa`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitkappa.html) Full-fit scalar submesoscale diffusivity diagnostic.
@@ -77,44 +94,6 @@ quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
   + [`scores`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scores.html) Consensus-score components and joint score for each bootstrap fit.
   + [`summary`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summary.html) Bootstrap COM-local mesoscale summaries evaluated on `queryTimes`.
   + [`summaryQuantiles`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summaryquantiles.html) Return bootstrap quantiles for the stored summaries.
-+ Other
-  + [`bestFitCoherenceFrequency`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bestfitcoherencefrequency.html) Persisted best-fit coherence-spectrum frequencies.
-  + [`bestFitCoherenceFrequencyIndex`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bestfitcoherencefrequencyindex.html) Index over the best-fit coherence-spectrum frequencies.
-  + [`bestFitCoherenceValue`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bestfitcoherencevalue.html) Persisted best-fit scalar mean coherence.
-  + [`bestFitCoherenceValues`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bestfitcoherencevalues.html) Persisted best-fit coherence-spectrum values.
-  + [`bestFitKappaValue`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bestfitkappavalue.html) Persisted best-fit scalar diffusivity diagnostic.
-  + [`bootstrapCoherenceCache`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bootstrapcoherencecache.html) Optional cached bootstrap scalar coherence diagnostics.
-  + [`bootstrapFitMetadata`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bootstrapfitmetadata.html) Persisted exact reconstruction metadata for each bootstrap replicate.
-  + [`bootstrapIndex`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bootstrapindex.html) Index over bootstrap replicates.
-  + [`bootstrapIndices`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bootstrapindices.html) Whole-drifter resampling indices for each bootstrap replicate.
-  + [`bootstrapKappaCache`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/bootstrapkappacache.html) Optional cached bootstrap scalar diffusivity diagnostics.
-  + [`fullFit`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfit.html) Full-data gridded-streamfunction fit used as the reference solution.
-  + [`fullFitCoherenceFrequency`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitcoherencefrequency.html) Persisted full-fit coherence-spectrum frequencies.
-  + [`fullFitCoherenceFrequencyIndex`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitcoherencefrequencyindex.html) Index over the full-fit coherence-spectrum frequencies.
-  + [`fullFitCoherenceValue`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitcoherencevalue.html) Persisted full-fit scalar mean coherence.
-  + [`fullFitCoherenceValues`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitcoherencevalues.html) Persisted full-fit coherence-spectrum values.
-  + [`fullFitKappaValue`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullfitkappavalue.html) Persisted full-fit scalar diffusivity diagnostic.
-  + [`fullSummarySigmaN`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullsummarysigman.html) Persisted full-fit `sigma_n` summary values.
-  + [`fullSummarySigmaS`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullsummarysigmas.html) Persisted full-fit `sigma_s` summary values.
-  + [`fullSummaryUCenter`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullsummaryucenter.html) Persisted full-fit `uCenter` summary values.
-  + [`fullSummaryVCenter`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullsummaryvcenter.html) Persisted full-fit `vCenter` summary values.
-  + [`fullSummaryZeta`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/fullsummaryzeta.html) Persisted full-fit `zeta` summary values.
-  + [`nBootstraps`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/nbootstraps.html) Number of bootstrap replicates in the ensemble.
-  + [`observedTrajectories`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/observedtrajectories.html) Original drifter trajectories used to seed the bootstrap ensemble.
-  + [`queryTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/querytimes.html) Times used to store COM-local bootstrap summaries.
-  + [`randomSeed`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/randomseed.html) Random-number seed used for whole-drifter resampling.
-  + [`scoreJoint`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scorejoint.html) Persisted bootstrap joint consensus scores.
-  + [`scoreStrain`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scorestrain.html) Persisted bootstrap strain consensus scores.
-  + [`scoreTimes`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scoretimes.html) Times used to compute the consensus score.
-  + [`scoreUv`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scoreuv.html) Persisted bootstrap velocity consensus scores.
-  + [`scoreZeta`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/scorezeta.html) Persisted bootstrap vorticity consensus scores.
-  + [`summarySigmaN`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summarysigman.html) Persisted bootstrap `sigma_n` summary matrix.
-  + [`summarySigmaS`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summarysigmas.html) Persisted bootstrap `sigma_s` summary matrix.
-  + [`summaryUCenter`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summaryucenter.html) Persisted bootstrap `uCenter` summary matrix.
-  + [`summaryVCenter`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summaryvcenter.html) Persisted bootstrap `vCenter` summary matrix.
-  + [`summaryZeta`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/summaryzeta.html) Persisted bootstrap `zeta` summary matrix.
-  + [`trajectoryIndex`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/trajectoryindex.html) Index over observed drifter trajectories.
-  + [`writeToFile`](/advection-diffusion-models/classes/estimators/gridded-streamfunction/griddedstreamfunctionbootstrap/writetofile.html) Write this instance to a NetCDF restart file.
 
 
 ---

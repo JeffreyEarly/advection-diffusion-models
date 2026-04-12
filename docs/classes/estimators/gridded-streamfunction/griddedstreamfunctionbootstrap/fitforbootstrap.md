@@ -3,7 +3,7 @@ layout: default
 title: fitForBootstrap
 parent: GriddedStreamfunctionBootstrap
 grand_parent: Classes
-nav_order: 20
+nav_order: 10
 mathjax: true
 ---
 
@@ -29,5 +29,3 @@ Reconstruct one bootstrap replicate exactly from saved metadata.
   Use this method to recover a full `GriddedStreamfunction`
   object for a particular bootstrap replicate without storing
   every replicate fit in memory.
-
-

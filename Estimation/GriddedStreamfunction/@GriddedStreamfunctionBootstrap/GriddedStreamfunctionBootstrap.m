@@ -22,8 +22,14 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
     % `zeta`, omitting constrained blocks when `mesoscaleConstraint`
     % forces them to vanish.
     %
+    % The structural mesoscale degrees of freedom are determined only by
+    % the resolved mesoscale basis and the selected hard constraint, so
+    % the full fit and every reconstructed bootstrap replicate share the
+    % same scalar `mesoscaleDegreesOfFreedom`.
+    %
     % ```matlab
     % bootstrap = GriddedStreamfunctionBootstrap.fromTrajectories(trajectories, nBootstraps=100);
+    % dof = bootstrap.mesoscaleDegreesOfFreedom;
     % bestFit = bootstrap.bestFit();
     % quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
     % ```
@@ -97,7 +103,10 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         %
         % `fullSummary` contains the fields `uCenter`, `vCenter`,
         % `sigma_n`, `sigma_s`, and `zeta`, each stored as a column vector
-        % aligned with `queryTimes`.
+        % aligned with `queryTimes`. These are the center diagnostics of
+        % the deterministic `fullFit`, evaluated at the fitted
+        % center-of-mass trajectory
+        % `fullFit.centerOfMassTrajectory(queryTimes)`.
         %
         % - Topic: Inspect full-fit diagnostics
         fullSummary
@@ -106,7 +115,15 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         %
         % `summary.uCenter`, `summary.vCenter`, `summary.sigma_n`,
         % `summary.sigma_s`, and `summary.zeta` are arrays of size
-        % `[numel(queryTimes) nBootstraps]`.
+        % `[numel(queryTimes) nBootstraps]`. Row `i` corresponds to
+        % `queryTimes(i)`, and column `j` corresponds to bootstrap
+        % replicate `j`.
+        %
+        % ```matlab
+        % summary = bootstrap.summary;
+        % medianUCenter = median(summary.uCenter, 2);
+        % oneTimeCloud = summary.sigma_n(10, :);
+        % ```
         %
         % - Topic: Summarize bootstrap uncertainty
         summary
@@ -138,13 +155,17 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % - Topic: Inspect full-fit diagnostics
         fullFitCoherenceSpectrum
 
-        % Full-fit structural mesoscale degrees of freedom.
+        % Structural mesoscale degrees of freedom shared by the ensemble.
         %
-        % `fullFitMesoscaleDegreesOfFreedom` delegates to
-        % `fullFit.mesoscaleDegreesOfFreedom`.
+        % `mesoscaleDegreesOfFreedom` is a single scalar determined by the
+        % resolved mesoscale basis after gauge reduction together with the
+        % selected hard mesoscale constraint. It is the same value
+        % reported by `fullFit.mesoscaleDegreesOfFreedom`,
+        % `bestFit().mesoscaleDegreesOfFreedom`, and every
+        % `fitForBootstrap(iBootstrap).mesoscaleDegreesOfFreedom`.
         %
-        % - Topic: Inspect full-fit diagnostics
-        fullFitMesoscaleDegreesOfFreedom
+        % - Topic: Inspect bootstrap properties
+        mesoscaleDegreesOfFreedom
 
         % Best-bootstrap scalar submesoscale diffusivity diagnostic.
         %
@@ -167,14 +188,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         % - Topic: Inspect best-fit diagnostics
         bestFitCoherenceSpectrum
 
-        % Best-bootstrap structural mesoscale degrees of freedom.
-        %
-        % `bestFitMesoscaleDegreesOfFreedom` corresponds to the fit
-        % returned by `bestFit()`.
-        %
-        % - Topic: Inspect best-fit diagnostics
-        bestFitMesoscaleDegreesOfFreedom
-
         % Lazy scalar diffusivity diagnostics for each bootstrap replicate.
         %
         % `bootstrapKappa` is a row vector of length `nBootstraps`.
@@ -191,14 +204,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         %
         % - Topic: Summarize bootstrap uncertainty
         bootstrapCoherence
-
-        % Structural mesoscale degrees of freedom for each bootstrap replicate.
-        %
-        % `bootstrapMesoscaleDegreesOfFreedom` is a row vector of length
-        % `nBootstraps`.
-        %
-        % - Topic: Summarize bootstrap uncertainty
-        bootstrapMesoscaleDegreesOfFreedom
 
         % Consensus-score components and joint score for each bootstrap fit.
         %
@@ -238,7 +243,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         bestFitCoherenceValue (1,1) double {mustBeReal} = NaN
         bestFitCoherenceFrequency (:,1) double {mustBeReal} = zeros(0, 1)
         bestFitCoherenceValues (:,1) double {mustBeReal} = zeros(0, 1)
-        bestFitMesoscaleDegreesOfFreedomValue (1,1) double {mustBeInteger,mustBeNonnegative} = 0
         scoreUv = zeros(1, 0)
         scoreStrain = zeros(1, 0)
         scoreZeta = zeros(1, 0)
@@ -246,7 +250,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         bootstrapFitMetadata = GriddedStreamfunctionBootstrapFitMetadata.empty(0, 1)
         bootstrapKappaCache = zeros(1, 0)
         bootstrapCoherenceCache = zeros(1, 0)
-        bootstrapMesoscaleDegreesOfFreedomValues (1, :) double {mustBeInteger,mustBeNonnegative} = zeros(1, 0)
     end
 
     properties (Access = private)
@@ -295,13 +298,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             % - Parameter options.bestFitCoherenceValue: persisted best-fit scalar mean coherence
             % - Parameter options.bestFitCoherenceFrequency: persisted best-fit coherence-spectrum frequencies
             % - Parameter options.bestFitCoherenceValues: persisted best-fit coherence-spectrum values
-            % - Parameter options.bestFitMesoscaleDegreesOfFreedomValue: persisted best-fit structural mesoscale degrees of freedom
             % - Parameter options.scoreUv: persisted bootstrap velocity consensus scores
             % - Parameter options.scoreStrain: persisted bootstrap strain consensus scores
             % - Parameter options.scoreZeta: persisted bootstrap vorticity consensus scores
             % - Parameter options.scoreJoint: persisted bootstrap joint consensus scores
             % - Parameter options.bootstrapFitMetadata: persisted exact reconstruction metadata for each bootstrap replicate
-            % - Parameter options.bootstrapMesoscaleDegreesOfFreedomValues: persisted per-replicate structural mesoscale degrees of freedom
             % - Parameter options.nBootstraps: number of bootstrap replicates
             % - Parameter options.randomSeed: random seed used for resampling
             % - Returns self: canonical `GriddedStreamfunctionBootstrap` instance
@@ -329,13 +330,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 options.bestFitCoherenceValue (1,1) double {mustBeReal} = NaN
                 options.bestFitCoherenceFrequency (:,1) double {mustBeReal} = zeros(0, 1)
                 options.bestFitCoherenceValues (:,1) double {mustBeReal} = zeros(0, 1)
-                options.bestFitMesoscaleDegreesOfFreedomValue (1,1) double {mustBeInteger,mustBeNonnegative} = 0
                 options.scoreUv double {mustBeReal,mustBeFinite} = zeros(1, 0)
                 options.scoreStrain double {mustBeReal,mustBeFinite} = zeros(1, 0)
                 options.scoreZeta double {mustBeReal,mustBeFinite} = zeros(1, 0)
                 options.scoreJoint double {mustBeReal,mustBeFinite} = zeros(1, 0)
                 options.bootstrapFitMetadata = GriddedStreamfunctionBootstrapFitMetadata.empty(0, 1)
-                options.bootstrapMesoscaleDegreesOfFreedomValues (1,:) double {mustBeInteger,mustBeNonnegative} = zeros(1, 0)
                 options.nBootstraps (1,1) double {mustBeInteger,mustBeNonnegative} = 0
                 options.randomSeed (1,1) double {mustBeInteger,mustBeFinite} = 0
             end
@@ -370,13 +369,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             self.bestFitCoherenceValue = options.bestFitCoherenceValue;
             self.bestFitCoherenceFrequency = options.bestFitCoherenceFrequency;
             self.bestFitCoherenceValues = options.bestFitCoherenceValues;
-            self.bestFitMesoscaleDegreesOfFreedomValue = options.bestFitMesoscaleDegreesOfFreedomValue;
             self.scoreUv = reshape(options.scoreUv, 1, []);
             self.scoreStrain = reshape(options.scoreStrain, 1, []);
             self.scoreZeta = reshape(options.scoreZeta, 1, []);
             self.scoreJoint = reshape(options.scoreJoint, 1, []);
             self.bootstrapFitMetadata = reshape(options.bootstrapFitMetadata, [], 1);
-            self.bootstrapMesoscaleDegreesOfFreedomValues = reshape(options.bootstrapMesoscaleDegreesOfFreedomValues, 1, []);
             self.nBootstraps = options.nBootstraps;
             self.randomSeed = options.randomSeed;
             self.refreshObservedTrajectorySampleData();
@@ -413,10 +410,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 self.fullFitCoherenceFrequency, self.fullFitCoherenceValues);
         end
 
-        function dof = get.fullFitMesoscaleDegreesOfFreedom(self)
-            dof = self.fullFit.mesoscaleDegreesOfFreedom;
-        end
-
         function kappa = get.bestFitKappa(self)
             kappa = self.bestFitKappaValue;
         end
@@ -430,10 +423,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 self.bestFitCoherenceFrequency, self.bestFitCoherenceValues);
         end
 
-        function dof = get.bestFitMesoscaleDegreesOfFreedom(self)
-            dof = self.bestFitMesoscaleDegreesOfFreedomValue;
-        end
-
         function kappa = get.bootstrapKappa(self)
             ensureBootstrapDiagnostics(self);
             kappa = self.bootstrapKappaCache;
@@ -444,8 +433,13 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             coherence = self.bootstrapCoherenceCache;
         end
 
-        function dof = get.bootstrapMesoscaleDegreesOfFreedom(self)
-            dof = self.bootstrapMesoscaleDegreesOfFreedomValues;
+        function dof = get.mesoscaleDegreesOfFreedom(self)
+            if isempty(self.fullFit)
+                dof = 0;
+                return
+            end
+
+            dof = self.fullFit.mesoscaleDegreesOfFreedom;
         end
 
         function scores = get.scores(self)
@@ -542,6 +536,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
         function fit = bestFit(self)
             % Reconstruct the top-ranked bootstrap replicate.
             %
+            % The returned fit has the same structural
+            % `mesoscaleDegreesOfFreedom` as `self.fullFit` and
+            % `self.mesoscaleDegreesOfFreedom`; only the fitted spline
+            % coefficients and diagnostics vary across replicates.
+            %
             % - Topic: Inspect best-fit diagnostics
             % - Declaration: fit = bestFit(self)
             % - Returns fit: reconstructed `GriddedStreamfunction` for the best bootstrap replicate
@@ -565,6 +564,12 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             % `[1 numel(probabilities)]`. The scalar coherence values use
             % the lower-frequency half of each bootstrap replicate's mean
             % coherence spectrum.
+            %
+            % ```matlab
+            % quantiles = bootstrap.summaryQuantiles([0.16 0.5 0.84]);
+            % medianStrain = quantiles.sigma_n(:, 2);
+            % kappaBand = quantiles.kappa;
+            % ```
             %
             % - Topic: Summarize bootstrap uncertainty
             % - Declaration: quantiles = summaryQuantiles(self,probabilities)
@@ -710,7 +715,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             self.bootstrapFitMetadata = GriddedStreamfunctionBootstrapFitMetadata.empty(0, 1);
             self.bootstrapKappaCache = zeros(1, 0);
             self.bootstrapCoherenceCache = zeros(1, 0);
-            self.bootstrapMesoscaleDegreesOfFreedomValues = zeros(1, self.nBootstraps);
 
             originalRng = rng;
             cleanupRng = onCleanup(@() rng(originalRng));
@@ -733,7 +737,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 self.summarySigmaS(:, iBootstrap) = summary.sigma_s;
                 self.summaryZeta(:, iBootstrap) = summary.zeta;
                 self.bootstrapFitMetadata(iBootstrap, 1) = GriddedStreamfunctionBootstrapFitMetadata.fromFit(fit);
-                self.bootstrapMesoscaleDegreesOfFreedomValues(iBootstrap) = fit.mesoscaleDegreesOfFreedom;
             end
 
             scores = GriddedStreamfunctionBootstrap.computeConsensusScores(self.summary, scoreIndices, self.fullFit.mesoscaleConstraint);
@@ -752,7 +755,6 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 bestDiagnostics.coherenceSpectrum);
             self.bestFitCoherenceFrequency = bestCoherenceSpectrumStorage.frequency;
             self.bestFitCoherenceValues = bestCoherenceSpectrumStorage.coherence;
-            self.bestFitMesoscaleDegreesOfFreedomValue = self.bootstrapMesoscaleDegreesOfFreedomValues(iBest);
         end
     end
 
@@ -781,13 +783,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 'bestFitCoherenceValue', ...
                 'bestFitCoherenceFrequency', ...
                 'bestFitCoherenceValues', ...
-                'bestFitMesoscaleDegreesOfFreedomValue', ...
                 'scoreUv', ...
                 'scoreStrain', ...
                 'scoreZeta', ...
                 'scoreJoint', ...
                 'bootstrapFitMetadata', ...
-                'bootstrapMesoscaleDegreesOfFreedomValues', ...
                 'nBootstraps', ...
                 'randomSeed'});
             vars.fullFit = GriddedStreamfunction.annotatedClassFromGroup(group.groupWithName('fullFit'));
@@ -817,13 +817,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             self.bestFitCoherenceValue = vars.bestFitCoherenceValue;
             self.bestFitCoherenceFrequency = vars.bestFitCoherenceFrequency;
             self.bestFitCoherenceValues = vars.bestFitCoherenceValues;
-            self.bestFitMesoscaleDegreesOfFreedomValue = vars.bestFitMesoscaleDegreesOfFreedomValue;
             self.scoreUv = reshape(vars.scoreUv, 1, []);
             self.scoreStrain = reshape(vars.scoreStrain, 1, []);
             self.scoreZeta = reshape(vars.scoreZeta, 1, []);
             self.scoreJoint = reshape(vars.scoreJoint, 1, []);
             self.bootstrapFitMetadata = reshape(vars.bootstrapFitMetadata, [], 1);
-            self.bootstrapMesoscaleDegreesOfFreedomValues = reshape(vars.bootstrapMesoscaleDegreesOfFreedomValues, 1, []);
             self.nBootstraps = vars.nBootstraps;
             self.randomSeed = vars.randomSeed;
             self.refreshObservedTrajectorySampleData();
@@ -868,13 +866,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
             propertyAnnotations(end+1) = CANumericProperty('bestFitCoherenceValue', {}, '', 'Persisted best-fit scalar mean coherence.');
             propertyAnnotations(end+1) = CANumericProperty('bestFitCoherenceFrequency', {'bestFitCoherenceFrequencyIndex'}, '', 'Persisted best-fit coherence-spectrum frequencies.');
             propertyAnnotations(end+1) = CANumericProperty('bestFitCoherenceValues', {'bestFitCoherenceFrequencyIndex'}, '', 'Persisted best-fit coherence-spectrum values.');
-            propertyAnnotations(end+1) = CANumericProperty('bestFitMesoscaleDegreesOfFreedomValue', {}, '', 'Persisted best-fit structural mesoscale degrees of freedom.');
             propertyAnnotations(end+1) = CANumericProperty('scoreUv', {'bootstrapIndex'}, '', 'Persisted bootstrap velocity consensus scores.');
             propertyAnnotations(end+1) = CANumericProperty('scoreStrain', {'bootstrapIndex'}, '', 'Persisted bootstrap strain consensus scores.');
             propertyAnnotations(end+1) = CANumericProperty('scoreZeta', {'bootstrapIndex'}, '', 'Persisted bootstrap vorticity consensus scores.');
             propertyAnnotations(end+1) = CANumericProperty('scoreJoint', {'bootstrapIndex'}, '', 'Persisted bootstrap joint consensus scores.');
             propertyAnnotations(end+1) = CAObjectProperty('bootstrapFitMetadata', 'Persisted exact reconstruction metadata for each bootstrap replicate.');
-            propertyAnnotations(end+1) = CANumericProperty('bootstrapMesoscaleDegreesOfFreedomValues', {'bootstrapIndex'}, '', 'Persisted per-replicate structural mesoscale degrees of freedom.');
             propertyAnnotations(end+1) = CANumericProperty('nBootstraps', {}, '', 'Number of bootstrap replicates in the ensemble.');
             propertyAnnotations(end+1) = CANumericProperty('randomSeed', {}, '', 'Random-number seed used for whole-drifter resampling.');
             propertyAnnotations(end+1) = CANumericProperty('bootstrapKappaCache', {'bootstrapIndex'}, '', 'Optional cached bootstrap scalar diffusivity diagnostics.');
@@ -906,13 +902,11 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                 'bestFitCoherenceValue', ...
                 'bestFitCoherenceFrequency', ...
                 'bestFitCoherenceValues', ...
-                'bestFitMesoscaleDegreesOfFreedomValue', ...
                 'scoreUv', ...
                 'scoreStrain', ...
                 'scoreZeta', ...
                 'scoreJoint', ...
                 'bootstrapFitMetadata', ...
-                'bootstrapMesoscaleDegreesOfFreedomValues', ...
                 'nBootstraps', ...
                 'randomSeed'};
         end
@@ -931,10 +925,9 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
                     isempty(options.fullFitCoherenceFrequency) && isempty(options.fullFitCoherenceValues) && ...
                     isnan(options.bestFitKappaValue) && isnan(options.bestFitCoherenceValue) && ...
                     isempty(options.bestFitCoherenceFrequency) && isempty(options.bestFitCoherenceValues) && ...
-                    options.bestFitMesoscaleDegreesOfFreedomValue == 0 && ...
                     isempty(options.scoreUv) && isempty(options.scoreStrain) && ...
                     isempty(options.scoreZeta) && isempty(options.scoreJoint) && ...
-                    isempty(options.bootstrapFitMetadata) && isempty(options.bootstrapMesoscaleDegreesOfFreedomValues) && ...
+                    isempty(options.bootstrapFitMetadata) && ...
                     options.nBootstraps == 0 && options.randomSeed == 0
                 return
             end
@@ -996,22 +989,9 @@ classdef GriddedStreamfunctionBootstrap < CAAnnotatedClass
 
             if numel(options.scoreUv) ~= nBootstraps || numel(options.scoreStrain) ~= nBootstraps || ...
                     numel(options.scoreZeta) ~= nBootstraps || numel(options.scoreJoint) ~= nBootstraps || ...
-                    numel(options.bootstrapFitMetadata) ~= nBootstraps || ...
-                    numel(options.bootstrapMesoscaleDegreesOfFreedomValues) ~= nBootstraps
+                    numel(options.bootstrapFitMetadata) ~= nBootstraps
                 error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
-                    'Persisted bootstrap scores, metadata, and mesoscale degrees of freedom must all have length nBootstraps.');
-            end
-
-            if ~isscalar(options.bestFitMesoscaleDegreesOfFreedomValue) || ...
-                    options.bestFitMesoscaleDegreesOfFreedomValue < 0 || ...
-                    round(options.bestFitMesoscaleDegreesOfFreedomValue) ~= options.bestFitMesoscaleDegreesOfFreedomValue
-                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
-                    'bestFitMesoscaleDegreesOfFreedomValue must be a nonnegative integer scalar.');
-            end
-            if any(options.bootstrapMesoscaleDegreesOfFreedomValues < 0) || ...
-                    any(round(options.bootstrapMesoscaleDegreesOfFreedomValues) ~= options.bootstrapMesoscaleDegreesOfFreedomValues)
-                error('GriddedStreamfunctionBootstrap:InvalidCanonicalState', ...
-                    'bootstrapMesoscaleDegreesOfFreedomValues must contain nonnegative integers.');
+                    'Persisted bootstrap scores and metadata must all have length nBootstraps.');
             end
         end
 
