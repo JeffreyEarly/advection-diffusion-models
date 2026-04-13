@@ -21,18 +21,13 @@ that
 
 $$ \dot{x}_k = u^{\mathrm{meso}} + u^{\mathrm{bg}} + u_k^{\mathrm{sm}}, \qquad \dot{y}_k = v^{\mathrm{meso}} + v^{\mathrm{bg}} + v_k^{\mathrm{sm}}. $$
 
-The checked-in Site 1 LatMix cluster translates together in the fixed
-frame while also shearing and spreading relative to its center of mass.
-This tutorial starts from those observed trajectories, then removes the
-common translation to fit a zero-vorticity mesoscale model.
+These are smoothed Site 1 LatMix trajectories in the fixed frame. The
+goal is to separate the common cluster translation from the relative
+motion within the cluster.
 
 ```matlab
 scriptDir = fileparts(mfilename("fullpath"));
 dataPath = fullfile(scriptDir, "..", "..", "Estimation", "ExampleData", "LatMix2011", "smoothedGriddedRho1Drifters.mat");
-if ~isfile(dataPath)
-    error("GriddedStreamfunction:MissingExampleData", "Expected local example data at %s.", dataPath);
-end
-
 siteData = load(dataPath);
 t = reshape(siteData.t, [], 1);
 x = siteData.x(:, 1:(end - 1));
@@ -44,8 +39,8 @@ f0 = 2 * 7.2921e-5 * sin(siteData.lat0*pi/180);
 
 ## Plot the drifters in the fixed frame
 
-In the laboratory frame, the cluster translation and the relative motion
-are superimposed. The fit will later separate those two pieces.
+These smoothed trajectories are shown in the fixed frame. The fit will
+separate the common translation from the relative motion.
 
 ```matlab
 figure(Color="w", Position=[100 100 430 360]); axFixed = axes; hold(axFixed, "on")
@@ -56,15 +51,28 @@ axis(axFixed, "equal"); xlabel(axFixed, "x (km)"); ylabel(axFixed, "y (km)")
 title(axFixed, "Fixed-frame drifters"); box(axFixed, "on")
 ```
 
-![In the fixed frame, the Site 1 drifters translate together while their relative spreading remains embedded in the common cluster motion.](./gridded-streamfunction-fit/fixed-frame-drifters.png)
+![These smoothed fixed-frame trajectories still combine the common cluster translation with the relative motion that the estimator will separate.](./gridded-streamfunction-fit/fixed-frame-drifters.png)
 
-*In the fixed frame, the Site 1 drifters translate together while their relative spreading remains embedded in the common cluster motion.*
+*These smoothed fixed-frame trajectories still combine the common cluster translation with the relative motion that the estimator will separate.*
 
-## Convert the drifters to trajectory splines
+## Build the centered zero-vorticity fit
 
-Each drifter becomes one cubic `TrajectorySpline`, so the estimator
-works with both positions and spline-derived velocities on the same
-support times.
+Each drifter is first represented as a cubic `TrajectorySpline`, then
+the fit is built directly from those splines with
+[`fromTrajectories`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/fromtrajectories).
+The key control is
+[`psiS`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/psis):
+`psiS=[2 2 1]` makes the centered mesoscale streamfunction quadratic in
+`q` and `r`, and linear in time, so the fit can represent a slowly
+evolving strain field without becoming high order.
+[`fastS`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/fasts)
+= `3` keeps the center-of-mass and background trajectories cubic in
+time, and
+[`mesoscaleConstraint`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/mesoscaleconstraint)
+= `"zeroVorticity"` removes solid-body rotation so the mesoscale fit is
+harmonic and strain-dominated. See
+[`centeredCoordinates`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/centeredcoordinates)
+for the matching COM-frame transform.
 
 ```matlab
 trajectoryCell = cell(nDrifters, 1);
@@ -72,16 +80,7 @@ for iDrifter = 1:nDrifters
     trajectoryCell{iDrifter} = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
 trajectories = vertcat(trajectoryCell{:});
-```
-
-## Fit a zero-vorticity mesoscale model
-
-The Site 1 tutorial uses a quadratic-in-space, cubic-in-time mesoscale
-spline basis together with `mesoscaleConstraint="zeroVorticity"`, which
-keeps the fitted mesoscale flow harmonic in the centered frame.
-
-```matlab
-fit = GriddedStreamfunction.fromTrajectories(trajectories, psiS=[2 2 3], fastS=3, mesoscaleConstraint="zeroVorticity");
+fit = GriddedStreamfunction.fromTrajectories(trajectories, psiS=[2 2 1], fastS=3, mesoscaleConstraint="zeroVorticity");
 decomposition = fit.decomposition;
 ```
 
@@ -162,28 +161,36 @@ with one mesoscale and one submesoscale trajectory for each drifter.
 backgroundX = fit.backgroundTrajectory.x(t);
 backgroundY = fit.backgroundTrajectory.y(t);
 
-figure(Color="w", Position=[100 100 1080 340]); tlDecomposition = tiledlayout(1, 3, TileSpacing="none", Padding="compact");
+figure(Color="w", Position=[100 100 960 290]); tlDecomposition = tiledlayout(1, 3, TileSpacing="compact", Padding="compact");
 axBackgroundPath = nexttile;
 plot(axBackgroundPath, backgroundX/1000, backgroundY/1000, "k", LineWidth=1.5)
 axis(axBackgroundPath, "equal"); xlabel(axBackgroundPath, "x (km)"); ylabel(axBackgroundPath, "y (km)")
 title(axBackgroundPath, "Common background path"); box(axBackgroundPath, "on")
 
 axMesoscale = nexttile; hold(axMesoscale, "on")
+mesoXMin = inf; mesoXMax = -inf; mesoYMin = inf; mesoYMax = -inf;
 for iDrifter = 1:nDrifters
     trajectory = fit.observedTrajectories(iDrifter); ti = trajectory.t; mesoscale = decomposition.fixedFrame.mesoscale(iDrifter);
-    plot(axMesoscale, mesoscale.x(ti)/1000, mesoscale.y(ti)/1000, LineWidth=1.2)
+    xMeso = mesoscale.x(ti)/1000; yMeso = mesoscale.y(ti)/1000;
+    mesoXMin = min(mesoXMin, min(xMeso)); mesoXMax = max(mesoXMax, max(xMeso));
+    mesoYMin = min(mesoYMin, min(yMeso)); mesoYMax = max(mesoYMax, max(yMeso));
+    plot(axMesoscale, xMeso, yMeso, LineWidth=1.2)
 end
-axis(axMesoscale, "equal"); xMeso = xlim(axMesoscale); yMeso = ylim(axMesoscale);
-xlim(axMesoscale, xMeso + 0.05 * max(diff(xMeso), 1) * [-1 1]); ylim(axMesoscale, yMeso + 0.05 * max(diff(yMeso), 1) * [-1 1])
+xlim(axMesoscale, [mesoXMin mesoXMax] + 0.03 * max(mesoXMax - mesoXMin, 1) * [-1 1])
+ylim(axMesoscale, [mesoYMin mesoYMax] + 0.03 * max(mesoYMax - mesoYMin, 1) * [-1 1])
 xlabel(axMesoscale, "x (km)"); title(axMesoscale, "Fixed-frame mesoscale"); axMesoscale.YTickLabel = []; box(axMesoscale, "on")
 
 axSubmesoscale = nexttile; hold(axSubmesoscale, "on")
+subXMin = inf; subXMax = -inf; subYMin = inf; subYMax = -inf;
 for iDrifter = 1:nDrifters
     trajectory = fit.observedTrajectories(iDrifter); ti = trajectory.t; submesoscale = decomposition.fixedFrame.submesoscale(iDrifter);
-    plot(axSubmesoscale, submesoscale.x(ti)/1000, submesoscale.y(ti)/1000, LineWidth=1.2)
+    xSubmeso = submesoscale.x(ti)/1000; ySubmeso = submesoscale.y(ti)/1000;
+    subXMin = min(subXMin, min(xSubmeso)); subXMax = max(subXMax, max(xSubmeso));
+    subYMin = min(subYMin, min(ySubmeso)); subYMax = max(subYMax, max(ySubmeso));
+    plot(axSubmesoscale, xSubmeso, ySubmeso, LineWidth=1.2)
 end
-axis(axSubmesoscale, "equal"); xSubmeso = xlim(axSubmesoscale); ySubmeso = ylim(axSubmesoscale);
-xlim(axSubmesoscale, xSubmeso + 0.05 * max(diff(xSubmeso), 1) * [-1 1]); ylim(axSubmesoscale, ySubmeso + 0.05 * max(diff(ySubmeso), 1) * [-1 1])
+xlim(axSubmesoscale, [subXMin subXMax] + 0.03 * max(subXMax - subXMin, 1) * [-1 1])
+ylim(axSubmesoscale, [subYMin subYMax] + 0.03 * max(subYMax - subYMin, 1) * [-1 1])
 xlabel(axSubmesoscale, "x (km)"); title(axSubmesoscale, "Fixed-frame submesoscale"); axSubmesoscale.YTickLabel = []; box(axSubmesoscale, "on")
 
 title(tlDecomposition, "Trajectory decomposition")
@@ -217,7 +224,12 @@ uReconstruction = uBackgroundDrifter + uMesoscale + uSubmesoscale;
 vReconstruction = vBackgroundDrifter + vMesoscale + vSubmesoscale;
 ```
 
-## Print a compact fit summary
+## Summarize the fit quality
+
+For this low-order example, the fitted mesoscale vorticity is
+effectively zero and the component velocities close back to the observed
+trajectory at machine precision. Printing the magnitudes makes that
+scale explicit.
 
 ```matlab
 fprintf("Site 1 zero-vorticity fit\n");
@@ -227,7 +239,12 @@ fprintf("  drifter %d max |u-u_recon|: %.3e m/s\n", iDrifter, max(abs(uObserved 
 fprintf("  drifter %d max |v-v_recon|: %.3e m/s\n", iDrifter, max(abs(vObserved - vReconstruction)));
 ```
 
-## Plot the velocity decomposition for one drifter
+## View the same decomposition as a velocity time series
+
+The spatial decomposition above shows where the pieces live. This
+alternative time-series view shows how the background, mesoscale, and
+submesoscale velocities add back to the observed spline-derived
+velocity at each sample time for one drifter.
 
 ```matlab
 figure(Color="w", Position=[100 100 760 420]); tlVelocity = tiledlayout(2, 1, TileSpacing="compact", Padding="compact");
