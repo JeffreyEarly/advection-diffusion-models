@@ -9,6 +9,7 @@ buildFolder = fullfile(rootDir, "docs");
 sourceFolder = fullfile(rootDir, "Documentation", "WebsiteDocumentation");
 tutorialSources = {
     fullfile(rootDir, "Examples", "Tutorials", "IntegratingStochasticTrajectories.m")
+    fullfile(rootDir, "Examples", "Tutorials", "GriddedStreamfunctionFit.m")
 };
 previousTutorialBuildFolder = "";
 
@@ -52,7 +53,7 @@ TutorialDocumentation.writeMarkdownIndex( ...
     buildFolder=buildFolder, ...
     websiteFolder="tutorials", ...
     nav_order=3, ...
-    description="Follow these tutorials to see how the kinematic models and particle integrators work together.");
+    description="Follow these tutorials to see how the package models, integrators, and estimators work together.");
 arrayfun(@(a) a.writeToFile(), tutorialDocumentation)
 clear tutorialDocumentation
 if previousTutorialBuildFolder ~= "" && isfolder(previousTutorialBuildFolder)
