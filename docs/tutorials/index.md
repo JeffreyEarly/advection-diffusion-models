@@ -17,3 +17,5 @@ Follow these tutorials to see how the package models, integrators, and estimator
   Compare deterministic and diffusive particle trajectories in the meandering jet and cylinder-flow kinematic models.
 - [Gridded streamfunction fit](./gridded-streamfunction-fit)
   Fit a zero-vorticity gridded streamfunction to the Site 1 LatMix drifter cluster and inspect the fitted decomposition.
+- [Bootstrap error assessment and model choice](./bootstrap-error-assessment-and-model-choice)
+  Use Site 1 bootstrap gridded-streamfunction fits to assess uncertainty, inspect restart files, and compare candidate models.

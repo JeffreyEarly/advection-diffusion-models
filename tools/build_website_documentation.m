@@ -10,6 +10,7 @@ sourceFolder = fullfile(rootDir, "Documentation", "WebsiteDocumentation");
 tutorialSources = {
     fullfile(rootDir, "Examples", "Tutorials", "IntegratingStochasticTrajectories.m")
     fullfile(rootDir, "Examples", "Tutorials", "GriddedStreamfunctionFit.m")
+    fullfile(rootDir, "Examples", "Tutorials", "BootstrapErrorAssessmentAndModelChoice.m")
 };
 previousTutorialBuildFolder = "";
 
