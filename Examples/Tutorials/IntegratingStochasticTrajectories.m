@@ -1,5 +1,5 @@
 %% Tutorial Metadata
-% Title: Integrating stochastic trajectories in kinematic models
+% Title: Stochastic trajectories in kinematic models
 % Slug: integrating-stochastic-trajectories
 % Description: Compare deterministic and diffusive particle trajectories in the meandering jet and cylinder-flow kinematic models.
 % NavOrder: 1
@@ -24,7 +24,9 @@
 jet = MeanderingJet();
 T = 5 * jet.Lx / jet.U;
 dt = 864;
-[x0Jet, y0Jet] = meanderingJetInitialPositions(jet);
+xJet = linspace(min(jet.xlim), max(jet.xlim), 6);
+yJet = linspace(min(jet.ylim), max(jet.ylim), 6);
+[x0Jet, y0Jet] = ndgrid(xJet, yJet);
 
 %% Deterministic trajectories in the meandering jet
 % Start with `kappa = 0` so that the particle paths follow only the jet
@@ -63,7 +65,8 @@ if exist("tutorialFigureCapture", "var") && isa(tutorialFigureCapture, "function
 cylinder = CylinderFlow();
 Tcylinder = 4 * cylinder.R / cylinder.U;
 dtCylinder = 1800;
-[x0Cylinder, y0Cylinder] = cylinderInitialPositions(cylinder);
+x0Cylinder = -2 * cylinder.R * ones(11, 1);
+y0Cylinder = linspace(-1.4 * cylinder.R, 1.4 * cylinder.R, 11).';
 
 rng(11)
 cylinderIntegrator = AdvectionDiffusionIntegrator(cylinder, 1e3);
@@ -76,14 +79,3 @@ cylinder.plotVelocityField(numPoints=20)
 cylinder.plotTrajectories(xCylinder, yCylinder, Color=[0.08 0.35 0.70], LineWidth=1.0)
 title("Diffusive trajectories around a cylinder")
 if exist("tutorialFigureCapture", "var") && isa(tutorialFigureCapture, "function_handle"), tutorialFigureCapture("cylinder-flow-diffusive", Caption="The cylinder obstacle redirects the mean flow while diffusivity spreads neighboring trajectories around the boundary and into the wake."); end
-
-function [x0, y0] = meanderingJetInitialPositions(jet)
-x = linspace(min(jet.xlim), max(jet.xlim), 6);
-y = linspace(min(jet.ylim), max(jet.ylim), 6);
-[x0, y0] = ndgrid(x, y);
-end
-
-function [x0, y0] = cylinderInitialPositions(cylinder)
-x0 = -2 * cylinder.R * ones(11, 1);
-y0 = linspace(-1.4 * cylinder.R, 1.4 * cylinder.R, 11).';
-end

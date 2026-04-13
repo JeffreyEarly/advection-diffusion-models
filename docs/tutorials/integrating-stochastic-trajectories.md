@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Integrating stochastic trajectories in kinematic models
+title: Stochastic trajectories in kinematic models
 parent: Tutorials
 nav_order: 1
 mathjax: true
 permalink: /tutorials/integrating-stochastic-trajectories
 ---
 
-# Integrating stochastic trajectories in kinematic models
+# Stochastic trajectories in kinematic models
 
 Compare deterministic and diffusive particle trajectories in the meandering jet and cylinder-flow kinematic models.
 
@@ -36,7 +36,9 @@ path.
 jet = MeanderingJet();
 T = 5 * jet.Lx / jet.U;
 dt = 864;
-[x0Jet, y0Jet] = meanderingJetInitialPositions(jet);
+xJet = linspace(min(jet.xlim), max(jet.xlim), 6);
+yJet = linspace(min(jet.ylim), max(jet.ylim), 6);
+[x0Jet, y0Jet] = ndgrid(xJet, yJet);
 ```
 
 ## Deterministic trajectories in the meandering jet
@@ -93,7 +95,8 @@ diffusivity perturbs nearby paths as they pass the boundary.
 cylinder = CylinderFlow();
 Tcylinder = 4 * cylinder.R / cylinder.U;
 dtCylinder = 1800;
-[x0Cylinder, y0Cylinder] = cylinderInitialPositions(cylinder);
+x0Cylinder = -2 * cylinder.R * ones(11, 1);
+y0Cylinder = linspace(-1.4 * cylinder.R, 1.4 * cylinder.R, 11).';
 
 rng(11)
 cylinderIntegrator = AdvectionDiffusionIntegrator(cylinder, 1e3);

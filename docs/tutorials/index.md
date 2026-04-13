@@ -13,5 +13,5 @@ Follow these tutorials to see how the kinematic models and particle integrators 
 
 ## Available Tutorials
 
-- [Integrating stochastic trajectories in kinematic models](./integrating-stochastic-trajectories)
+- [Stochastic trajectories in kinematic models](./integrating-stochastic-trajectories)
   Compare deterministic and diffusive particle trajectories in the meandering jet and cylinder-flow kinematic models.
