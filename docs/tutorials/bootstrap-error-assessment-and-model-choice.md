@@ -350,8 +350,21 @@ diagnosticsTable = table( ...
     bestFitCoherence, ...
     VariableNames=["psiS", "mesoscaleConstraint", "label", "mesoscaleDegreesOfFreedom", "fullFitKappa", "fullFitCoherence", "bestFitKappa", "bestFitCoherence"]);
 diagnosticsTable = sortrows(diagnosticsTable, ["mesoscaleConstraint", "psiS"]);
-disp(diagnosticsTable)
+```
 
+```text
+      psiS       mesoscaleConstraint           label           mesoscaleDegreesOfFreedom    fullFitKappa    fullFitCoherence    bestFitKappa    bestFitCoherence
+    _________    ___________________    ___________________    _________________________    ____________    ________________    ____________    ________________
+
+    "[2 2 1]"      "none"               "free zeta [2 2 1]"               16                   1.0224           0.21936           0.65944           0.25534
+    "[2 2 3]"      "none"               "free zeta [2 2 3]"               32                  0.29842           0.22827           0.29154           0.22404
+    "[2 2 1]"      "zeroVorticity"      "zeta=0 [2 2 1]"                   8                  0.17676           0.14883           0.13082           0.16719
+    "[2 2 3]"      "zeroVorticity"      "zeta=0 [2 2 3]"                  16                  0.17433            0.1518           0.13985           0.16352
+```
+
+*The model-choice table compares the four tutorial candidates using mesoscale degrees of freedom, diffusivity, and coherence diagnostics.*
+
+```matlab
 figure(Color="w", Position=[100 100 900 360]);
 tlModelChoice = tiledlayout(1, 2, TileSpacing="compact", Padding="compact");
 
@@ -377,4 +390,3 @@ title(tlModelChoice, "Bootstrap model choice")
 ![A small candidate sweep compares model complexity against the scalar bootstrap diagnostics. Open markers show the full-data fit and filled markers show the top-ranked bootstrap replicate for each candidate.](./bootstrap-error-assessment-and-model-choice/bootstrap-model-choice.png)
 
 *A small candidate sweep compares model complexity against the scalar bootstrap diagnostics. Open markers show the full-data fit and filled markers show the top-ranked bootstrap replicate for each candidate.*
-

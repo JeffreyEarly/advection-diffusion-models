@@ -307,7 +307,7 @@ diagnosticsTable = table( ...
     bestFitCoherence, ...
     VariableNames=["psiS", "mesoscaleConstraint", "label", "mesoscaleDegreesOfFreedom", "fullFitKappa", "fullFitCoherence", "bestFitKappa", "bestFitCoherence"]);
 diagnosticsTable = sortrows(diagnosticsTable, ["mesoscaleConstraint", "psiS"]);
-disp(diagnosticsTable)
+if exist("tutorialOutputCapture", "var") && isa(tutorialOutputCapture, "function_handle"), tutorialOutputCapture(@() disp(diagnosticsTable), Caption="The model-choice table compares the four tutorial candidates using mesoscale degrees of freedom, diffusivity, and coherence diagnostics."); end
 
 figure(Color="w", Position=[100 100 900 360]);
 tlModelChoice = tiledlayout(1, 2, TileSpacing="compact", Padding="compact");
