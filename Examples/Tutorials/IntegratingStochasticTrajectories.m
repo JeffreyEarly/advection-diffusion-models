@@ -9,14 +9,14 @@
 %
 % $$ d\mathbf{r}(t) = \mathbf{u}(t,\mathbf{r})\,dt + \sqrt{2\kappa}\,d\mathbf{W}_t, $$
 %
-% where `\mathbf{u}(t,\mathbf{r})` comes from a `KinematicModel` and
-% `\kappa` is the scalar diffusivity. When `kappa = 0`, the stochastic term
-% vanishes and the trajectories reduce to deterministic advection.
+% where $$\mathbf{u}(t,\mathbf{r})$$ comes from a `KinematicModel` and
+% $$\kappa$$ is the scalar diffusivity. When `kappa = 0`, the stochastic
+% term vanishes and the trajectories reduce to deterministic advection.
 %
-% Over one short timestep `\Delta t`, the package applies the same idea in
-% discrete form,
+% Over one short timestep $$\Delta t$$, the package applies the same idea
+% in discrete form,
 %
-% $$ \mathbf{r}_{n+1} \approx \mathbf{r}_n + \mathbf{u}(t_n,\mathbf{r}_n)\Delta t + \sqrt{2\kappa\Delta t}\,\boldsymbol{\xi}_n, \qquad \boldsymbol{\xi}_n \sim \mathcal{N}(0, I). $$
+% $$ \mathbf{r}_{n+1} \approx \mathbf{r}_n + \mathbf{u}(t_n,\mathbf{r}_n)\Delta t + \sqrt{2\kappa\Delta t}\,\mathbf{z}_n, \qquad \mathbf{z}_n \sim \mathcal{N}(0, I). $$
 %
 % The deterministic drift is advanced by the existing integrator machinery,
 % and the stochastic increment is added through the diffusivity integrator
@@ -25,9 +25,6 @@ jet = MeanderingJet();
 T = 5 * jet.Lx / jet.U;
 dt = 864;
 [x0Jet, y0Jet] = meanderingJetInitialPositions(jet);
-if ~exist("tutorialFigureCapture", "var") || ~isa(tutorialFigureCapture, "function_handle")
-    tutorialFigureCapture = @(varargin) [];
-end
 
 %% Deterministic trajectories in the meandering jet
 % Start with `kappa = 0` so that the particle paths follow only the jet
@@ -42,8 +39,7 @@ hold on
 jet.plotVelocityField(numPoints=20)
 jet.plotTrajectories(xDeterministic, yDeterministic, Color=[0.12 0.12 0.12], LineWidth=1.0)
 title("Deterministic trajectories in the meandering jet")
-tutorialFigureCapture("meandering-jet-deterministic", Caption= ...
-    "With zero diffusivity, particles stay locked to the organized pathways of the meandering jet and retain sharp transport structure.");
+if exist("tutorialFigureCapture", "var") && isa(tutorialFigureCapture, "function_handle"), tutorialFigureCapture("meandering-jet-deterministic", Caption="With zero diffusivity, particles stay locked to the organized pathways of the meandering jet and retain sharp transport structure."); end
 
 %% Add diffusivity in the same meandering jet
 % Now keep the same velocity field and initial conditions, but add scalar
@@ -58,8 +54,7 @@ hold on
 jet.plotVelocityField(numPoints=20)
 jet.plotTrajectories(xDiffusive, yDiffusive, Color=[0.84 0.24 0.11], LineWidth=1.0)
 title("Diffusive trajectories in the meandering jet")
-tutorialFigureCapture("meandering-jet-diffusive", Caption= ...
-    "Adding diffusivity broadens the same initial particle set while keeping the organized meandering-jet pathways visible.");
+if exist("tutorialFigureCapture", "var") && isa(tutorialFigureCapture, "function_handle"), tutorialFigureCapture("meandering-jet-diffusive", Caption="Adding diffusivity broadens the same initial particle set while keeping the organized meandering-jet pathways visible."); end
 
 %% Diffusive trajectories around an obstacle
 % The same integration call also works when the model contains an obstacle.
@@ -80,8 +75,7 @@ hold on
 cylinder.plotVelocityField(numPoints=20)
 cylinder.plotTrajectories(xCylinder, yCylinder, Color=[0.08 0.35 0.70], LineWidth=1.0)
 title("Diffusive trajectories around a cylinder")
-tutorialFigureCapture("cylinder-flow-diffusive", Caption= ...
-    "The cylinder obstacle redirects the mean flow while diffusivity spreads neighboring trajectories around the boundary and into the wake.");
+if exist("tutorialFigureCapture", "var") && isa(tutorialFigureCapture, "function_handle"), tutorialFigureCapture("cylinder-flow-diffusive", Caption="The cylinder obstacle redirects the mean flow while diffusivity spreads neighboring trajectories around the boundary and into the wake."); end
 
 function [x0, y0] = meanderingJetInitialPositions(jet)
 x = linspace(min(jet.xlim), max(jet.xlim), 6);

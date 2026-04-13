@@ -47,6 +47,7 @@ model = KernelDensityEstimate.fromData(data);
 contourf(gridVectors{1}, gridVectors{2}, density.')
 stats = KernelDensityEstimate.planarStatisticsFromData(data);
 polar = KernelDensityEstimate.polarSummaryFromPlanarStatistics(stats);
+strain = KernelDensityEstimate.strainSummaryFromPlanarStatistics(stats);
 ```
 
 
@@ -72,6 +73,8 @@ polar = KernelDensityEstimate.polarSummaryFromPlanarStatistics(stats);
     + [`plotPlanarStatistics`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/plotplanarstatistics.html) Plot a planar KDE summary from precomputed statistics.
   + Polar reduction
     + [`polarSummaryFromPlanarStatistics`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/polarsummaryfromplanarstatistics.html) Reduce planar KDE statistics to radius-angle uncertainty summaries.
+  + Strain reduction
+    + [`strainSummaryFromPlanarStatistics`](/advection-diffusion-models/classes/estimators/density-estimation/kerneldensityestimate/strainsummaryfromplanarstatistics.html) Reduce planar KDE statistics to strain magnitude-angle summaries.
 
 
 ---

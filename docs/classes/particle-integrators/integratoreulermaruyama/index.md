@@ -35,7 +35,7 @@ $$
 y_{n+1} = y_n + f(t_n,y_n)\,dt + g(t_n,y_n)\sqrt{dt}\,\eta_n,
 $$
 
-where `\eta_n` is standard normal with the same shape as `y_n`.
+where $$\eta_n$$ is standard normal with the same shape as `y_n`.
 `advanceToTime` preserves the existing first-order linear
 interpolation between accepted stochastic steps.
 

@@ -2,8 +2,8 @@ function strainSummary = strainSummaryFromPlanarStatistics(statistics, options)
 % Reduce planar KDE statistics to strain magnitude-angle summaries.
 %
 % `strainSummaryFromPlanarStatistics(...)` converts the planar KDE mode and
-% selected contour in `(\sigma_n,\sigma_s)` space into the physical strain
-% variables
+% selected contour in the $$(\sigma_n,\sigma_s)$$ plane into the physical
+% strain variables
 %
 % $$ \sigma = \sqrt{\sigma_n^2 + \sigma_s^2}, \qquad
 % \theta = \tfrac{1}{2}\operatorname{atan2}(\sigma_s,\sigma_n). $$

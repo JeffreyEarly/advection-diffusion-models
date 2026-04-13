@@ -30,7 +30,7 @@ dy = f(t,y)\,dt + \sqrt{2\kappa}\,dW_t,
 $$
 
 where `kappa` may be a scalar or a `1 x nDims` vector of componentwise
-diffusivities `\kappa_i`. The bounds `ymin` and `ymax` define
+diffusivities $$\kappa_i$$. The bounds `ymin` and `ymax` define
 independent reflecting or unbounded box conditions along each
 coordinate, using the repository's existing reflected and wrapped
 increment formulas.

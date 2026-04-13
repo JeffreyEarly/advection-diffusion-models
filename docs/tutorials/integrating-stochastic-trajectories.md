@@ -19,14 +19,14 @@ Source: `Examples/Tutorials/IntegratingStochasticTrajectories.m`
 
 $$ d\mathbf{r}(t) = \mathbf{u}(t,\mathbf{r})\,dt + \sqrt{2\kappa}\,d\mathbf{W}_t, $$
 
-where `\mathbf{u}(t,\mathbf{r})` comes from a `KinematicModel` and
-`\kappa` is the scalar diffusivity. When `kappa = 0`, the stochastic term
-vanishes and the trajectories reduce to deterministic advection.
+where $$\mathbf{u}(t,\mathbf{r})$$ comes from a `KinematicModel` and
+$$\kappa$$ is the scalar diffusivity. When `kappa = 0`, the stochastic
+term vanishes and the trajectories reduce to deterministic advection.
 
-Over one short timestep `\Delta t`, the package applies the same idea in
-discrete form,
+Over one short timestep $$\Delta t$$, the package applies the same idea
+in discrete form,
 
-$$ \mathbf{r}_{n+1} \approx \mathbf{r}_n + \mathbf{u}(t_n,\mathbf{r}_n)\Delta t + \sqrt{2\kappa\Delta t}\,\boldsymbol{\xi}_n, \qquad \boldsymbol{\xi}_n \sim \mathcal{N}(0, I). $$
+$$ \mathbf{r}_{n+1} \approx \mathbf{r}_n + \mathbf{u}(t_n,\mathbf{r}_n)\Delta t + \sqrt{2\kappa\Delta t}\,\mathbf{z}_n, \qquad \mathbf{z}_n \sim \mathcal{N}(0, I). $$
 
 The deterministic drift is advanced by the existing integrator machinery,
 and the stochastic increment is added through the diffusivity integrator
@@ -37,9 +37,6 @@ jet = MeanderingJet();
 T = 5 * jet.Lx / jet.U;
 dt = 864;
 [x0Jet, y0Jet] = meanderingJetInitialPositions(jet);
-if ~exist("tutorialFigureCapture", "var") || ~isa(tutorialFigureCapture, "function_handle")
-    tutorialFigureCapture = @(varargin) [];
-end
 ```
 
 ## Deterministic trajectories in the meandering jet
