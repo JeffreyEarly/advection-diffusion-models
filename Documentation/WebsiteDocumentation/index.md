@@ -16,5 +16,6 @@ publishes the core class reference for particle integrators, kinematic models, a
 ## Start here
 
 - [Installation](installation)
+- [Tutorials](tutorials)
 - [Class documentation](classes)
 - [Version history](version-history)
