@@ -64,10 +64,7 @@ The key control is
 [`psiS`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/psis):
 `psiS=[2 2 1]` makes the centered mesoscale streamfunction quadratic in
 `q` and `r`, and linear in time, so the fit can represent a slowly
-evolving strain field without becoming high order.
-[`fastS`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/fasts)
-= `3` keeps the center-of-mass and background trajectories cubic in
-time, and
+evolving strain field without becoming high order, while
 [`mesoscaleConstraint`](../classes/estimators/gridded-streamfunction/griddedstreamfunction/mesoscaleconstraint)
 = `"zeroVorticity"` removes solid-body rotation so the mesoscale fit is
 harmonic and strain-dominated. See
@@ -80,7 +77,7 @@ for iDrifter = 1:nDrifters
     trajectoryCell{iDrifter} = TrajectorySpline.fromData(t, x(:, iDrifter), y(:, iDrifter), S=3);
 end
 trajectories = vertcat(trajectoryCell{:});
-fit = GriddedStreamfunction.fromTrajectories(trajectories, psiS=[2 2 1], fastS=3, mesoscaleConstraint="zeroVorticity");
+fit = GriddedStreamfunction.fromTrajectories(trajectories, psiS=[2 2 1], mesoscaleConstraint="zeroVorticity");
 decomposition = fit.decomposition;
 ```
 
@@ -142,8 +139,8 @@ ylabel(axTheta, "\theta (deg)"); xlim(axTheta, [tDays(1), tDays(end)]); box(axTh
 
 axBackground = nexttile; hold(axBackground, "on")
 plot(axBackground, tDays, uBackground, LineWidth=1.5); plot(axBackground, tDays, vBackground, LineWidth=1.5)
-xlabel(axBackground, "time (days)"); ylabel(axBackground, "u_bg, v_bg (m/s)")
-xlim(axBackground, [tDays(1), tDays(end)]); legend(axBackground, "u_bg", "v_bg", Location="best"); box(axBackground, "on")
+xlabel(axBackground, "time (days)"); ylabel(axBackground, "u_{bg}, v_{bg} (m/s)")
+xlim(axBackground, [tDays(1), tDays(end)]); legend(axBackground, "u_{bg}", "v_{bg}", Location="best"); box(axBackground, "on")
 
 title(tlDiagnostics, "Fitted diagnostics")
 ```
@@ -161,13 +158,8 @@ with one mesoscale and one submesoscale trajectory for each drifter.
 backgroundX = fit.backgroundTrajectory.x(t);
 backgroundY = fit.backgroundTrajectory.y(t);
 
-figure(Color="w", Position=[100 100 960 290]); tlDecomposition = tiledlayout(1, 3, TileSpacing="compact", Padding="compact");
-axBackgroundPath = nexttile;
-plot(axBackgroundPath, backgroundX/1000, backgroundY/1000, "k", LineWidth=1.5)
-axis(axBackgroundPath, "equal"); xlabel(axBackgroundPath, "x (km)"); ylabel(axBackgroundPath, "y (km)")
-title(axBackgroundPath, "Common background path"); box(axBackgroundPath, "on")
-
-axMesoscale = nexttile; hold(axMesoscale, "on")
+figure(Color="w", Position=[100 100 780 560]); tlDecomposition = tiledlayout(2, 2, TileSpacing="compact", Padding="compact");
+axMesoscale = nexttile([2 1]); hold(axMesoscale, "on")
 mesoXMin = inf; mesoXMax = -inf; mesoYMin = inf; mesoYMax = -inf;
 for iDrifter = 1:nDrifters
     trajectory = fit.observedTrajectories(iDrifter); ti = trajectory.t; mesoscale = decomposition.fixedFrame.mesoscale(iDrifter);
@@ -178,7 +170,13 @@ for iDrifter = 1:nDrifters
 end
 xlim(axMesoscale, [mesoXMin mesoXMax] + 0.03 * max(mesoXMax - mesoXMin, 1) * [-1 1])
 ylim(axMesoscale, [mesoYMin mesoYMax] + 0.03 * max(mesoYMax - mesoYMin, 1) * [-1 1])
-xlabel(axMesoscale, "x (km)"); title(axMesoscale, "Fixed-frame mesoscale"); axMesoscale.YTickLabel = []; box(axMesoscale, "on")
+axis(axMesoscale, "equal"); xlabel(axMesoscale, "x (km)"); ylabel(axMesoscale, "y (km)")
+title(axMesoscale, "Fixed-frame mesoscale"); box(axMesoscale, "on")
+
+axBackgroundPath = nexttile;
+plot(axBackgroundPath, backgroundX/1000, backgroundY/1000, "k", LineWidth=1.5)
+axis(axBackgroundPath, "equal"); xlabel(axBackgroundPath, "x (km)"); ylabel(axBackgroundPath, "y (km)")
+title(axBackgroundPath, "Common background path"); box(axBackgroundPath, "on")
 
 axSubmesoscale = nexttile; hold(axSubmesoscale, "on")
 subXMin = inf; subXMax = -inf; subYMin = inf; subYMax = -inf;
@@ -191,6 +189,7 @@ for iDrifter = 1:nDrifters
 end
 xlim(axSubmesoscale, [subXMin subXMax] + 0.03 * max(subXMax - subXMin, 1) * [-1 1])
 ylim(axSubmesoscale, [subYMin subYMax] + 0.03 * max(subYMax - subYMin, 1) * [-1 1])
+axis(axSubmesoscale, "equal")
 xlabel(axSubmesoscale, "x (km)"); title(axSubmesoscale, "Fixed-frame submesoscale"); axSubmesoscale.YTickLabel = []; box(axSubmesoscale, "on")
 
 title(tlDecomposition, "Trajectory decomposition")
@@ -228,15 +227,34 @@ vReconstruction = vBackgroundDrifter + vMesoscale + vSubmesoscale;
 
 For this low-order example, the fitted mesoscale vorticity is
 effectively zero and the component velocities close back to the observed
-trajectory at machine precision. Printing the magnitudes makes that
-scale explicit.
+trajectory at machine precision. A compact table makes those scales
+explicit in the rendered tutorial and at the command line.
 
 ```matlab
-fprintf("Site 1 zero-vorticity fit\n");
-fprintf("  drifters: %d\n", nDrifters);
-fprintf("  max |zeta/f0| on COM path: %.3e\n", max(abs(zeta/f0)));
-fprintf("  drifter %d max |u-u_recon|: %.3e m/s\n", iDrifter, max(abs(uObserved - uReconstruction)));
-fprintf("  drifter %d max |v-v_recon|: %.3e m/s\n", iDrifter, max(abs(vObserved - vReconstruction)));
+fitSummaryTable = table( ...
+    ["drifters"; "max |zeta/f0| on COM path"; sprintf("drifter %d max |u-u_recon|", iDrifter); sprintf("drifter %d max |v-v_recon|", iDrifter)], ...
+    [nDrifters; max(abs(zeta/f0)); max(abs(uObserved - uReconstruction)); max(abs(vObserved - vReconstruction))], ...
+    ["count"; "f0"; "m/s"; "m/s"], ...
+    VariableNames=["metric", "value", "units"]);
+if exist("tutorialOutputCapture", "var") && isa(tutorialOutputCapture, "function_handle")
+```
+
+```text
+              metric                 value        units
+    ___________________________    __________    _______
+
+    "drifters"                              9    "count"
+    "max |zeta/f0| on COM path"    6.1214e-15    "f0"
+    "drifter 1 max |u-u_recon|"    3.7192e-15    "m/s"
+    "drifter 1 max |v-v_recon|"    2.5813e-15    "m/s"
+```
+
+*The fit summary table reports the drifter count, the near-zero mesoscale vorticity on the center-of-mass path, and the reconstruction errors for one representative drifter.*
+
+```matlab
+else
+    disp(fitSummaryTable)
+end
 ```
 
 ## View the same decomposition as a velocity time series
