@@ -420,12 +420,13 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             %
             % - Topic: Fit the estimator
             % - nav_order: 1
-            % - Declaration: self = fromTrajectories(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,mesoscaleConstraint=...)
+            % - Declaration: self = fromTrajectories(trajectories,psiKnotPoints=...,psiS=...,fastKnotPoints=...,fastS=...,centerOfMassTrajectory=...,mesoscaleConstraint=...)
             % - Parameter trajectories: nonempty vector of `TrajectorySpline` drifters
             % - Parameter psiKnotPoints: optional cell array `{qKnot, rKnot, tKnot}` for the mesoscale basis
             % - Parameter psiS: optional mesoscale spline degree vector `[Sq Sr St]`, default `[2 2 0]`
             % - Parameter fastKnotPoints: optional fast temporal knot vector for COM and background
             % - Parameter fastS: optional fast temporal spline degree, default `3`
+            % - Parameter centerOfMassTrajectory: optional prefit COM trajectory to preserve instead of refitting from the supplied samples
             % - Parameter mesoscaleConstraint: optional hard mesoscale constraint `"none"`, `"zeroVorticity"`, or `"zeroStrain"`
             % - Returns self: fitted `GriddedStreamfunction` estimator
             arguments (Input)
@@ -434,6 +435,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
                 options.psiS (1,3) double {mustBeInteger, mustBeNonnegative} = [2 2 0]
                 options.fastKnotPoints = []
                 options.fastS (1,1) double {mustBeInteger, mustBeNonnegative} = 3
+                options.centerOfMassTrajectory = TrajectorySpline.empty(0, 1)
                 options.mesoscaleConstraint {mustBeTextScalar, mustBeMember(options.mesoscaleConstraint, ["none", "zeroVorticity", "zeroStrain"])} = "none"
                 options.buildDecomposition (1,1) logical = true
                 options.sampleData struct = struct([])
@@ -444,8 +446,32 @@ classdef GriddedStreamfunction < CAAnnotatedClass
             psiKnotPoints = options.psiKnotPoints;
             fastKnotPoints = options.fastKnotPoints;
             fastS = options.fastS;
+            centerOfMassTrajectory = options.centerOfMassTrajectory;
             mesoscaleConstraint = string(options.mesoscaleConstraint);
             sampleData = options.sampleData;
+
+            if ~isempty(centerOfMassTrajectory)
+                if ~(isa(centerOfMassTrajectory, "TrajectorySpline") && isscalar(centerOfMassTrajectory))
+                    error("GriddedStreamfunction:InvalidCenterOfMassTrajectory", ...
+                        "centerOfMassTrajectory must be empty or a scalar TrajectorySpline.");
+                end
+                if centerOfMassTrajectory.x.S ~= centerOfMassTrajectory.y.S || ...
+                        ~isequal(centerOfMassTrajectory.x.knotPoints, centerOfMassTrajectory.y.knotPoints)
+                    error("GriddedStreamfunction:IncompatibleCenterOfMassSplines", ...
+                        "The supplied center-of-mass x and y splines must use the same degree and knot points.");
+                end
+                if fastS ~= centerOfMassTrajectory.x.S
+                    error("GriddedStreamfunction:IncompatibleCenterOfMassDegree", ...
+                        "fastS=%d must equal the supplied center-of-mass spline degree %d.", ...
+                        fastS, centerOfMassTrajectory.x.S);
+                end
+                if isempty(fastKnotPoints)
+                    fastKnotPoints = centerOfMassTrajectory.x.knotPoints;
+                elseif ~isequal(reshape(fastKnotPoints, [], 1), centerOfMassTrajectory.x.knotPoints)
+                    error("GriddedStreamfunction:IncompatibleCenterOfMassKnotPoints", ...
+                        "fastKnotPoints must equal the supplied center-of-mass spline knot points.");
+                end
+            end
 
             if ~isempty(fastKnotPoints)
                 if ~(isnumeric(fastKnotPoints) && isvector(fastKnotPoints) && ...
@@ -494,6 +520,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
                 psiS, ...
                 fastKnotPoints, ...
                 fastS, ...
+                centerOfMassTrajectory, ...
                 mesoscaleConstraint, ...
                 options.buildDecomposition, ...
                 sampleData);
@@ -822,7 +849,7 @@ classdef GriddedStreamfunction < CAAnnotatedClass
     end
 
     methods (Access = private)
-        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition, sampleData)
+        fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, centerOfMassTrajectory, mesoscaleConstraint, buildDecomposition, sampleData)
         [backgroundTrajectory, decomposition] = decomposeTrajectorySet(self, trajectories)
     end
 

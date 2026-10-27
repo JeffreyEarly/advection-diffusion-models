@@ -1,4 +1,4 @@
-function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, mesoscaleConstraint, buildDecomposition, sampleData)
+function fitTrajectorySplines(self, trajectories, psiKnotPoints, psiS, fastKnotPoints, fastS, centerOfMassTrajectory, mesoscaleConstraint, buildDecomposition, sampleData)
 if isempty(sampleData)
     sampledData = GriddedStreamfunction.sampleTrajectoryData(trajectories);
 else
@@ -33,18 +33,30 @@ else
 end
 
 fastState = GriddedStreamfunction.fastBasisState(allT, fastKnotPoints, fastS, true);
-centerCoefficients = fastState.solver \ [allX, allY];
-bX = centerCoefficients(:, 1);
-bY = centerCoefficients(:, 2);
-centerXSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bX, S=fastS);
-centerYSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bY, S=fastS);
-centerOfMassTrajectory = TrajectorySpline(t=fitSupportTimes, x=centerXSpline, y=centerYSpline);
+if isempty(centerOfMassTrajectory)
+    centerCoefficients = fastState.solver \ [allX, allY];
+    bX = centerCoefficients(:, 1);
+    bY = centerCoefficients(:, 2);
+    centerXSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bX, S=fastS);
+    centerYSpline = TensorSpline.fromKnotPoints(fastKnotPoints, bY, S=fastS);
+    centerOfMassTrajectory = TrajectorySpline(t=fitSupportTimes, x=centerXSpline, y=centerYSpline);
 
-mxAll = fastState.B * bX;
-myAll = fastState.B * bY;
-% \dot{m} comes from differentiating the fitted fast COM spline.
-mxDotAll = fastState.dB * bX;
-myDotAll = fastState.dB * bY;
+    mxAll = fastState.B * bX;
+    myAll = fastState.B * bY;
+    % \dot{m} comes from differentiating the fitted fast COM spline.
+    mxDotAll = fastState.dB * bX;
+    myDotAll = fastState.dB * bY;
+else
+    centerTimeDomain = [centerOfMassTrajectory.x.knotPoints(1), centerOfMassTrajectory.x.knotPoints(end)];
+    if any(allT < centerTimeDomain(1) | allT > centerTimeDomain(2))
+        error("GriddedStreamfunction:ObservationOutsideCenterOfMassDomain", ...
+            "Observation times must lie inside the supplied center-of-mass spline domain.");
+    end
+    mxAll = reshape(centerOfMassTrajectory.x(allT), [], 1);
+    myAll = reshape(centerOfMassTrajectory.y(allT), [], 1);
+    mxDotAll = reshape(centerOfMassTrajectory.u(allT), [], 1);
+    myDotAll = reshape(centerOfMassTrajectory.v(allT), [], 1);
+end
 qAll = allX - mxAll;
 rAll = allY - myAll;
 

@@ -1,5 +1,8 @@
 # Version History
 
+## Unreleased
+- added optional preservation of a prefit center-of-mass trajectory when fitting `GriddedStreamfunction` models from filtered trajectory samples
+
 ## [2.2.0] - 2026-04-13
 - simplified the `GriddedStreamfunction` interface and examples, added the new constrained-streamfunction options, and expanded the Site 1 bootstrap workflow
 - refactored the gridded-streamfunction bootstrap and trajectory-decomposition antiderivative paths to use the public `BSpline` integration utilities added in `SplineCore 2.2`, and raised the package dependency floor to `SplineCore ^2.2`

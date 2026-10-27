@@ -56,7 +56,7 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
             fit = GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="zeroVorticity");
             path = [tempname, '.nc'];
-            cleanup = onCleanup(@() GriddedStreamfunctionUnitTests.deleteIfExists(path)); %#ok<NASGU>
+            cleanup = onCleanup(@() GriddedStreamfunctionUnitTests.deleteIfExists(path));
 
             fit.writeToFile(path, shouldOverwriteExisting=true);
             restored = GriddedStreamfunction.fromFile(path);
@@ -123,6 +123,37 @@ classdef GriddedStreamfunctionUnitTests < matlab.unittest.TestCase
             [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
 
             testCase.verifyError(@() GriddedStreamfunction.fromTrajectories(trajectories, mesoscaleConstraint="badConstraint"), "MATLAB:validators:mustBeMember")
+        end
+
+        function suppliedCenterOfMassTrajectoryIsPreserved(testCase)
+            [~, t, x, y, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            geometryFit = GriddedStreamfunction.fromTrajectories(trajectories, psiS=[2 2 1]);
+
+            fit = GriddedStreamfunction.fromTrajectories( ...
+                trajectories(1:2), psiS=[2 2 1], fastS=geometryFit.fastS, ...
+                centerOfMassTrajectory=geometryFit.centerOfMassTrajectory);
+            tGrid = repmat(t, 1, 2);
+
+            testCase.verifyEqual(fit.fastKnotPoints, geometryFit.fastKnotPoints, "AbsTol", 0)
+            testCase.verifyEqual(fit.centerOfMassTrajectory.x.xi, geometryFit.centerOfMassTrajectory.x.xi, "AbsTol", 0)
+            testCase.verifyEqual(fit.centerOfMassTrajectory.y.xi, geometryFit.centerOfMassTrajectory.y.xi, "AbsTol", 0)
+            testCase.verifyEqual(fit.centerOfMassTrajectory.x(t), geometryFit.centerOfMassTrajectory.x(t), "AbsTol", 0)
+            testCase.verifyEqual(fit.centerOfMassTrajectory.y(t), geometryFit.centerOfMassTrajectory.y(t), "AbsTol", 0)
+            testCase.verifySize(fit.uMesoscale(tGrid, x(:, 1:2), y(:, 1:2)), size(tGrid))
+        end
+
+        function suppliedCenterOfMassTrajectoryRejectsIncompatibleFastSettings(testCase)
+            [~, ~, ~, ~, trajectories] = GriddedStreamfunctionUnitTests.synchronousLinearFieldData();
+            geometryFit = GriddedStreamfunction.fromTrajectories(trajectories);
+
+            testCase.verifyError(@() GriddedStreamfunction.fromTrajectories( ...
+                trajectories, fastS=geometryFit.fastS - 1, ...
+                centerOfMassTrajectory=geometryFit.centerOfMassTrajectory), ...
+                "GriddedStreamfunction:IncompatibleCenterOfMassDegree")
+            testCase.verifyError(@() GriddedStreamfunction.fromTrajectories( ...
+                trajectories, fastKnotPoints=geometryFit.fastKnotPoints(1:end - 1), ...
+                centerOfMassTrajectory=geometryFit.centerOfMassTrajectory), ...
+                "GriddedStreamfunction:IncompatibleCenterOfMassKnotPoints")
         end
 
         function explicitNoneConstraintMatchesDefaultFit(testCase)
